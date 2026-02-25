@@ -5,6 +5,9 @@ export interface User {
   fullName?: string;
   bio?: string;
   avatarUrl?: string;
+  coverUrl?: string;
+  department?: string;
+  class?: string;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -30,6 +33,8 @@ export interface Post {
   published: boolean;
   authorId: number;
   categoryId?: number;
+  repostId?: number;
+  repostOf?: Post;
   createdAt: string;
   updatedAt: string;
   author: {
@@ -42,9 +47,10 @@ export interface Post {
   _count?: {
     likes: number;
     comments: number;
-    reposts?: number;
+    reposts: number;
   };
   isLiked?: boolean; // Frontend için
+  isReposted?: boolean; // Frontend için
 }
 
 export interface Like {

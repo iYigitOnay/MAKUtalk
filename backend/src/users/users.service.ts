@@ -8,10 +8,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { MailService } from '../mail/mail.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private mailService: MailService,
+  ) {}
 
   async create(createUserDto: CreateUserDto) {
     const { email, username, password, fullName } = createUserDto;
@@ -27,13 +31,91 @@ export class UsersService {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 haneli kod
 
-    return this.prisma.user.create({
+    const user = await this.prisma.user.create({
       data: {
         email,
         username,
         password: hashedPassword,
         fullName,
+        verificationCode,
+        isVerified: false,
+      },
+    });
+
+    // Kayıt sonrası doğrulama kodunu gönder
+    try {
+      await this.mailService.sendVerificationCode(user.email, verificationCode);
+    } catch (error) {
+      console.error('Doğrulama kodu gönderim hatası:', error);
+    }
+
+    return user;
+  }
+
+  async verifyEmail(email: string, code: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException('Kullanıcı bulunamadı.');
+    }
+
+    if (user.verificationCode !== code) {
+      throw new ForbiddenException('Doğrulama kodu hatalı.');
+    }
+
+    return this.prisma.user.update({
+      where: { email },
+      data: {
+        isVerified: true,
+        verificationCode: null, // Kod kullanıldıktan sonra temizle
+      },
+    });
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException('Bu e-posta adresiyle kayıtlı bir kullanıcı bulunamadı.');
+    }
+
+    const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    await this.prisma.user.update({
+      where: { email },
+      data: { verificationCode: resetCode },
+    });
+
+    try {
+      await this.mailService.sendPasswordResetCode(email, resetCode);
+      return { message: 'Şifre sıfırlama kodu e-posta adresinize gönderildi.' };
+    } catch (error) {
+      console.error('Şifre sıfırlama kodu gönderim hatası:', error);
+      throw new Error('E-posta gönderilemedi.');
+    }
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+
+    if (!user) {
+      throw new NotFoundException('Kullanıcı bulunamadı.');
+    }
+
+    if (user.verificationCode !== code) {
+      throw new ForbiddenException('Sıfırlama kodu hatalı.');
+    }
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    return this.prisma.user.update({
+      where: { email },
+      data: {
+        password: hashedPassword,
+        verificationCode: null,
+        isVerified: true, // Şifre sıfırlayabiliyorsa hesabı doğrulanmış sayılabilir veya doğrulanmış olmalıdır
       },
     });
   }
@@ -78,6 +160,8 @@ export class UsersService {
         bio: true,
         avatarUrl: true,
         coverUrl: true,
+        department: true,
+        class: true,
         createdAt: true,
         _count: {
           select: {
@@ -100,9 +184,12 @@ export class UsersService {
         id: true,
         username: true,
         fullName: true,
+        email: true,
         bio: true,
         avatarUrl: true,
         coverUrl: true,
+        department: true,
+        class: true,
         createdAt: true,
         _count: {
           select: {
@@ -143,6 +230,7 @@ export class UsersService {
       where: {
         authorId: userId,
         published: true,
+        repostId: null, // Sadece orijinal postlar
       },
       include: {
         author: {
@@ -154,10 +242,18 @@ export class UsersService {
           },
         },
         category: true,
+        repostOf: {
+          include: {
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            category: true,
+            _count: { select: { likes: true, comments: true, reposts: true } }
+          }
+        },
         _count: {
           select: {
             likes: true,
             comments: true,
+            reposts: true,
           },
         },
       },
@@ -192,9 +288,12 @@ export class UsersService {
         id: true,
         username: true,
         fullName: true,
+        email: true,
         bio: true,
         avatarUrl: true,
         coverUrl: true,
+        department: true,
+        class: true,
         createdAt: true,
         _count: {
           select: {

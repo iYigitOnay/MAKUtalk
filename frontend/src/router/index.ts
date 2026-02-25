@@ -53,28 +53,22 @@ const router = createRouter({
       meta: { requiresAuth: true, layout: "main" },
     },
     {
-      path: "/profile/:id",
+      path: "/profile/:id?",
       name: "Profile",
       component: () => import("@/views/Profile.vue"),
       meta: { layout: "main" },
     },
     {
       path: "/my-profile",
-      name: "MyProfile",
-      component: () => import("@/views/Profile.vue"),
-      meta: { requiresAuth: true, layout: "main" },
+      redirect: (to) => {
+        const authStore = useAuthStore();
+        return authStore.user ? `/profile/${authStore.user.username}` : "/auth";
+      },
     },
     {
       path: "/my-posts",
-      name: "MyPosts",
       component: () => import("@/views/MyPosts.vue"),
       meta: { requiresAuth: true, layout: "main" },
-    },
-    {
-      path: "/user/:id",
-      name: "UserProfile",
-      component: () => import("@/views/UserProfile.vue"),
-      meta: { layout: "main" },
     },
     {
       path: "/post/:id",

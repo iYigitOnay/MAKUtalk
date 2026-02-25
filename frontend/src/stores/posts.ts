@@ -10,10 +10,10 @@ export const usePostsStore = defineStore("posts", () => {
   const currentCategory = ref<number | null>(null);
 
   // Tüm postları getir
-  const fetchPosts = async (userId?: number) => {
+  const fetchPosts = async (currentUserId?: number) => {
     loading.value = true;
     try {
-      const params = userId ? { userId } : {};
+      const params = currentUserId ? { currentUserId } : {};
       const response = await apiClient.get<Post[]>("/posts", { params });
       posts.value = response.data;
     } catch (error) {
@@ -25,11 +25,11 @@ export const usePostsStore = defineStore("posts", () => {
   };
 
   // Kategoriye göre postları getir
-  const fetchPostsByCategory = async (categoryId: number, userId?: number) => {
+  const fetchPostsByCategory = async (categoryId: number, currentUserId?: number) => {
     loading.value = true;
     currentCategory.value = categoryId;
     try {
-      const params = userId ? { userId } : {};
+      const params = currentUserId ? { currentUserId } : {};
       const response = await apiClient.get<Post[]>(
         `/posts/category/${categoryId}`,
         {
@@ -56,6 +56,34 @@ export const usePostsStore = defineStore("posts", () => {
       throw error;
     } finally {
       loading.value = false;
+    }
+  };
+
+  // Kullanıcının repostlarını getir (Remakü Sekmesi için)
+  const fetchUserReposts = async (userId: number, currentUserId?: number) => {
+    loading.value = true;
+    try {
+      const params = currentUserId ? { currentUserId } : {};
+      const response = await apiClient.get<Post[]>(`/posts/user/${userId}/reposts`, { params });
+      return response.data;
+    } catch (error) {
+      console.error("User reposts fetch error:", error);
+      throw error;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Repost İşlemi (Remakü)
+  const toggleRepost = async (postId: number) => {
+    try {
+      const response = await apiClient.post<{ reposted: boolean; post?: Post; message: string }>(
+        `/posts/${postId}/repost`
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Toggle repost error:", error);
+      throw error;
     }
   };
 
@@ -121,16 +149,26 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  // Post'u local state'te güncelle (like toggle için)
-  const updatePostLocally = (postId: number, updates: Partial<Post>) => {
+  // Post'u local state'te güncelle (tüm eşleşmeleri bul ve güncelle)
+  const updatePostLocally = (postId: number, updates: any, arrays: Post[][] = [posts.value, myPosts.value]) => {
     const updateInArray = (arr: Post[]) => {
-      const index = arr.findIndex((p) => p.id === postId);
-      if (index !== -1) {
-        arr[index] = { ...arr[index], ...updates };
-      }
+      if (!arr) return;
+      arr.forEach((p, index) => {
+        if (p.id === postId || p.repostId === postId) {
+          if (p.id === postId) {
+            const newCount = updates._count ? { ...p._count, ...updates._count } : p._count;
+            arr[index] = { ...p, ...updates, _count: newCount };
+          } else if (p.repostOf && p.repostId === postId) {
+            const newInnerCount = updates._count ? { ...p.repostOf._count, ...updates._count } : p.repostOf._count;
+            arr[index] = { 
+              ...p,
+              repostOf: { ...p.repostOf, ...updates, _count: newInnerCount }
+            };
+          }
+        }
+      });
     };
-    updateInArray(posts.value);
-    updateInArray(myPosts.value);
+    arrays.forEach(updateInArray);
   };
 
   // Kategori filtresini sıfırla
@@ -146,6 +184,8 @@ export const usePostsStore = defineStore("posts", () => {
     fetchPosts,
     fetchPostsByCategory,
     fetchMyPosts,
+    fetchUserReposts,
+    toggleRepost,
     createPost,
     deletePost,
     updatePost,

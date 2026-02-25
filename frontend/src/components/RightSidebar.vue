@@ -2,22 +2,19 @@
 <template>
   <div class="p-4 space-y-4">
     <!-- Arama -->
-    <div class="relative">
+    <div class="relative group">
       <input
         v-model="searchQuery"
         @keyup.enter="handleSearch"
-        @input="searchQuery"
         type="text"
         placeholder="MAKUtalk'ta ara..."
-        class="w-full pl-10 pr-10 py-2.5 rounded-full bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm border border-transparent focus:border-primary-600 outline-none transition-colors"
+        class="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-gray-400 text-sm border border-transparent focus:border-blue-500/50 focus:bg-white dark:focus:bg-gray-800 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all"
       />
-      <button
-        @click="handleSearch"
-        type="button"
-        class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary-600 transition-colors p-1"
+      <div
+        class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
       >
         <svg
-          class="w-4 h-4"
+          class="w-4.5 h-4.5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -25,11 +22,11 @@
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
-            stroke-width="2"
+            stroke-width="2.5"
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"
           />
         </svg>
-      </button>
+      </div>
     </div>
 
     <!-- Kategoriler -->
@@ -56,22 +53,22 @@
           :class="[
             'w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors',
             !activeCategory
-              ? 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
+              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800',
           ]"
         >
           Tümü
         </button>
 
         <button
-          v-for="cat in categoriesStore.categories"
+          v-for="cat in sortedCategories"
           :key="cat.id"
           @click="selectCategory(cat.id)"
           :class="[
             'w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2',
             activeCategory === cat.id
-              ? 'text-white'
-              : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800',
+              ? 'text-white shadow-sm'
+              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800',
           ]"
           :style="
             activeCategory === cat.id ? { backgroundColor: cat.color } : {}
@@ -145,7 +142,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useCategoriesStore } from "@/stores/categories";
 import { usePostsStore } from "@/stores/posts";
@@ -161,6 +158,24 @@ const searchQuery = ref("");
 const hashtags = ref<{ tag: string; count: number }[]>([]);
 const loadingHashtags = ref(true);
 const activeCategory = ref<number | null>(null);
+
+const sortedCategories = computed(() => {
+  const order = [
+    "Genel",
+    "Duyuru",
+    "Etkinlik",
+    "Arıza-Kayıp",
+    "Satılık",
+    "Soru-Cevap",
+  ];
+  return [...categoriesStore.categories].sort((a, b) => {
+    const indexA = order.indexOf(a.name);
+    const indexB = order.indexOf(b.name);
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+});
 
 onMounted(async () => {
   await categoriesStore.fetchCategories();

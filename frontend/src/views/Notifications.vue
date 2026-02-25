@@ -67,23 +67,31 @@
       >
         <div class="flex gap-3">
           <!-- Avatar -->
-          <img
-            v-if="notification.sender?.avatarUrl"
-            :src="notification.sender.avatarUrl"
-            :alt="notification.sender.username"
-            class="w-12 h-12 rounded-full object-cover flex-shrink-0"
-          />
-          <div
-            v-else
-            class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold flex-shrink-0"
+          <div 
+            @click.stop="router.push(`/profile/${notification.sender?.username}`)"
+            class="cursor-pointer hover:opacity-80 transition-opacity"
           >
-            {{ notification.sender?.username?.charAt(0).toUpperCase() || "?" }}
+            <img
+              v-if="notification.sender?.avatarUrl"
+              :src="notification.sender.avatarUrl"
+              :alt="notification.sender.username"
+              class="w-12 h-12 rounded-full object-cover flex-shrink-0"
+            />
+            <div
+              v-else
+              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0"
+            >
+              {{ notification.sender?.username?.charAt(0).toUpperCase() || "?" }}
+            </div>
           </div>
 
           <!-- Content -->
           <div class="flex-1 min-w-0">
-            <p class="text-sm text-gray-900 dark:text-white">
-              <span class="font-bold">
+            <p class="text-sm text-slate-900 dark:text-white">
+              <span 
+                @click.stop="router.push(`/profile/${notification.sender?.username}`)"
+                class="font-bold cursor-pointer hover:underline"
+              >
                 {{
                   notification.sender?.fullName || notification.sender?.username
                 }}

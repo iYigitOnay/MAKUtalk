@@ -4,25 +4,31 @@
 
 @layer base {
   body {
-    @apply bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-50;
+    @apply bg-[#f8fafc] text-slate-900 dark:bg-gray-950 dark:text-gray-50;
   }
 
-  /* Dark mode scrollbar */
+  /* Global scrollbar styling */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 4px;
+    height: 4px;
   }
 
   ::-webkit-scrollbar-track {
-    @apply bg-gray-100 dark:bg-gray-900;
+    @apply bg-transparent;
   }
 
   ::-webkit-scrollbar-thumb {
-    @apply bg-gray-400 dark:bg-gray-700 rounded-lg;
+    background-color: transparent;
+    @apply rounded-full;
   }
 
-  ::-webkit-scrollbar-thumb:hover {
-    @apply bg-gray-500 dark:bg-gray-600;
+  /* Show scrollbar thumb when the container is hovered */
+  *:hover::-webkit-scrollbar-thumb {
+    @apply bg-slate-200 dark:bg-gray-800/50;
+  }
+
+  *:hover::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-300 dark:bg-gray-700;
   }
 }
 
@@ -38,22 +44,22 @@
   }
 
   .btn-primary {
-    @apply px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 dark:hover:bg-primary-500 transition-colors duration-200 font-medium;
+    @apply px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-primary-500 transition-all duration-200 font-semibold shadow-sm active:scale-[0.98];
   }
 
   .btn-secondary {
-    @apply px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200 font-medium;
+    @apply px-4 py-2 bg-slate-200 dark:bg-gray-700 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-300 dark:hover:bg-gray-600 transition-all duration-200 font-medium;
   }
 
   .btn-outline {
-    @apply px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-200 font-medium;
+    @apply px-4 py-2 border border-slate-300 dark:border-gray-600 text-slate-700 dark:text-gray-300 rounded-lg hover:bg-slate-50 dark:hover:bg-gray-800 transition-all duration-200 font-medium;
   }
 
   .input-field {
-    @apply w-full px-4 py-2 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 dark:focus:ring-primary-400 focus:border-transparent transition-colors duration-200;
+    @apply w-full px-4 py-2 border border-slate-200 dark:border-gray-600 bg-white dark:bg-gray-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-gray-400 rounded-lg focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500/50 dark:focus:ring-primary-400 transition-all duration-200;
   }
 
   .card {
-    @apply bg-white dark:bg-gray-900 rounded-xl shadow-sm border border-gray-200 dark:border-primary-900/30 p-6 transition-colors duration-200;
+    @apply bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-slate-200/60 dark:border-primary-900/30 p-6 transition-all duration-200;
   }
 }

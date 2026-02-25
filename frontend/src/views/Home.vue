@@ -8,18 +8,22 @@
       class="sticky top-0 z-10 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-4"
     >
       <div class="flex gap-4">
-        <!-- Avatar -->
-        <img
-          v-if="authStore.user?.avatarUrl"
-          :src="authStore.user.avatarUrl"
-          :alt="authStore.user.username"
-          class="w-12 h-12 rounded-full object-cover flex-shrink-0 ring-2 ring-primary-500/50 dark:ring-primary-500/40 shadow-md"
-        />
-        <div
-          v-else
-          class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center text-white font-bold flex-shrink-0 ring-2 ring-primary-500/50 dark:ring-primary-500/40 shadow-md"
-        >
-          {{ authStore.user?.username?.charAt(0).toUpperCase() }}
+        <!-- Avatar with Gradient Ring -->
+        <div class="relative group flex-shrink-0">
+          <div class="p-[2px] rounded-full bg-gradient-to-tr from-blue-400 to-purple-400 shadow-md transition-transform group-hover:scale-105">
+            <img
+              v-if="authStore.user?.avatarUrl"
+              :src="authStore.user.avatarUrl"
+              :alt="authStore.user.username"
+              class="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-950"
+            />
+            <div
+              v-else
+              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white dark:border-gray-950 flex items-center justify-center text-white font-bold"
+            >
+              {{ authStore.user?.username?.charAt(0).toUpperCase() }}
+            </div>
+          </div>
         </div>
 
         <!-- Composer -->
@@ -87,9 +91,6 @@
                       : {}
                   "
                 >
-                  <span v-if="category.icon" class="text-lg">{{
-                    category.icon
-                  }}</span>
                   {{ category.name }}
                 </button>
               </div>
@@ -147,7 +148,7 @@
               <button
                 @click="handleCreatePost"
                 :disabled="!newPostContent.trim() || postsStore.loading"
-                class="px-6 py-2 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 dark:from-primary-600 dark:to-primary-700 dark:hover:from-primary-500 dark:hover:to-primary-600 disabled:from-gray-300 disabled:to-gray-400 dark:disabled:from-gray-700 dark:disabled:to-gray-800 disabled:cursor-not-allowed text-white font-bold rounded-full transition-all duration-200 shadow-lg hover:shadow-2xl hover:scale-105 active:scale-95 disabled:shadow-none disabled:scale-100 flex items-center gap-2 justify-center"
+                class="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 disabled:from-slate-300 disabled:to-slate-400 dark:disabled:from-gray-700 dark:disabled:to-gray-800 disabled:cursor-not-allowed text-white font-bold rounded-full transition-all duration-200 shadow-lg hover:shadow-blue-500/20 hover:scale-105 active:scale-95 disabled:shadow-none disabled:scale-100 flex items-center gap-2 justify-center"
               >
                 <span
                   v-if="postsStore.loading"

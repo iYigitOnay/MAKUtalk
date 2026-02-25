@@ -29,6 +29,24 @@ export class UsersController {
     return result;
   }
 
+  @Post('verify-email')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmail(@Body() body: { email: string; code: string }) {
+    return this.usersService.verifyEmail(body.email, body.code);
+  }
+
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+  async forgotPassword(@Body() body: { email: string }) {
+    return this.usersService.forgotPassword(body.email);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() body: { email: string; code: string; newPassword: string }) {
+    return this.usersService.resetPassword(body.email, body.code, body.newPassword);
+  }
+
   @Get(':id')
   async getUserProfile(
     @Param('id', ParseIntPipe) id: number,

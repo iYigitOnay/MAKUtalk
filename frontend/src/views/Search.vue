@@ -34,7 +34,6 @@
       </div>
     </div>
 
-    <!-- Results Tabs -->
     <div
       v-if="searchQuery"
       class="sticky top-20 z-10 backdrop-blur bg-white/80 dark:bg-gray-950/80 border-b border-gray-200 dark:border-primary-900/30 flex"
@@ -74,14 +73,12 @@
       </button>
     </div>
 
-    <!-- Loading State -->
     <div v-if="loading" class="flex justify-center items-center h-64">
       <div
         class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"
       ></div>
     </div>
 
-    <!-- Empty State -->
     <div
       v-else-if="!searchQuery"
       class="flex flex-col items-center justify-center h-64 text-center px-4"
@@ -105,7 +102,6 @@
       </p>
     </div>
 
-    <!-- No Results State -->
     <div
       v-else-if="searchQuery && !hasResults"
       class="flex flex-col items-center justify-center h-64 text-center px-4"
@@ -131,11 +127,8 @@
       </p>
     </div>
 
-    <!-- Results -->
     <div v-else>
-      <!-- All Results Tab -->
       <div v-if="activeTab === 'all'">
-        <!-- Users Section -->
         <div v-if="results.users?.length">
           <div
             class="px-4 py-3 font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-950/30 border-b border-gray-200 dark:border-primary-900/30"
@@ -164,8 +157,8 @@
                 </div>
               </div>
               <router-link
-                :to="`/user/${user.id}`"
-                class="px-4 py-2 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-all"
+                :to="`/profile/${user.username}`"
+                class="px-4 py-2 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-all"
               >
                 Profil
               </router-link>
@@ -173,7 +166,6 @@
           </div>
         </div>
 
-        <!-- Posts Section -->
         <div v-if="results.posts?.length">
           <div
             class="px-4 py-3 font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-950/30 border-b border-gray-200 dark:border-primary-900/30"
@@ -190,7 +182,6 @@
         </div>
       </div>
 
-      <!-- Users Tab -->
       <div
         v-else-if="activeTab === 'users' && results.users?.length"
         class="divide-y divide-gray-200 dark:divide-primary-900/20"
@@ -216,8 +207,8 @@
             </div>
           </div>
           <router-link
-            :to="`/user/${user.id}`"
-            class="px-4 py-2 bg-primary-600 text-white rounded-full font-semibold hover:bg-primary-700 transition-all"
+            :to="`/profile/${user.username}`"
+            class="px-4 py-2 bg-blue-600 text-white rounded-full font-semibold hover:bg-blue-700 transition-all"
           >
             Profil
           </router-link>

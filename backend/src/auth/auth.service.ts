@@ -21,6 +21,10 @@ export class AuthService {
       throw new UnauthorizedException('E-posta veya parola hatalı.');
     }
 
+    if (!user.isVerified) {
+      throw new UnauthorizedException('Lütfen önce e-posta adresinizi doğrulayın.');
+    }
+
     // Şifreyi kontrol et
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
@@ -42,6 +46,9 @@ export class AuthService {
         email: user.email,
         username: user.username,
         fullName: user.fullName,
+        bio: user.bio,
+        avatarUrl: user.avatarUrl,
+        coverUrl: user.coverUrl,
       },
     };
   }

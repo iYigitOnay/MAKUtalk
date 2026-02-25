@@ -15,6 +15,10 @@ model User {
   bio       String?  @db.Text
   avatarUrl String?
   coverUrl  String?  
+  department String? // Bölüm bilgisi
+  class      String? // Sınıf bilgisi (Hazırlık, 1, 2, 3, 4, Mezun vb.)
+  isVerified Boolean  @default(false) // E-posta doğrulandı mı?
+  verificationCode String? // 6 haneli doğrulama kodu
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -42,15 +46,18 @@ model Category {
 
 model Post {
   id         Int      @id @default(autoincrement())
-  content    String   @db.Text
+  content    String?  @db.Text
   published  Boolean  @default(true)
   authorId   Int
   categoryId Int?
+  repostId   Int?     // Eğer bu bir repost ise orijinal postun ID'si
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
   author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   category      Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  repostOf      Post?          @relation("Reposts", fields: [repostId], references: [id], onDelete: Cascade)
+  reposts       Post[]         @relation("Reposts")
   likes         Like[]
   comments      Comment[]
   notifications Notification[]
@@ -58,6 +65,7 @@ model Post {
   @@index([authorId])
   @@index([categoryId])
   @@index([createdAt])
+  @@index([repostId])
 }
 
 model Like {

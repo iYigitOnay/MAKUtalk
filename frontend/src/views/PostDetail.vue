@@ -102,7 +102,7 @@
             class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium text-white"
             :style="{ backgroundColor: post.category.color || '#3b82f6' }"
           >
-            {{ post.category.icon }} {{ post.category.name }}
+            {{ post.category.name }}
           </span>
         </div>
 
@@ -207,9 +207,14 @@
       >
         <div class="flex gap-3">
           <div
-            class="w-9 h-9 rounded-full flex-shrink-0 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
+            class="w-9 h-9 rounded-full flex-shrink-0 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center overflow-hidden"
           >
-            <span class="text-white font-bold text-xs">
+            <img
+              v-if="authStore.user?.avatarUrl"
+              :src="authStore.user.avatarUrl"
+              class="w-full h-full object-cover"
+            />
+            <span v-else class="text-white font-bold text-xs">
               {{ authStore.user?.username?.charAt(0).toUpperCase() }}
             </span>
           </div>
@@ -256,8 +261,9 @@
           >
             <div class="flex gap-3">
               <!-- Avatar -->
-              <div
-                class="w-9 h-9 rounded-full flex-shrink-0 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
+              <router-link
+                :to="`/profile/${comment.author?.username}`"
+                class="w-9 h-9 rounded-full flex-shrink-0 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center overflow-hidden"
               >
                 <img
                   v-if="comment.author?.avatarUrl"
@@ -267,17 +273,23 @@
                 <span v-else class="text-white font-bold text-xs">
                   {{ comment.author?.username?.charAt(0).toUpperCase() }}
                 </span>
-              </div>
+              </router-link>
 
               <div class="flex-1 min-w-0">
                 <!-- Üst satır -->
                 <div class="flex items-center gap-2 flex-wrap mb-1">
-                  <span class="font-bold text-sm text-gray-900 dark:text-white">
-                    {{ comment.author?.fullName || comment.author?.username }}
-                  </span>
-                  <span class="text-gray-400 text-xs"
-                    >@{{ comment.author?.username }}</span
+                  <router-link
+                    :to="`/profile/${comment.author?.username}`"
+                    class="font-bold text-sm text-gray-900 dark:text-white hover:underline"
                   >
+                    {{ comment.author?.fullName || comment.author?.username }}
+                  </router-link>
+                  <router-link
+                    :to="`/profile/${comment.author?.username}`"
+                    class="text-gray-400 text-xs"
+                  >
+                    @{{ comment.author?.username }}
+                  </router-link>
                   <span class="text-gray-300 dark:text-gray-600 text-xs"
                     >·</span
                   >
@@ -468,9 +480,9 @@ const sentimentClass = (s: string) =>
 
 const sentimentLabel = (s: string) =>
   ({
-    POSITIVE: "😊 Pozitif",
-    NEGATIVE: "😟 Negatif",
-    NEUTRAL: "😐 Nötr",
+    POSITIVE: "Pozitif",
+    NEGATIVE: "Negatif",
+    NEUTRAL: "Nötr",
   })[s] || s;
 
 const formatDate = (date: string) => {

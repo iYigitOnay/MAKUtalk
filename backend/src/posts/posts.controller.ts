@@ -50,6 +50,23 @@ export class PostsController {
     return this.postsService.findMyPosts(user.id);
   }
 
+  @Post(':id/repost')
+  @UseGuards(JwtAuthGuard)
+  toggleRepost(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
+    return this.postsService.toggleRepost(user.id, id);
+  }
+
+  @Get('user/:userId/reposts')
+  findUserReposts(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('currentUserId') currentUserId?: string,
+  ) {
+    return this.postsService.findUserReposts(
+      userId,
+      currentUserId ? +currentUserId : undefined,
+    );
+  }
+
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,

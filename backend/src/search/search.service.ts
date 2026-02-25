@@ -23,7 +23,7 @@ export class SearchService {
     const hashtagCounts: Record<string, number> = {};
 
     posts.forEach(({ content }) => {
-      const matches = content.match(/#[\wÇçĞğİıÖöŞşÜü]+/g) || [];
+      const matches = (content || '').match(/#[\wÇçĞğİıÖöŞşÜü]+/g) || [];
       matches.forEach((tag) => {
         const normalized = tag.toLowerCase();
         hashtagCounts[normalized] = (hashtagCounts[normalized] || 0) + 1;

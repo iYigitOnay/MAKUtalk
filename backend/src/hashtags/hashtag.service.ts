@@ -6,7 +6,8 @@ export class HashtagService {
   constructor(private prisma: PrismaService) {}
 
   // Post içeriğinden hashtag'leri çıkar
-  extractHashtags(content: string): string[] {
+  extractHashtags(content: string | null): string[] {
+    if (!content) return [];
     const hashtagRegex = /#[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+/g;
     const matches = content.match(hashtagRegex);
     if (!matches) return [];
