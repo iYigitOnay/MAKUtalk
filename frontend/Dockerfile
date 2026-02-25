@@ -16,11 +16,11 @@ RUN npx vite build
 # Stage 2: Runtime (Nginx)
 FROM nginx:stable-alpine
 
-# Copy built files from builder stage
+# Build çıktısını kopyala
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Optional: Add custom nginx config if needed
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Özel Nginx konfigürasyonunu kopyala (SPA hatasını çözer)
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
 

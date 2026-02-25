@@ -57,68 +57,52 @@ jobs:
           cache-to: type=gha,mode=max
 
   deploy:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     needs: build
-
     steps:
-      - name: Log in to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Pull images
-        run: |
-          docker pull ${{ needs.build.outputs.backend_image }}:latest
-          docker pull ${{ needs.build.outputs.frontend_image }}:latest
+      - name: Copy docker-compose.yml to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "docker-compose.yml"
+          target: "~/makutalk"
 
-      - name: Stop old containers
-        run: |
-          docker stop makutalk-backend 2>/dev/null || true
-          docker stop makutalk-frontend 2>/dev/null || true
-          docker rm makutalk-backend 2>/dev/null || true
-          docker rm makutalk-frontend 2>/dev/null || true
+      - name: Deploy to DigitalOcean via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DROPLET_IP }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd ~/makutalk
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+            
+            # Ortam değişkenlerini oluştur (SMTP_PORT=587)
+            cat <<EOF > .env
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_NAME=${{ secrets.DB_NAME }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SMTP_HOST=smtp.gmail.com
+            SMTP_PORT=587
+            SMTP_USER=${{ secrets.SMTP_USER }}
+            SMTP_PASS=${{ secrets.SMTP_PASS }}
+            SMTP_FROM="MAKUtalk <${{ secrets.SMTP_USER }}>"
+            VITE_API_URL=https://melygranmomstories.software/api
+            FRONTEND_URL=https://melygranmomstories.software
+            EOF
 
-      - name: Create network
-        run: |
-          docker network create makutalk-net 2>/dev/null || echo "Network already exists"
-
-      - name: Start backend
-        env:
-          BACKEND_IMAGE: ${{ needs.build.outputs.backend_image }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          SMTP_USER: ${{ secrets.SMTP_USER }}
-          SMTP_PASS: ${{ secrets.SMTP_PASS }}
-        run: |
-          docker run -d --name makutalk-backend \
-            --network makutalk-net \
-            -p 3001:3000 \
-            -e DATABASE_URL="$DATABASE_URL" \
-            -e JWT_SECRET="$JWT_SECRET" \
-            -e SMTP_HOST=smtp.gmail.com \
-            -e SMTP_PORT=465 \
-            -e SMTP_USER="$SMTP_USER" \
-            -e SMTP_PASS="$SMTP_PASS" \
-            -e SMTP_FROM="MAKUtalk <$SMTP_USER>" \
-            -e FRONTEND_URL=https://melygranmomstories.software \
-            --restart unless-stopped \
-            "$BACKEND_IMAGE:latest"
-
-      - name: Start frontend
-        env:
-          FRONTEND_IMAGE: ${{ needs.build.outputs.frontend_image }}
-        run: |
-          docker run -d --name makutalk-frontend \
-            --network makutalk-net \
-            -p 5173:80 \
-            --restart unless-stopped \
-            "$FRONTEND_IMAGE:latest"
-
-      - name: Health check
-        run: |
-          echo "Waiting for containers to start..."
-          sleep 5
-          docker ps | grep makutalk
-
-      - name: Logout GHCR
-        if: always()
-        run: docker logout ghcr.io
-
+            # İmajları çek ve ayağa kaldır
+            docker-compose pull
+            docker-compose up -d --remove-orphans
+            
+            # Veritabanı işlemleri
+            docker exec makutalk_backend npx prisma migrate deploy
+            docker exec makutalk_backend npx prisma db seed
+            
+            docker image prune -f
