@@ -118,4 +118,4 @@ Bu proje MIT lisansı altında lisanslanmıştır. Daha fazla bilgi için `LICEN
 
 ---
 
-⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın! Saygılarla.
+⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
