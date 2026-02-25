@@ -69,20 +69,25 @@ jobs:
           docker pull ${{ needs.build.outputs.backend_image }}:latest
           docker pull ${{ needs.build.outputs.frontend_image }}:latest
 
-      - name: Restart containers
+      - name: Stop old containers
+        run: |
+          docker stop makutalk-backend 2>/dev/null || true
+          docker stop makutalk-frontend 2>/dev/null || true
+          docker rm makutalk-backend 2>/dev/null || true
+          docker rm makutalk-frontend 2>/dev/null || true
+
+      - name: Create network
+        run: |
+          docker network create makutalk-net 2>/dev/null || echo "Network already exists"
+
+      - name: Start backend
         env:
           BACKEND_IMAGE: ${{ needs.build.outputs.backend_image }}
-          FRONTEND_IMAGE: ${{ needs.build.outputs.frontend_image }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
-        # NOT: Bash'te alt satıra geçmek için ters slash (\) eklendi
         run: |
-          docker network create makutalk-net 2>/dev/null || true
-
-          # Backend
-          docker rm -f makutalk-backend || true
           docker run -d --name makutalk-backend \
             --network makutalk-net \
             -p 3001:3000 \
@@ -97,13 +102,23 @@ jobs:
             --restart unless-stopped \
             "$BACKEND_IMAGE:latest"
 
-          # Frontend
-          docker rm -f makutalk-frontend || true
+      - name: Start frontend
+        env:
+          FRONTEND_IMAGE: ${{ needs.build.outputs.frontend_image }}
+        run: |
           docker run -d --name makutalk-frontend \
             --network makutalk-net \
             -p 5173:80 \
             --restart unless-stopped \
             "$FRONTEND_IMAGE:latest"
 
+      - name: Health check
+        run: |
+          echo "Waiting for containers to start..."
+          sleep 5
+          docker ps | grep makutalk
+
       - name: Logout GHCR
+        if: always()
         run: docker logout ghcr.io
+
