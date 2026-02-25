@@ -108,4 +108,4 @@ Bu proje GitHub Actions ile entegre edilmiştir. `main` branch'ine yapılan her 
 Bu proje MIT lisansı altında lisanslanmıştır. Daha fazla bilgi için `LICENSE` dosyasına göz atın.
 
 ---
-⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
+⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın! Saygılarla.
