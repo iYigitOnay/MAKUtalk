@@ -127,7 +127,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useNotificationsStore } from "@/stores/notifications";
@@ -141,7 +141,6 @@ const toast = useToast();
 
 const isExpanded = ref(true);
 const unreadNotifications = ref(0);
-const unreadMessages = ref(0);
 const showUserMenu = ref(false);
 
 const navItems = [

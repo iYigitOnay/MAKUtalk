@@ -1,0 +1,108 @@
+name: Build & Deploy MAKUtalk
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      backend_image: ${{ steps.vars.outputs.backend_image }}
+      frontend_image: ${{ steps.vars.outputs.frontend_image }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set lowercase image names
+        id: vars
+        run: |
+          OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          echo "backend_image=ghcr.io/${OWNER}/makutalk-backend" >> $GITHUB_OUTPUT
+          echo "frontend_image=ghcr.io/${OWNER}/makutalk-frontend" >> $GITHUB_OUTPUT
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ${{ steps.vars.outputs.backend_image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          build-args: |
+            VITE_API_URL=http://localhost:3001
+          push: true
+          tags: ${{ steps.vars.outputs.frontend_image }}:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    runs-on: self-hosted
+    needs: build
+
+    steps:
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+
+      - name: Pull images
+        run: |
+          docker pull ${{ needs.build.outputs.backend_image }}:latest
+          docker pull ${{ needs.build.outputs.frontend_image }}:latest
+
+      - name: Restart containers
+        env:
+          BACKEND_IMAGE: ${{ needs.build.outputs.backend_image }}
+          FRONTEND_IMAGE: ${{ needs.build.outputs.frontend_image }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        run: |
+          docker network create makutalk-net 2>/dev/null || true
+
+          # Backend
+          docker rm -f makutalk-backend || true
+          docker run -d --name makutalk-backend 
+            --network makutalk-net 
+            -p 3001:3000 
+            -e DATABASE_URL="$DATABASE_URL" 
+            -e JWT_SECRET="$JWT_SECRET" 
+            -e SMTP_HOST=smtp.gmail.com 
+            -e SMTP_PORT=465 
+            -e SMTP_USER="$SMTP_USER" 
+            -e SMTP_PASS="$SMTP_PASS" 
+            -e SMTP_FROM="MAKUtalk <$SMTP_USER>" 
+            -e FRONTEND_URL=http://localhost:5173 
+            --restart unless-stopped 
+            "$BACKEND_IMAGE:latest"
+
+          # Frontend
+          docker rm -f makutalk-frontend || true
+          docker run -d --name makutalk-frontend 
+            --network makutalk-net 
+            -p 5173:80 
+            --restart unless-stopped 
+            "$FRONTEND_IMAGE:latest"
+
+      - name: Logout GHCR
+        run: docker logout ghcr.io

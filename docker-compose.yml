@@ -4,13 +4,57 @@ services:
     container_name: makutalk_db
     restart: always
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: makupassword123
-      POSTGRES_DB: makutalk_db
+      POSTGRES_USER: ${DB_USERNAME:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-makupassword123}
+      POSTGRES_DB: ${DB_NAME:-makutalk_db}
     ports:
-      - "51213:5432"
+      - "${DB_PORT_EXTERNAL:-51213}:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - makutalk_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: makutalk_backend
+    restart: always
+    environment:
+      # İç ağda host 'db', port 5432'dir
+      DATABASE_URL: postgresql://${DB_USERNAME:-admin}:${DB_PASSWORD:-makupassword123}@db:5432/${DB_NAME:-makutalk_db}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-465}
+      SMTP_USER: ${SMTP_USER}
+      SMTP_PASS: ${SMTP_PASS}
+      SMTP_FROM: ${SMTP_FROM}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+    ports:
+      - "3001:3000"
+    depends_on:
+      - db
+    networks:
+      - makutalk_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:3001}
+    container_name: makutalk_frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
+    networks:
+      - makutalk_network
+
+networks:
+  makutalk_network:
+    driver: bridge
 
 volumes:
   postgres_data:

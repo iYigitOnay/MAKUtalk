@@ -347,7 +347,6 @@ import api from "@/api/client";
 const route = useRoute();
 const authStore = useAuthStore();
 const likesStore = useLikesStore();
-const postsStore = usePostsStore();
 const toast = useToast();
 
 const post = ref<any>(null);
