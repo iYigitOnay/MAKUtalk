@@ -50,7 +50,7 @@ jobs:
         with:
           context: ./frontend
           build-args: |
-            VITE_API_URL=https://melygranmomstories.software
+            VITE_API_URL=https://melygranmomstories.software/api
           push: true
           tags: ${{ steps.vars.outputs.frontend_image }}:latest
           cache-from: type=gha
@@ -77,31 +77,32 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           SMTP_USER: ${{ secrets.SMTP_USER }}
           SMTP_PASS: ${{ secrets.SMTP_PASS }}
+        # NOT: Bash'te alt satıra geçmek için ters slash (\) eklendi
         run: |
           docker network create makutalk-net 2>/dev/null || true
 
           # Backend
           docker rm -f makutalk-backend || true
-          docker run -d --name makutalk-backend 
-            --network makutalk-net 
-            -p 3001:3000 
-            -e DATABASE_URL="$DATABASE_URL" 
-            -e JWT_SECRET="$JWT_SECRET" 
-            -e SMTP_HOST=smtp.gmail.com 
-            -e SMTP_PORT=465 
-            -e SMTP_USER="$SMTP_USER" 
-            -e SMTP_PASS="$SMTP_PASS" 
-            -e SMTP_FROM="MAKUtalk <$SMTP_USER>" 
-            -e FRONTEND_URL=https://melygranmomstories.software
-            --restart unless-stopped 
+          docker run -d --name makutalk-backend \
+            --network makutalk-net \
+            -p 3001:3000 \
+            -e DATABASE_URL="$DATABASE_URL" \
+            -e JWT_SECRET="$JWT_SECRET" \
+            -e SMTP_HOST=smtp.gmail.com \
+            -e SMTP_PORT=465 \
+            -e SMTP_USER="$SMTP_USER" \
+            -e SMTP_PASS="$SMTP_PASS" \
+            -e SMTP_FROM="MAKUtalk <$SMTP_USER>" \
+            -e FRONTEND_URL=https://melygranmomstories.software \
+            --restart unless-stopped \
             "$BACKEND_IMAGE:latest"
 
           # Frontend
           docker rm -f makutalk-frontend || true
-          docker run -d --name makutalk-frontend 
-            --network makutalk-net 
-            -p 5173:80 
-            --restart unless-stopped 
+          docker run -d --name makutalk-frontend \
+            --network makutalk-net \
+            -p 5173:80 \
+            --restart unless-stopped \
             "$FRONTEND_IMAGE:latest"
 
       - name: Logout GHCR
