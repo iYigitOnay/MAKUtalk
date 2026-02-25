@@ -42,8 +42,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:3001}
-    container_name: makutalk_frontend
+        - VITE_API_URL=https://melygranmomstories.software/api
+    container_name: makutalk_frontend 
     restart: always
     ports:
       - "5173:80"
