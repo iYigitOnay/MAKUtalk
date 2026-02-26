@@ -50,7 +50,7 @@ jobs:
         with:
           context: ./frontend
           build-args: |
-            VITE_API_URL=https://melygranmomstories.software/api
+            VITE_API_URL=https://${{ secrets.DOMAIN_NAME }}/api
           push: true
           tags: ${{ steps.vars.outputs.frontend_image }}:latest
           cache-from: type=gha
@@ -82,19 +82,16 @@ jobs:
             cd ~/makutalk
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
             
-            # Ortam değişkenlerini oluştur (SMTP_PORT=587)
+            # Ortam değişkenlerini oluştur
             cat <<EOF > .env
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DB_NAME=${{ secrets.DB_NAME }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
-            SMTP_HOST=smtp.gmail.com
-            SMTP_PORT=587
-            SMTP_USER=${{ secrets.SMTP_USER }}
-            SMTP_PASS=${{ secrets.SMTP_PASS }}
-            SMTP_FROM="MAKUtalk <${{ secrets.SMTP_USER }}>"
-            VITE_API_URL=https://melygranmomstories.software/api
-            FRONTEND_URL=https://melygranmomstories.software
+            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+            SMTP_FROM=${{ secrets.SMTP_FROM }}
+            VITE_API_URL=https://${{ secrets.DOMAIN_NAME }}/api
+            FRONTEND_URL=https://${{ secrets.DOMAIN_NAME }}
             EOF
 
             # İmajları çek ve ayağa kaldır

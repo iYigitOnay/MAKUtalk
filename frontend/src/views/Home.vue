@@ -39,10 +39,10 @@
           <!-- Category Select & Actions -->
           <div
             v-if="newPostContent.trim()"
-            class="mt-4 pt-4 border-t border-gray-200 dark:border-primary-900/30 space-y-4"
+            class="mt-2 pt-2 border-t border-gray-100 dark:border-primary-900/10 space-y-2"
           >
             <!-- Category Selector Chips -->
-            <div class="space-y-2">
+            <div class="space-y-2 mt-4 pt-4 border-t border-gray-200 dark:border-primary-900/30">
               <label
                 class="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wide"
               >
@@ -53,25 +53,12 @@
                   type="button"
                   @click="selectedCategoryId = null"
                   :class="[
-                    'px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-2',
+                    'px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-2 border',
                     !selectedCategoryId
-                      ? 'bg-primary-600 text-white shadow-md hover:shadow-lg'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700',
+                      ? 'bg-primary-600 text-white border-primary-600 shadow-md'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-transparent hover:bg-gray-200',
                   ]"
                 >
-                  <svg
-                    class="w-4 h-4"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
                   Tümü
                 </button>
                 <button
@@ -80,10 +67,10 @@
                   type="button"
                   @click="selectedCategoryId = category.id"
                   :class="[
-                    'px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-2',
+                    'px-4 py-2 rounded-full text-xs font-semibold transition-all duration-200 flex items-center gap-2 border',
                     selectedCategoryId === category.id
-                      ? 'text-white shadow-md hover:shadow-lg'
-                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700',
+                      ? 'text-white shadow-md border-transparent'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-transparent hover:bg-gray-200',
                   ]"
                   :style="
                     selectedCategoryId === category.id
@@ -184,6 +171,46 @@
       </div>
     </div>
 
+    <!-- Kategori Filtre Çubuğu -->
+    <div class="sticky top-[116px] z-[5] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10">
+      <div class="flex items-center gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
+        <!-- Tümü Butonu -->
+        <button 
+          @click="selectCategory(null)"
+          :class="[
+            'flex-shrink-0 px-5 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all active:scale-95',
+            !postsStore.currentCategory 
+              ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg shadow-blue-500/20' 
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700'
+          ]"
+        >
+          AKIŞ
+        </button>
+
+        <!-- Dinamik Kategoriler -->
+        <button 
+          v-for="cat in sortedCategories" 
+          :key="cat.id"
+          @click="selectCategory(cat.id)"
+          :class="[
+            'flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-black uppercase tracking-wider transition-all active:scale-95 flex items-center gap-2',
+            postsStore.currentCategory === cat.id 
+              ? 'text-white shadow-lg shadow-blue-500/20' 
+              : 'bg-gray-50 dark:bg-gray-900/40 text-gray-600 dark:text-gray-400 border border-gray-100 dark:border-primary-900/10 hover:border-gray-200'
+          ]"
+          :style="postsStore.currentCategory === cat.id ? { backgroundColor: cat.color } : {}"
+        >
+          <!-- Kategori Noktası -->
+          <span 
+            class="w-1.5 h-1.5 rounded-full"
+            :class="postsStore.currentCategory === cat.id ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]' : ''"
+            :style="postsStore.currentCategory !== cat.id ? { backgroundColor: cat.color } : {}"
+          ></span>
+          {{ cat.name }}
+        </button>
+      </div>
+    </div>
+
     <!-- Posts Feed -->
     <div>
       <!-- Loading State -->
@@ -245,7 +272,8 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
 import { useCategoriesStore } from "@/stores/categories";
@@ -267,6 +295,26 @@ const selectedPostId = ref<number | null>(null);
 const showDeleteModal = ref(false);
 const postIdToDelete = ref<number | null>(null);
 const isDeleting = ref(false);
+
+const sortedCategories = computed(() => {
+  const order = ["Genel", "Duyuru", "Etkinlik", "Arıza-Kayıp", "Satılık", "Soru-Cevap"];
+  return [...categoriesStore.categories].sort((a, b) => {
+    const indexA = order.indexOf(a.name);
+    const indexB = order.indexOf(b.name);
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+    return indexA - indexB;
+  });
+});
+
+const selectCategory = (id: number | null) => {
+  if (id) {
+    postsStore.fetchPostsByCategory(id, authStore.user?.id);
+  } else {
+    postsStore.resetCategory();
+    postsStore.fetchPosts(authStore.user?.id);
+  }
+};
 
 onMounted(() => {
   postsStore.resetCategory();

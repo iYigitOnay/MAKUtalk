@@ -1,37 +1,35 @@
 import { Injectable } from '@nestjs/common';
-import * as nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class MailService {
-  private transporter: nodemailer.Transporter;
+  private resend: Resend;
 
   constructor(private configService: ConfigService) {
-    this.transporter = nodemailer.createTransport({
-      host: this.configService.get('SMTP_HOST'),
-      port: this.configService.get('SMTP_PORT'),
-      secure: true, // Port 465 için true
-      auth: {
-        user: this.configService.get('SMTP_USER'),
-        pass: this.configService.get('SMTP_PASS'),
-      },
-    });
+    this.resend = new Resend(this.configService.get('RESEND_API_KEY'));
   }
 
   async sendMail(to: string, subject: string, html: string) {
-    const from = this.configService.get('SMTP_FROM');
+    const from = this.configService.get('SMTP_FROM') || 'MAKUtalk <onboarding@resend.dev>';
 
     try {
-      const info = await this.transporter.sendMail({
+      const { data, error } = await this.resend.emails.send({
         from,
         to,
         subject,
         html,
       });
-      console.log('E-posta gönderildi: %s', info.messageId);
-      return info;
+
+      if (error) {
+        console.error('Resend error:', error);
+        throw error;
+      }
+
+      console.log('E-posta başarıyla gönderildi:', data?.id);
+      return data;
     } catch (error) {
-      console.error('E-posta gönderme hatası:', error);
+      console.error('E-posta gönderim hatası:', error);
       throw error;
     }
   }
@@ -53,6 +51,9 @@ export class MailService {
   }
 
   async sendVerificationCode(email: string, code: string) {
+    console.log(`\n=== 📧 DOĞRULAMA KODU (${email}) ===`);
+    console.log(`KOD: ${code}`);
+    console.log(`====================================\n`);
     const subject = 'MAKUtalk Doğrulama Kodun';
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-align: center;">
@@ -70,6 +71,9 @@ export class MailService {
   }
 
   async sendPasswordResetCode(email: string, code: string) {
+    console.log(`\n=== 🔐 ŞİFRE SIFIRLAMA KODU (${email}) ===`);
+    console.log(`KOD: ${code}`);
+    console.log(`==========================================\n`);
     const subject = 'MAKUtalk Şifre Sıfırlama Kodu';
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px; text-align: center;">
@@ -84,5 +88,42 @@ export class MailService {
       </div>
     `;
     return this.sendMail(email, subject, html);
+  }
+
+  async sendReportEmail(reporter: string, reported: string, reason: string, subReason: string) {
+    const subject = `⚠️ Yeni Şikayet Bildirimi: @${reported}`;
+    const date = new Date().toLocaleString('tr-TR');
+    const html = `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; border: 2px solid #ef4444; border-radius: 16px; padding: 24px; background-color: #fef2f2;">
+        <h2 style="color: #b91c1c; margin-top: 0;">⚠️ Şikayet Bildirimi</h2>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #fee2e2; color: #991b1b; font-weight: bold;">Tarih:</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #fee2e2;">${date}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #fee2e2; color: #991b1b; font-weight: bold;">Şikayet Eden:</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #fee2e2;">@${reporter}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #fee2e2; color: #991b1b; font-weight: bold;">Şikayet Edilen:</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #fee2e2;">@${reported}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid #fee2e2; color: #991b1b; font-weight: bold;">Ana Kategori:</td>
+            <td style="padding: 10px 0; border-bottom: 1px solid #fee2e2;">${reason}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; color: #991b1b; font-weight: bold;">Detaylı Sebep:</td>
+            <td style="padding: 10px 0;">${subReason}</td>
+          </tr>
+        </table>
+        <div style="margin-top: 24px; padding: 12px; background-color: white; border-radius: 8px; border: 1px solid #fecaca; font-size: 13px; color: #7f1d1d;">
+          <strong>Not:</strong> Bu kullanıcı bildirimi üzerine gerekli incelemelerin başlatılması önerilir.
+        </div>
+      </div>
+    `;
+    // Şikayeti doğrulanmış olan admin adresine gönderiyoruz
+    return this.sendMail('2312101063@ogr.mehmetakif.edu.tr', subject, html);
   }
 }

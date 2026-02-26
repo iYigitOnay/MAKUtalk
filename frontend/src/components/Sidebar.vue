@@ -18,15 +18,46 @@
     <!-- Main Navigation -->
     <nav class="flex-1 space-y-1 py-2 px-2 sm:px-1">
       <router-link
-        v-for="item in navItems"
+        v-for="item in filteredNavItems"
         :key="item.path"
         :to="item.path"
-        class="flex items-center justify-center lg:justify-start gap-4 px-4 py-3 rounded-full text-slate-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-primary-900/20 hover:text-blue-600 dark:hover:text-primary-400 transition-all duration-200"
+        class="group flex items-center justify-center lg:justify-start gap-4 px-4 py-3 rounded-full text-slate-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-primary-900/20 hover:text-blue-600 dark:hover:text-primary-400 transition-all duration-200"
         :class="{ 'bg-blue-50 dark:bg-primary-900/20 text-blue-600 dark:text-primary-400': isActive(item.id) }"
       >
-        <div class="w-6 h-6 flex-shrink-0" v-html="item.iconSvg"></div>
-        <span v-if="isExpanded" class="hidden lg:inline font-semibold text-base">{{ item.name }}</span>
+        <div class="relative w-6 h-6 flex-shrink-0">
+          <div v-html="item.iconSvg"></div>
+          <!-- Badge for small sidebar -->
+          <div 
+            v-if="!isExpanded && getBadgeCount(item.id) > 0"
+            class="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center bg-blue-600 text-white text-[10px] font-bold rounded-full border-2 border-white dark:border-gray-950"
+          >
+            {{ getBadgeCount(item.id) > 9 ? '9+' : getBadgeCount(item.id) }}
+          </div>
+        </div>
+        
+        <div v-if="isExpanded" class="hidden lg:flex items-center justify-between flex-1">
+          <span class="font-semibold text-base">{{ item.name }}</span>
+          <!-- Badge for expanded sidebar -->
+          <span 
+            v-if="getBadgeCount(item.id) > 0"
+            class="ml-2 px-2 py-0.5 text-[11px] font-black bg-blue-600 text-white rounded-full min-w-[20px] text-center"
+          >
+            {{ getBadgeCount(item.id) }}
+          </span>
+        </div>
       </router-link>
+
+      <!-- MAKÜ Style Signature (Aligned with Text) -->
+      <div 
+        v-if="isExpanded"
+        class="flex items-center gap-4 px-4 py-3 pointer-events-none select-none"
+      >
+        <!-- İkon boşluğu kadar yer bırakıyoruz -->
+        <div class="w-6 h-6 flex-shrink-0"></div>
+        <span class="hidden lg:inline font-black italic text-xl tracking-normal bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent pr-2 pb-1">
+          MAKÜ
+        </span>
+      </div>
     </nav>
 
     <!-- User Profile Section -->
@@ -127,28 +158,46 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useNotificationsStore } from "@/stores/notifications";
+import { useFollowStore } from "@/stores/follow";
 import { useToast } from "vue-toastification";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 const notificationsStore = useNotificationsStore();
+const followStore = useFollowStore();
 const toast = useToast();
 
 const isExpanded = ref(true);
-const unreadNotifications = ref(0);
 const showUserMenu = ref(false);
 
 const navItems = [
   { id: 'home', name: 'Anasayfa', path: '/', iconSvg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>' },
   { id: 'search', name: 'Keşfet', path: '/search', iconSvg: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>' },
   { id: 'notifications', name: 'Bildirimler', path: '/notifications', iconSvg: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>' },
+  { id: 'requests', name: 'İstekler', path: '/requests', iconSvg: '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" /></svg>' },
   { id: 'messages', name: 'Sohbet', iconSvg: '<svg fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4a2 2 0 00-2 2v18l4-4h14a2 2 0 002-2V4a2 2 0 00-2-2z" /></svg>', path: '/messages' },
 ];
+
+const filteredNavItems = computed(() => {
+  return navItems.filter(item => {
+    // Sadece hesabı gizli olanlar "İstekler" menüsünü görebilir
+    if (item.id === 'requests') {
+      return authStore.user?.isPrivate;
+    }
+    return true;
+  });
+});
+
+const getBadgeCount = (id: string) => {
+  if (id === 'notifications') return notificationsStore.unreadCount;
+  if (id === 'requests') return followStore.pendingRequests.length;
+  return 0;
+};
 
 const isActive = (id: string): boolean => {
   if (id === 'home') return route.path === '/';
@@ -179,7 +228,9 @@ const handleLogout = () => {
 const fetchUnreadCounts = async () => {
   try {
     await notificationsStore.fetchUnreadCount();
-    unreadNotifications.value = notificationsStore.unreadCount;
+    if (authStore.user?.isPrivate) {
+      await followStore.fetchPendingRequests();
+    }
   } catch (error) {
     console.error("Error fetching unread counts:", error);
   }

@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import apiClient from "@/api/client";
 import type {
   User,
@@ -12,6 +12,19 @@ export const useAuthStore = defineStore("auth", () => {
   const user = ref<User | null>(null);
   const token = ref<string | null>(null);
   const loading = ref(false);
+
+  // User değiştikçe localStorage'ı güncelle
+  watch(
+    () => user.value,
+    (newUser) => {
+      if (newUser) {
+        localStorage.setItem("user", JSON.stringify(newUser));
+      } else {
+        localStorage.removeItem("user");
+      }
+    },
+    { deep: true }
+  );
 
   // Computed
   const isAuthenticated = computed(() => !!token.value);

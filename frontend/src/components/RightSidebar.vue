@@ -29,53 +29,73 @@
       </div>
     </div>
 
-    <!-- Kategoriler -->
+    <!-- Haftanın Nabzı (Trend Kategoriler) -->
     <div
-      class="bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 rounded-2xl border border-gray-200 dark:border-primary-900/20 overflow-hidden"
+      v-if="categoriesStore.trendingCategories.length > 0"
+      class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-primary-900/20 overflow-hidden shadow-sm"
     >
-      <div
-        class="px-4 py-3 border-b border-gray-200 dark:border-primary-900/20"
-      >
-        <h2 class="font-bold text-gray-900 dark:text-white">Kategoriler</h2>
+      <div class="px-4 py-3 border-b border-gray-100 dark:border-primary-900/10 bg-gray-50/50 dark:bg-gray-800/50">
+        <h2 class="font-black text-gray-900 dark:text-white text-[11px] uppercase tracking-[0.15em]">
+          Haftanın Nabzı
+        </h2>
       </div>
-
-      <div v-if="categoriesStore.loading" class="p-4 space-y-2">
+      
+      <div class="p-2 space-y-2">
         <div
-          v-for="i in 5"
-          :key="i"
-          class="h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"
-        />
-      </div>
-
-      <div v-else class="p-2 space-y-1">
-        <button
-          @click="selectCategory(null)"
-          :class="[
-            'w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-            !activeCategory
-              ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800',
-          ]"
-        >
-          Tümü
-        </button>
-
-        <button
-          v-for="cat in sortedCategories"
+          v-for="cat in categoriesStore.trendingCategories.slice(0, 3)"
           :key="cat.id"
-          @click="selectCategory(cat.id)"
-          :class="[
-            'w-full text-left px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2',
-            activeCategory === cat.id
-              ? 'text-white shadow-sm'
-              : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800',
-          ]"
-          :style="
-            activeCategory === cat.id ? { backgroundColor: cat.color } : {}
-          "
+          class="relative px-4 py-3 rounded-xl border border-gray-100 dark:border-primary-900/10 transition-all hover:shadow-md hover:-translate-y-0.5 overflow-hidden group"
         >
-          <span class="truncate">{{ cat.name }}</span>
-        </button>
+          <!-- Kategori Renk Şeridi -->
+          <div 
+            class="absolute left-0 top-0 bottom-0 w-1.5"
+            :style="{ backgroundColor: cat.color }"
+          ></div>
+
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="font-black text-gray-900 dark:text-white text-[13px] leading-tight mb-1">
+                {{ cat.name }}
+              </p>
+              <div class="flex items-center gap-2.5">
+                <!-- Canlı Nabız Göstergesi -->
+                <div class="relative flex h-2 w-2">
+                  <span 
+                    class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                    :style="{ backgroundColor: cat.color }"
+                  ></span>
+                  <span 
+                    class="relative inline-flex rounded-full h-2 w-2"
+                    :style="{ backgroundColor: cat.color }"
+                  ></span>
+                </div>
+                <p class="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                  {{ cat.weeklyPostCount }} YENİ PAYLAŞIM
+                </p>
+              </div>
+            </div>
+            
+            <!-- Küçük bir trend göstergesi (Sadece Yanıp Sönen) -->
+            <div class="relative group-hover:scale-110 transition-transform duration-300">
+              <div 
+                class="absolute inset-0 blur-md opacity-25 animate-pulse"
+                :style="{ color: cat.color }"
+              >
+                <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                </svg>
+              </div>
+              <svg 
+                class="w-7 h-7 relative z-10" 
+                :style="{ color: cat.color }" 
+                fill="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+              </svg>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -131,18 +151,12 @@
           </div>
         </button>
       </div>
-
-      <div v-else class="p-4 text-center">
-        <p class="text-sm text-gray-500 dark:text-gray-400">
-          Hashtag bulunamadı
-        </p>
-      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, onUnmounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useCategoriesStore } from "@/stores/categories";
 import { usePostsStore } from "@/stores/posts";
@@ -157,7 +171,7 @@ const authStore = useAuthStore();
 const searchQuery = ref("");
 const hashtags = ref<{ tag: string; count: number }[]>([]);
 const loadingHashtags = ref(true);
-const activeCategory = ref<number | null>(null);
+let refreshInterval: any = null;
 
 const sortedCategories = computed(() => {
   const order = [
@@ -177,9 +191,21 @@ const sortedCategories = computed(() => {
   });
 });
 
+const refreshData = async () => {
+  await Promise.all([
+    categoriesStore.fetchTrendingCategories(),
+    fetchHashtags()
+  ]);
+};
+
 onMounted(async () => {
   await categoriesStore.fetchCategories();
-  await fetchHashtags();
+  await refreshData();
+  refreshInterval = setInterval(refreshData, 5 * 60 * 1000);
+});
+
+onUnmounted(() => {
+  if (refreshInterval) clearInterval(refreshInterval);
 });
 
 async function fetchHashtags() {

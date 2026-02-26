@@ -8,6 +8,9 @@ export interface User {
   coverUrl?: string;
   department?: string;
   class?: string;
+  role: 'USER' | 'ADMIN';
+  isBanned: boolean;
+  isPrivate: boolean;
   createdAt: string;
   updatedAt: string;
   _count?: {
@@ -35,6 +38,8 @@ export interface Post {
   categoryId?: number;
   repostId?: number;
   repostOf?: Post;
+  sentiment?: string;
+  sentimentScore?: number;
   createdAt: string;
   updatedAt: string;
   author: {
@@ -42,6 +47,9 @@ export interface Post {
     username: string;
     fullName?: string;
     avatarUrl?: string;
+    badges?: Array<{
+      badge: Category; // Badge ve Category yapıları benzer (id, name, color, icon)
+    }>;
   };
   category?: Category;
   _count?: {

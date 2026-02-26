@@ -150,25 +150,34 @@ export const usePostsStore = defineStore("posts", () => {
   };
 
   // Post'u local state'te güncelle (tüm eşleşmeleri bul ve güncelle)
-  const updatePostLocally = (postId: number, updates: any, arrays: Post[][] = [posts.value, myPosts.value]) => {
+  const updatePostLocally = (postId: number, updates: any) => {
     const updateInArray = (arr: Post[]) => {
-      if (!arr) return;
-      arr.forEach((p, index) => {
-        if (p.id === postId || p.repostId === postId) {
-          if (p.id === postId) {
-            const newCount = updates._count ? { ...p._count, ...updates._count } : p._count;
-            arr[index] = { ...p, ...updates, _count: newCount };
-          } else if (p.repostOf && p.repostId === postId) {
-            const newInnerCount = updates._count ? { ...p.repostOf._count, ...updates._count } : p.repostOf._count;
-            arr[index] = { 
-              ...p,
-              repostOf: { ...p.repostOf, ...updates, _count: newInnerCount }
-            };
-          }
+      return arr.map((p) => {
+        // Eğer bu direkt hedef post ise
+        if (p.id === postId) {
+          return {
+            ...p,
+            ...updates,
+            _count: updates._count ? { ...p._count, ...updates._count } : p._count,
+          };
         }
+        // Eğer bu bir repost ise ve orijinal post güncelleniyorsa
+        if (p.repostOf && p.repostId === postId) {
+          return {
+            ...p,
+            repostOf: {
+              ...p.repostOf,
+              ...updates,
+              _count: updates._count ? { ...p.repostOf._count, ...updates._count } : p.repostOf._count,
+            },
+          };
+        }
+        return p;
       });
     };
-    arrays.forEach(updateInArray);
+
+    posts.value = updateInArray(posts.value);
+    myPosts.value = updateInArray(myPosts.value);
   };
 
   // Kategori filtresini sıfırla

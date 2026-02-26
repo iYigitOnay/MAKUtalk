@@ -52,9 +52,31 @@
 
     <!-- Notifications List -->
     <div
-      v-else-if="notifications.length > 0"
+      v-else-if="notifications.length > 0 || followStore.pendingRequests.length > 0"
       class="divide-y divide-gray-200 dark:divide-primary-900/20"
     >
+      <!-- Follow Requests Banner -->
+      <div 
+        v-if="authStore.user?.isPrivate && followStore.pendingRequests.length > 0"
+        @click="router.push('/requests')"
+        class="p-4 bg-blue-50/50 dark:bg-blue-900/10 hover:bg-blue-100/50 dark:hover:bg-blue-900/20 transition-colors cursor-pointer border-b border-gray-200 dark:border-primary-900/30 flex items-center justify-between group"
+      >
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-bold text-gray-900 dark:text-white">Takip İstekleri</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">{{ followStore.pendingRequests.length }} bekleyen istek var</p>
+          </div>
+        </div>
+        <svg class="w-5 h-5 text-blue-600 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+
       <div
         v-for="notification in notifications"
         :key="notification.id"
@@ -191,9 +213,13 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useNotificationsStore } from "@/stores/notifications";
+import { useAuthStore } from "@/stores/auth";
+import { useFollowStore } from "@/stores/follow";
 
 const router = useRouter();
 const notificationsStore = useNotificationsStore();
+const authStore = useAuthStore();
+const followStore = useFollowStore();
 const loading = ref(true);
 
 const notifications = computed(() => notificationsStore.notifications);
@@ -231,7 +257,7 @@ const handleNotificationClick = async (notification: any) => {
   if (notification.postId) {
     router.push(`/post/${notification.postId}`);
   } else if (notification.type === "FOLLOW" && notification.sender) {
-    router.push(`/profile/${notification.sender.id}`);
+    router.push(`/profile/${notification.sender.username}`);
   }
 };
 
@@ -245,8 +271,16 @@ const markAllAsRead = async () => {
 
 onMounted(async () => {
   try {
-    await notificationsStore.fetchNotifications();
-    await notificationsStore.fetchUnreadCount();
+    const promises = [
+      notificationsStore.fetchNotifications(),
+      notificationsStore.fetchUnreadCount(),
+    ];
+    
+    if (authStore.user?.isPrivate) {
+      promises.push(followStore.fetchPendingRequests());
+    }
+    
+    await Promise.all(promises);
   } catch (error) {
     console.error("Error fetching notifications:", error);
   } finally {

@@ -28,4 +28,7 @@ export class UpdateUserDto {
   @IsString()
   @MaxLength(50)
   class?: string;
+
+  @IsOptional()
+  isPrivate?: boolean;
 }

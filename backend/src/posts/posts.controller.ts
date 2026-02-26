@@ -67,6 +67,17 @@ export class PostsController {
     );
   }
 
+  @Get('user/:userId/likes')
+  findLikedPosts(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query('currentUserId') currentUserId?: string,
+  ) {
+    return this.postsService.findLikedPosts(
+      userId,
+      currentUserId ? +currentUserId : undefined,
+    );
+  }
+
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,

@@ -162,7 +162,15 @@ export class UsersService {
         coverUrl: true,
         department: true,
         class: true,
+        isPrivate: true,
+        isBanned: true,
+        role: true,
         createdAt: true,
+        badges: {
+          include: {
+            badge: true
+          }
+        },
         _count: {
           select: {
             posts: true,
@@ -190,7 +198,15 @@ export class UsersService {
         coverUrl: true,
         department: true,
         class: true,
+        isPrivate: true,
+        isBanned: true,
+        role: true,
         createdAt: true,
+        badges: {
+          include: {
+            badge: true
+          }
+        },
         _count: {
           select: {
             posts: true,
@@ -226,6 +242,17 @@ export class UsersService {
 
   // Kullanıcıya ait postlar
   async getUserPosts(userId: number, currentUserId?: number) {
+    // Gizlilik kontrolü
+    if (userId !== currentUserId) {
+      const targetUser = await this.prisma.user.findUnique({ where: { id: userId } });
+      if (targetUser?.isPrivate) {
+        const isFollowing = await this.prisma.follow.findUnique({
+          where: { followerId_followingId: { followerId: currentUserId || 0, followingId: userId } }
+        });
+        if (!isFollowing) return []; // Gizli hesabı takip etmiyorsa postlarını boş dön
+      }
+    }
+
     const posts = await this.prisma.post.findMany({
       where: {
         authorId: userId,
@@ -239,12 +266,14 @@ export class UsersService {
             username: true,
             fullName: true,
             avatarUrl: true,
+            isPrivate: true,
+            badges: { include: { badge: true } }
           },
         },
         category: true,
         repostOf: {
           include: {
-            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
             _count: { select: { likes: true, comments: true, reposts: true } }
           }
@@ -280,10 +309,23 @@ export class UsersService {
     return posts;
   }
 
-  // Username'e göre kullanıcı bul
   async findByUsername(username: string, currentUserId?: number) {
-    const user = await this.prisma.user.findUnique({
-      where: { username },
+    // Geçersiz giriş kontrolü
+    if (!username || username === 'undefined' || username === 'null') {
+      throw new NotFoundException('Geçersiz kullanıcı adı.');
+    }
+
+    // Geçersiz sayı kontrolü
+    const safeCurrentUserId = (typeof currentUserId === 'number' && !isNaN(currentUserId) && currentUserId > 0) ? currentUserId : undefined;
+
+    // findUnique yerine findFirst + insensitive kullanarak harf duyarlılığını ortadan kaldırıyoruz
+    const user = await this.prisma.user.findFirst({
+      where: { 
+        username: {
+          equals: username,
+          mode: 'insensitive'
+        }
+      },
       select: {
         id: true,
         username: true,
@@ -294,7 +336,15 @@ export class UsersService {
         coverUrl: true,
         department: true,
         class: true,
+        isPrivate: true,
+        isBanned: true,
+        role: true,
         createdAt: true,
+        badges: {
+          include: {
+            badge: true
+          }
+        },
         _count: {
           select: {
             posts: true,
@@ -310,21 +360,155 @@ export class UsersService {
     }
 
     let isFollowing = false;
-    if (currentUserId && currentUserId !== user.id) {
-      const follow = await this.prisma.follow.findUnique({
-        where: {
-          followerId_followingId: {
-            followerId: currentUserId,
-            followingId: user.id,
+    let isBlocked = false;
+    let isFollowRequestSent = false;
+
+    // Sadece geçerli bir currentUserId varsa bu kontrolleri yap
+    if (safeCurrentUserId && safeCurrentUserId !== user.id) {
+      const [follow, block, followRequest] = await Promise.all([
+        this.prisma.follow.findUnique({
+          where: {
+            followerId_followingId: {
+              followerId: safeCurrentUserId,
+              followingId: user.id,
+            },
           },
-        },
-      });
+        }),
+        this.prisma.block.findUnique({
+          where: {
+            blockerId_blockedId: {
+              blockerId: safeCurrentUserId,
+              blockedId: user.id,
+            },
+          },
+        }),
+        this.prisma.followRequest.findUnique({
+          where: {
+            senderId_receiverId: {
+              senderId: safeCurrentUserId,
+              receiverId: user.id,
+            }
+          }
+        })
+      ]);
       isFollowing = !!follow;
+      isBlocked = !!block;
+      isFollowRequestSent = !!followRequest;
     }
 
     return {
       ...user,
       isFollowing,
+      isBlocked,
+      isFollowRequestSent,
     };
+  }
+
+  // Engelleme İşlemi
+  async toggleBlock(blockerId: number, blockedId: number) {
+    if (blockerId === blockedId) {
+      throw new ForbiddenException('Kendinizi engelleyemezsiniz.');
+    }
+
+    const existingBlock = await this.prisma.block.findUnique({
+      where: { blockerId_blockedId: { blockerId, blockedId } },
+    });
+
+    if (existingBlock) {
+      await this.prisma.block.delete({ where: { id: existingBlock.id } });
+      return { blocked: false, message: 'Engel kaldırıldı.' };
+    }
+
+    // Engelleme gerçekleştiğinde takipleşmeyi bitir
+    await Promise.all([
+      this.prisma.block.create({ data: { blockerId, blockedId } }),
+      this.prisma.follow.deleteMany({
+        where: {
+          OR: [
+            { followerId: blockerId, followingId: blockedId },
+            { followerId: blockedId, followingId: blockerId },
+          ],
+        },
+      }),
+    ]);
+
+    return { blocked: true, message: 'Kullanıcı engellendi.' };
+  }
+
+  // Engellenen kullanıcıları listele
+  async getBlockedUsers(userId: number) {
+    return this.prisma.block.findMany({
+      where: { blockerId: userId },
+      include: {
+        blocked: {
+          select: {
+            id: true,
+            username: true,
+            fullName: true,
+            avatarUrl: true,
+          },
+        },
+      },
+    });
+  }
+
+  async reportUser(reporter: string, reported: string, reason: string, subReason: string) {
+    await this.mailService.sendReportEmail(reporter, reported, reason, subReason);
+    return { success: true, message: 'Şikayetiniz iletildi.' };
+  }
+
+  // Admin: Kullanıcıyı banla/ban kaldır
+  async toggleBan(userId: number, currentUserId: number) {
+    const admin = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+    if (!admin || admin.role !== 'ADMIN') throw new ForbiddenException('Bu işlem için yetkiniz yok.');
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
+    if (user.role === 'ADMIN') throw new ForbiddenException('Diğer adminleri banlayamazsınız.');
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id: userId },
+      data: { isBanned: !user.isBanned },
+    });
+
+    return { 
+      banned: updatedUser.isBanned, 
+      message: updatedUser.isBanned ? 'Kullanıcı yasaklandı.' : 'Kullanıcı yasağı kaldırıldı.' 
+    };
+  }
+
+  async toggleUserBadge(userId: number, badgeId: number, currentUserId: number) {
+    const admin = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+    if (!admin || admin.role !== 'ADMIN') throw new ForbiddenException('Yetkiniz yok.');
+
+    const existing = await this.prisma.userBadge.findUnique({
+      where: { userId_badgeId: { userId, badgeId } }
+    });
+
+    if (existing) {
+      await this.prisma.userBadge.delete({ where: { id: existing.id } });
+      return { assigned: false, message: 'Rozet kaldırıldı.' };
+    }
+
+    await this.prisma.userBadge.create({ data: { userId, badgeId } });
+    return { assigned: true, message: 'Rozet atandı.' };
+  }
+
+  // Admin: Kullanıcıyı tamamen sil
+  async deleteUser(userId: number, currentUserId: number) {
+    const admin = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+    if (!admin || admin.role !== 'ADMIN') throw new ForbiddenException('Bu işlem için yetkiniz yok.');
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
+    if (user.role === 'ADMIN') throw new ForbiddenException('Admin hesapları silinemez.');
+
+    await this.prisma.user.delete({ where: { id: userId } });
+    return { success: true, message: 'Kullanıcı hesabı tamamen silindi.' };
+  }
+
+  // Tüm mevcut rozetleri getir
+  async getAllBadges() {
+    return this.prisma.badge.findMany({ orderBy: { name: 'asc' } });
   }
 }

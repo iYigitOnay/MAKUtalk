@@ -2,33 +2,64 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { AiService } from '../ai/ai.service';
 
 @Injectable()
 export class PostsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(PostsService.name);
 
-  // Post oluştur
+  constructor(
+    private prisma: PrismaService,
+    private aiService: AiService,
+  ) {}
+
   async create(userId: number, createPostDto: CreatePostDto) {
+    // Eğer kategori seçilmemişse AI kategori ve duygu analizi yapacak
+    const shouldIdentifyCategory = !createPostDto.categoryId;
+    const aiAnalysis = await this.aiService.analyzePost(createPostDto.content, shouldIdentifyCategory);
+
+    let categoryId = createPostDto.categoryId;
+
+    // AI'dan gelen slug'ı veritabanındaki ID ile eşleştir (ID karmaşasını önler)
+    if (!categoryId && aiAnalysis.suggestedCategorySlug) {
+      const suggestedCategory = await this.prisma.category.findUnique({ 
+        where: { slug: aiAnalysis.suggestedCategorySlug.toLowerCase().trim() } 
+      });
+      categoryId = suggestedCategory?.id;
+    }
+
+    // Hala kategori yoksa "Genel" bul
+    if (!categoryId) {
+      const generalCategory = await this.prisma.category.findUnique({ where: { slug: 'genel' } });
+      categoryId = generalCategory?.id || 1;
+    }
+
     return this.prisma.post.create({
       data: {
         content: createPostDto.content,
         published: createPostDto.published ?? true,
         authorId: userId,
-        categoryId: createPostDto.categoryId,
+        categoryId: categoryId,
+        sentiment: aiAnalysis.sentiment,
+        sentimentScore: aiAnalysis.sentimentScore,
       },
       include: {
         author: {
-          select: { id: true, username: true, fullName: true, avatarUrl: true },
+          select: { 
+            id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true,
+            badges: { include: { badge: true } }
+          },
         },
         category: true,
         repostOf: {
           include: {
-            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
             _count: { select: { likes: true, comments: true, reposts: true } }
           }
@@ -38,37 +69,21 @@ export class PostsService {
     });
   }
 
-  // Repost İşlemi (Remakü)
+  // Diğer metodlar orijinal hallerinde kalabilir...
   async toggleRepost(userId: number, postId: number) {
-    // Önce bu post zaten repost edilmiş mi kontrol et
-    const existingRepost = await this.prisma.post.findFirst({
-      where: {
-        authorId: userId,
-        repostId: postId,
-      },
-    });
-
+    const existingRepost = await this.prisma.post.findFirst({ where: { authorId: userId, repostId: postId } });
     if (existingRepost) {
-      // Eğer varsa sil (Un-repost)
       await this.prisma.post.delete({ where: { id: existingRepost.id } });
       return { reposted: false, message: 'Remakü geri alındı.' };
     }
-
-    // Yoksa yeni bir repost oluştur
     const newRepost = await this.prisma.post.create({
-      data: {
-        authorId: userId,
-        repostId: postId,
-        published: true,
-      },
+      data: { authorId: userId, repostId: postId, published: true },
       include: {
-        author: {
-          select: { id: true, username: true, fullName: true, avatarUrl: true },
-        },
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
         repostOf: {
           include: {
-            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
             _count: { select: { likes: true, comments: true, reposts: true } }
           }
@@ -76,20 +91,31 @@ export class PostsService {
         _count: { select: { likes: true, comments: true, reposts: true } },
       },
     });
-
     return { reposted: true, post: newRepost, message: 'Remakülendi!' };
   }
 
-  // Tüm postları listele
   async findAll(userId?: number) {
     const posts = await this.prisma.post.findMany({
-      where: { published: true },
+      where: { 
+        published: true,
+        OR: [
+          { author: { isPrivate: false } }, // Herkese açık hesaplar
+          { authorId: userId },             // Kendi postları
+          { 
+            author: { 
+              followers: { 
+                some: { followerId: userId } // Takip ettiği gizli hesaplar
+              } 
+            } 
+          }
+        ]
+      },
       include: {
-        author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
         repostOf: {
           include: {
-            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
             _count: { select: { likes: true, comments: true, reposts: true } }
           }
@@ -98,20 +124,32 @@ export class PostsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-
     return this.mapInteractionStatus(posts, userId);
   }
 
-  // Kategoriye göre postlar
   async findByCategory(categoryId: number, userId?: number) {
     const posts = await this.prisma.post.findMany({
-      where: { categoryId, published: true },
+      where: { 
+        categoryId, 
+        published: true,
+        OR: [
+          { author: { isPrivate: false } },
+          { authorId: userId },
+          { 
+            author: { 
+              followers: { 
+                some: { followerId: userId } 
+              } 
+            } 
+          }
+        ]
+      },
       include: {
-        author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
         repostOf: {
           include: {
-            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
             _count: { select: { likes: true, comments: true, reposts: true } }
           }
@@ -120,20 +158,18 @@ export class PostsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-
     return this.mapInteractionStatus(posts, userId);
   }
 
-  // Kullanıcının kendi postları
   async findMyPosts(userId: number) {
     const posts = await this.prisma.post.findMany({
       where: { authorId: userId },
       include: {
-        author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
         repostOf: {
           include: {
-            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
             _count: { select: { likes: true, comments: true, reposts: true } }
           }
@@ -142,20 +178,27 @@ export class PostsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-
     return this.mapInteractionStatus(posts, userId);
   }
 
-  // Kullanıcının repostlarını getir (Remakü Sekmesi için)
   async findUserReposts(userId: number, currentUserId?: number) {
+    // Profil sahibinin gizlilik kontrolü
+    const targetUser = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (targetUser?.isPrivate && userId !== currentUserId) {
+      const isFollowing = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: currentUserId || 0, followingId: userId } }
+      });
+      if (!isFollowing) return [];
+    }
+
     const posts = await this.prisma.post.findMany({
       where: { authorId: userId, NOT: { repostId: null } },
       include: {
-        author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
         repostOf: {
           include: {
-            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
             _count: { select: { likes: true, comments: true, reposts: true } }
           }
@@ -164,29 +207,55 @@ export class PostsService {
       },
       orderBy: { createdAt: 'desc' },
     });
-
     return this.mapInteractionStatus(posts, currentUserId || userId);
   }
 
-  // Ortak fonksiyon: Beğeni ve Repost durumlarını işaretle
+  async findLikedPosts(userId: number, currentUserId?: number) {
+    // Profil sahibinin gizlilik kontrolü
+    const targetUser = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (targetUser?.isPrivate && userId !== currentUserId) {
+      const isFollowing = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: currentUserId || 0, followingId: userId } }
+      });
+      if (!isFollowing) return [];
+    }
+
+    const likes = await this.prisma.like.findMany({
+      where: { userId },
+      include: {
+        post: {
+          include: {
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
+            category: true,
+            repostOf: {
+              include: {
+                author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
+                category: true,
+                _count: { select: { likes: true, comments: true, reposts: true } }
+              }
+            },
+            _count: { select: { likes: true, comments: true, reposts: true } },
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+    
+    const posts = likes.map(l => l.post);
+    return this.mapInteractionStatus(posts, currentUserId || userId);
+  }
+
   private async mapInteractionStatus(posts: any[], userId?: number) {
     if (!userId) return posts;
-
     const [userLikes, userReposts] = await Promise.all([
       this.prisma.like.findMany({ where: { userId }, select: { postId: true } }),
       this.prisma.post.findMany({ where: { authorId: userId, NOT: { repostId: null } }, select: { repostId: true } })
     ]);
-    
-    const likedPostIds = new Set(userLikes.map((like) => like.postId));
+    const likedPostIds = new Set(userLikes.map((l) => l.postId));
     const repostedPostIds = new Set(userReposts.map((r) => r.repostId));
-
-    return posts.map((post) => {
-      const targetId = post.repostId || post.id;
-      return {
-        ...post,
-        isLiked: likedPostIds.has(targetId),
-        isReposted: repostedPostIds.has(targetId),
-      };
+    return posts.map((p) => {
+      const targetId = p.repostId || p.id;
+      return { ...p, isLiked: likedPostIds.has(targetId), isReposted: repostedPostIds.has(targetId) };
     });
   }
 
@@ -194,61 +263,51 @@ export class PostsService {
     const post = await this.prisma.post.findUnique({
       where: { id },
       include: {
-        author: {
-          select: {
-            id: true,
-            username: true,
-            fullName: true,
-            avatarUrl: true,
-          },
-        },
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
         repostOf: {
           include: {
-            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
             _count: { select: { likes: true, comments: true, reposts: true } }
           }
         },
-        _count: {
-          select: { likes: true, comments: true, reposts: true },
-        },
+        _count: { select: { likes: true, comments: true, reposts: true } },
       },
     });
-
     if (!post) return null;
+
+    // Gizlilik kontrolü
+    if (post.author.isPrivate && post.authorId !== currentUserId) {
+      const isFollowing = await this.prisma.follow.findUnique({
+        where: { followerId_followingId: { followerId: currentUserId || 0, followingId: post.authorId } }
+      });
+      if (!isFollowing) {
+        throw new ForbiddenException('Bu gönderiyi görüntüleme yetkiniz yok. Kullanıcı gizli.');
+      }
+    }
 
     let isLiked = false;
     if (currentUserId) {
-      const like = await this.prisma.like.findUnique({
-        where: {
-          userId_postId: { userId: currentUserId, postId: id },
-        },
-      });
+      const like = await this.prisma.like.findUnique({ where: { userId_postId: { userId: currentUserId, postId: id } } });
       isLiked = !!like;
     }
-
     return { ...post, isLiked };
   }
 
   async update(id: number, userId: number, updatePostDto: UpdatePostDto) {
     const post = await this.prisma.post.findUnique({ where: { id } });
-
     if (!post) throw new NotFoundException('Post bulunamadı.');
-    if (post.authorId !== userId)
-      throw new ForbiddenException('Bu postu düzenleme yetkiniz yok.');
-
+    if (post.authorId !== userId) throw new ForbiddenException('Bu postu düzenleme yetkiniz yok.');
     return this.prisma.post.update({
       where: { id },
       data: updatePostDto,
       include: {
-        author: {
-          select: { id: true, username: true, fullName: true, avatarUrl: true },
-        },
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
         repostOf: {
           include: {
-            author: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
             _count: { select: { likes: true, comments: true, reposts: true } }
           }
@@ -260,11 +319,8 @@ export class PostsService {
 
   async remove(id: number, userId: number) {
     const post = await this.prisma.post.findUnique({ where: { id } });
-
     if (!post) throw new NotFoundException('Post bulunamadı.');
-    if (post.authorId !== userId)
-      throw new ForbiddenException('Bu postu silme yetkiniz yok.');
-
+    if (post.authorId !== userId) throw new ForbiddenException('Bu postu silme yetkiniz yok.');
     await this.prisma.post.delete({ where: { id } });
     return { message: 'Post başarıyla silindi.' };
   }

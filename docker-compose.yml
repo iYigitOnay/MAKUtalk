@@ -21,14 +21,10 @@ services:
     container_name: makutalk_backend
     restart: always
     environment:
-      # İç ağda host 'db', port 5432'dir
       DATABASE_URL: postgresql://${DB_USERNAME:-admin}:${DB_PASSWORD:-makupassword123}@db:5432/${DB_NAME:-makutalk_db}?schema=public
       JWT_SECRET: ${JWT_SECRET}
-      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
-      SMTP_PORT: ${SMTP_PORT:-465}
-      SMTP_USER: ${SMTP_USER}
-      SMTP_PASS: ${SMTP_PASS}
-      SMTP_FROM: ${SMTP_FROM}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      SMTP_FROM: ${SMTP_FROM:-"MAKUtalk <onboarding@resend.dev>"}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
     ports:
       - "3001:3000"
@@ -42,8 +38,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=https://melygranmomstories.software/api
-    container_name: makutalk_frontend 
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:3001}
+    container_name: makutalk_frontend
     restart: always
     ports:
       - "5173:80"

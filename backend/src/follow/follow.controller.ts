@@ -1,10 +1,11 @@
 import {
   Controller,
-  Post,
   Get,
+  Post,
   Param,
-  ParseIntPipe,
+  Delete,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FollowService } from './follow.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -17,10 +18,31 @@ export class FollowController {
 
   @Post(':userId')
   toggleFollow(
-    @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user,
+    @Param('userId', ParseIntPipe) followingId: number,
   ) {
-    return this.followService.toggleFollow(user.id, userId);
+    return this.followService.toggleFollow(user.id, followingId);
+  }
+
+  @Get('requests')
+  getPendingRequests(@CurrentUser() user) {
+    return this.followService.getPendingRequests(user.id);
+  }
+
+  @Post('requests/:id/accept')
+  acceptRequest(
+    @CurrentUser() user,
+    @Param('id', ParseIntPipe) requestId: number,
+  ) {
+    return this.followService.acceptRequest(user.id, requestId);
+  }
+
+  @Post('requests/:id/reject')
+  rejectRequest(
+    @CurrentUser() user,
+    @Param('id', ParseIntPipe) requestId: number,
+  ) {
+    return this.followService.rejectRequest(user.id, requestId);
   }
 
   @Get('followers/:userId')
@@ -35,9 +57,9 @@ export class FollowController {
 
   @Get('check/:userId')
   isFollowing(
-    @Param('userId', ParseIntPipe) userId: number,
     @CurrentUser() user,
+    @Param('userId', ParseIntPipe) followingId: number,
   ) {
-    return this.followService.isFollowing(user.id, userId);
+    return this.followService.isFollowing(user.id, followingId);
   }
 }

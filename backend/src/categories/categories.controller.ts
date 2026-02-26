@@ -10,6 +10,14 @@ export class CategoriesController {
     return this.categoriesService.findAll();
   }
 
+  /**
+   * Haftalık popüler kategorileri getirir
+   */
+  @Get('trending')
+  getTrending() {
+    return this.categoriesService.getTrending();
+  }
+
   @Get(':id')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.categoriesService.findOne(id);

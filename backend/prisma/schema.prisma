@@ -18,6 +18,9 @@ model User {
   department String? // Bölüm bilgisi
   class      String? // Sınıf bilgisi (Hazırlık, 1, 2, 3, 4, Mezun vb.)
   isVerified Boolean  @default(false) // E-posta doğrulandı mı?
+  isPrivate  Boolean  @default(false) // Hesap gizli mi?
+  isBanned   Boolean  @default(false) // Banlı mı?
+  role       UserRole @default(USER)
   verificationCode String? // 6 haneli doğrulama kodu
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -30,6 +33,59 @@ model User {
   followers            Follow[]       @relation("UserFollowers")
   notifications        Notification[] @relation("NotificationRecipient")
   triggeredNotifications Notification[] @relation("NotificationSender")
+  blockedUsers         Block[]        @relation("Blocker")
+  blockedBy            Block[]        @relation("Blocked")
+  badges               UserBadge[]
+  sentRequests         FollowRequest[] @relation("SentRequests")
+  receivedRequests     FollowRequest[] @relation("ReceivedRequests")
+}
+
+model Badge {
+  id          Int         @id @default(autoincrement())
+  name        String      @unique
+  icon        String?     // Emoji veya SVG adı
+  color       String      @default("#1E3A8A") // Varsayılan Navy Blue
+  description String?
+  createdAt   DateTime    @default(now())
+
+  users       UserBadge[]
+}
+
+model UserBadge {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  badgeId   Int
+  assignedAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+}
+
+model FollowRequest {
+  id          Int      @id @default(autoincrement())
+  senderId    Int
+  receiverId  Int
+  status      RequestStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+
+  sender      User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([senderId, receiverId])
+  @@index([receiverId])
+}
+
+enum RequestStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+enum UserRole {
+  USER
+  ADMIN
 }
 
 model Category {
@@ -51,6 +107,8 @@ model Post {
   authorId   Int
   categoryId Int?
   repostId   Int?     // Eğer bu bir repost ise orijinal postun ID'si
+  sentiment      String?  // positive, negative, neutral
+  sentimentScore Float?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
@@ -127,6 +185,20 @@ model Notification {
   @@index([recipientId])
   @@index([read])
   @@index([createdAt])
+}
+
+model Block {
+  id          Int      @id @default(autoincrement())
+  blockerId   Int      // Engelleyen kullanıcı
+  blockedId   Int      // Engellenen kullanıcı
+  createdAt   DateTime @default(now())
+
+  blocker     User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked     User     @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
+
+  @@unique([blockerId, blockedId])
+  @@index([blockerId])
+  @@index([blockedId])
 }
 
 enum NotificationType {

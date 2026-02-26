@@ -35,6 +35,12 @@ const router = createRouter({
       meta: { requiresAuth: true, layout: "main" },
     },
     {
+      path: "/requests",
+      name: "FollowRequests",
+      component: () => import("@/views/FollowRequests.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+    },
+    {
       path: "/messages",
       name: "Messages",
       component: () => import("@/views/Messages.vue"),
