@@ -452,9 +452,25 @@ export class UsersService {
     });
   }
 
-  async reportUser(reporter: string, reported: string, reason: string, subReason: string) {
-    await this.mailService.sendReportEmail(reporter, reported, reason, subReason);
-    return { success: true, message: 'Şikayetiniz iletildi.' };
+  async reportUser(reporterUsername: string, reportedUsername: string, reason: string, subReason: string) {
+    const [reporter, reportedUser] = await Promise.all([
+      this.prisma.user.findUnique({ where: { username: reporterUsername } }),
+      this.prisma.user.findFirst({ where: { username: { equals: reportedUsername, mode: 'insensitive' } } }),
+    ]);
+
+    if (!reporter || !reportedUser) {
+      throw new NotFoundException('Kullanıcı bulunamadı.');
+    }
+
+    return (this.prisma as any).report.create({
+      data: {
+        reporterId: reporter.id,
+        reportedUserId: reportedUser.id,
+        reason,
+        subReason,
+        status: 'PENDING',
+      },
+    });
   }
 
   // Admin: Kullanıcıyı banla/ban kaldır
@@ -505,6 +521,17 @@ export class UsersService {
 
     await this.prisma.user.delete({ where: { id: userId } });
     return { success: true, message: 'Kullanıcı hesabı tamamen silindi.' };
+  }
+
+  // Geri Bildirim Oluştur
+  async createFeedback(userId: number | null, type: string, message: string) {
+    return (this.prisma as any).feedback.create({
+      data: {
+        type,
+        message,
+        userId,
+      },
+    });
   }
 
   // Tüm mevcut rozetleri getir

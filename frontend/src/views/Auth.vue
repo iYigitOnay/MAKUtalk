@@ -235,12 +235,20 @@
               Tekrar Hoş Geldin
             </h2>
             <form @submit.prevent="handleLogin" class="space-y-4">
-              <input
-                v-model="loginForm.email"
-                type="email"
-                placeholder="E-posta"
-                class="auth-input"
-              />
+              <div class="relative flex items-center">
+                <input
+                  v-model="loginForm.email"
+                  type="text"
+                  placeholder="Öğrenci No veya E-posta"
+                  class="auth-input pr-32"
+                />
+                <span 
+                  v-if="loginForm.email && !loginForm.email.includes('@')"
+                  class="absolute right-4 text-[10px] font-bold text-slate-400 pointer-events-none select-none uppercase tracking-tighter"
+                >
+                  @ogr.mehmetakif.edu.tr
+                </span>
+              </div>
               <div class="relative group">
                 <input
                   v-model="loginForm.password"

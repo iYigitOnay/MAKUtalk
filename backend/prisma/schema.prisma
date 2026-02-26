@@ -38,6 +38,10 @@ model User {
   badges               UserBadge[]
   sentRequests         FollowRequest[] @relation("SentRequests")
   receivedRequests     FollowRequest[] @relation("ReceivedRequests")
+  
+  feedbacks            Feedback[]
+  reportsSent          Report[]        @relation("ReportedBy")
+  reportsAgainst       Report[]        @relation("ReportedUser")
 }
 
 model Badge {
@@ -119,6 +123,7 @@ model Post {
   likes         Like[]
   comments      Comment[]
   notifications Notification[]
+  reports       Report[]
 
   @@index([authorId])
   @@index([categoryId])
@@ -199,6 +204,29 @@ model Block {
   @@unique([blockerId, blockedId])
   @@index([blockerId])
   @@index([blockedId])
+}
+
+model Feedback {
+  id        Int      @id @default(autoincrement())
+  type      String   // error, suggestion, complaint, other
+  message   String   @db.Text
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+}
+
+model Report {
+  id               Int      @id @default(autoincrement())
+  reporterId       Int
+  reporter         User     @relation("ReportedBy", fields: [reporterId], references: [id])
+  reportedUserId   Int?
+  reportedUser     User?    @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  reportedPostId   Int?
+  reportedPost     Post?    @relation(fields: [reportedPostId], references: [id])
+  reason           String
+  subReason        String?
+  status           String   @default("PENDING") // PENDING, REVIEWED, RESOLVED
+  createdAt        DateTime @default(now())
 }
 
 enum NotificationType {

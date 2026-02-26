@@ -11,12 +11,15 @@ import { FollowModule } from './follow/follow.module';
 import { SearchModule } from './search/search.module';
 import { AiModule } from './ai/ai.module';
 import { MailModule } from './mail/mail.module';
+import { CampusModule } from './campus/campus.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    ScheduleModule.forRoot(),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -28,6 +31,7 @@ import { MailModule } from './mail/mail.module';
     SearchModule,
     AiModule,
     MailModule,
+    CampusModule,
   ],
 })
 export class AppModule {}

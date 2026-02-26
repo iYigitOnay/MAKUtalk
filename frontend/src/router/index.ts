@@ -88,6 +88,26 @@ const router = createRouter({
       component: () => import("@/views/HashtagPage.vue"),
       meta: { layout: "main" },
     },
+    {
+      path: "/admin",
+      name: "Admin",
+      component: () => import("@/views/Admin.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+      beforeEnter: (to, from, next) => {
+        const authStore = useAuthStore();
+        if (authStore.user?.role === 'ADMIN' || authStore.user?.email === '2312101063@ogr.mehmetakif.edu.tr') {
+          next();
+        } else {
+          next('/');
+        }
+      }
+    },
+    {
+      path: "/campus",
+      name: "Campus",
+      component: () => import("@/views/Campus.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+    },
 
     // ── 404 ───────────────────────────────────────────────
     {

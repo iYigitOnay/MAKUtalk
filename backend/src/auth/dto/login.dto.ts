@@ -1,7 +1,8 @@
-import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsString } from 'class-validator';
 
 export class LoginDto {
-  @IsEmail({}, { message: 'Geçerli bir e-posta adresi giriniz.' })
+  @IsString()
+  @IsNotEmpty({ message: 'E-posta veya öğrenci numarası boş bırakılamaz.' })
   email: string;
 
   @IsString()

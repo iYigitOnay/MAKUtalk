@@ -10,23 +10,49 @@ export class AiService implements OnModuleInit {
 
   constructor(private configService: ConfigService) {}
 
-  onModuleInit() {
+  async onModuleInit() {
     const apiKey = this.configService.get<string>('GEMINI_API_KEY');
     if (!apiKey) return;
 
     try {
       this.genAI = new GoogleGenerativeAI(apiKey);
-      // Listendeki kesin çalışan model ismine geri dönüyoruz
-      this.model = this.genAI.getGenerativeModel({ 
-        model: 'gemini-flash-latest', 
-        generationConfig: { 
-          temperature: 0.1,
-          responseMimeType: "application/json"
-        }
-      });
-      this.logger.log('Akıllı AI Modülü aktif (Model: gemini-flash-latest).');
+      await this.listAvailableModels(); // Modelleri listele ve en uygununu seç
     } catch (error) {
-      this.logger.error('Gemini başlatma hatası:', error);
+      this.logger.error('AI başlatma hatası:', error);
+    }
+  }
+
+  private async listAvailableModels() {
+    try {
+      const apiKey = this.configService.get('GEMINI_API_KEY');
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const data = await response.json();
+      const models = data.models || [];
+      const modelNames = models.map((m: any) => m.name.replace('models/', ''));
+      
+      this.logger.log('--- ERİŞİLEBİLİR MODELLER ---');
+      this.logger.log(modelNames.join(', '));
+      this.logger.log('-----------------------------');
+
+      // Kotası yüksek olan Gemma modelini veya stabil Gemini'yi bulmaya çalış
+      let selectedModel = modelNames.find((n: string) => n.includes('gemma-3-27b')) || 
+                          modelNames.find((n: string) => n.includes('gemma-2')) ||
+                          modelNames.find((n: string) => n.includes('gemini-1.5-flash')) ||
+                          modelNames[0];
+
+      if (selectedModel) {
+        this.model = this.genAI.getGenerativeModel({ 
+          model: selectedModel, 
+          generationConfig: { 
+            temperature: 0.1,
+            // Sadece Gemini modelleri JSON modunu garanti eder, Gemma için kapatıyoruz
+            ...(selectedModel.includes('gemini') ? { responseMimeType: "application/json" } : {})
+          }
+        });
+        this.logger.log(`Seçilen Model: ${selectedModel}`);
+      }
+    } catch (e) {
+      this.logger.error('Modeller listelenemedi:', e.message);
     }
   }
 
@@ -38,20 +64,27 @@ export class AiService implements OnModuleInit {
     if (!this.model) return { sentiment: 'Sakin', sentimentScore: 0.5, suggestedCategorySlug: 'genel' };
 
     try {
-      const categoryPrompt = includeCategory ? `
-        KATEGORİ (Slug seç): "genel", "duyuru", "etkinlik", "ariza-kayip", "satilik", "soru-cevap".
-      ` : "Kategori analizi yapma, 'category' alanını null dön.";
-
-      const prompt = `
-        ANALİZ: "${content}"
-        ${categoryPrompt}
-        DUYGU: "Neşeli", "Hüzünlü", "Kızgın", "Endişeli", "Sakin", "Meraklı", "Ciddi".
-        JSON FORMATI: {"sentiment": "Duygu", "sentimentScore": 0.5, "category": "slug_veya_null"}
-      `;
+      const prompt = includeCategory 
+        ? `ANALİZ: "${content}"
+           GÖREV: Duygu analizi yap ve en uygun kategoriyi seç.
+           KATEGORİLER: "genel", "duyuru", "etkinlik", "ariza-kayip", "satilik", "soru-cevap".
+           DUYGULAR: "Neşeli", "Hüzünlü", "Kızgın", "Endişeli", "Sakin", "Meraklı", "Ciddi".
+           FORMAT (JSON): {"sentiment": "...", "sentimentScore": 0.5, "category": "slug"}`
+        : `ANALİZ: "${content}"
+           GÖREV: SADECE duygu analizi yap. Kategori belirleme.
+           DUYGULAR: "Neşeli", "Hüzünlü", "Kızgın", "Endişeli", "Sakin", "Meraklı", "Ciddi".
+           FORMAT (JSON): {"sentiment": "...", "sentimentScore": 0.5, "category": null}`;
 
       const result = await this.model.generateContent(prompt);
       const responseText = result.response.text();
-      const analysis = JSON.parse(responseText);
+      
+      // JSON Çıkarma: İlk { ve son } arasını bul (Gemma'nın fazladan metinlerini temizler)
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        throw new Error('Gelen yanıtta JSON verisi bulunamadı.');
+      }
+      
+      const analysis = JSON.parse(jsonMatch[0]);
 
       return {
         sentiment: analysis.sentiment || 'Sakin',
@@ -59,7 +92,11 @@ export class AiService implements OnModuleInit {
         suggestedCategorySlug: includeCategory ? (analysis.category || 'genel') : null,
       };
     } catch (error) {
-      this.logger.error('AI Analiz Hatası:', error.message);
+      if (error.message?.includes('429')) {
+        this.logger.warn('AI Kota sınırı aşıldı, varsayılan değerler kullanılıyor.');
+      } else {
+        this.logger.error('AI Analiz Hatası:', error.message);
+      }
       return { sentiment: 'Sakin', sentimentScore: 0.5, suggestedCategorySlug: 'genel' };
     }
   }

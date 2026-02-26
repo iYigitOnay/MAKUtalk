@@ -137,4 +137,13 @@ export class UsersController {
   ) {
     return this.usersService.toggleUserBadge(userId, badgeId, admin.id);
   }
+
+  @Post('feedback')
+  async submitFeedback(
+    @CurrentUser() user,
+    @Body() body: { type: string; message: string },
+  ) {
+    const userId = user ? user.id : null;
+    return this.usersService.createFeedback(userId, body.type, body.message);
+  }
 }
