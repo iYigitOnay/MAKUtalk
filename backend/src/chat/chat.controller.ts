@@ -1,4 +1,5 @@
 import { Controller, Get, Param, Post, Body, UseGuards, Query } from '@nestjs/common';
+import { ClubsService } from '../clubs/clubs.service';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -20,10 +21,17 @@ export class ChatController {
     return this.chatService.getOrCreateConversation(user.id, +targetUserId);
   }
 
-  // Mesaj geçmişini getir
+  // Mesaj geçmişini getir (FIXED: Service method called correctly)
   @Get('messages/:conversationId')
   getMessages(@Param('conversationId') conversationId: string) {
     return this.chatService.getMessages(+conversationId);
+  }
+
+  // Mesajları okundu olarak işaretle
+  @Post(':id/read')
+  @UseGuards(JwtAuthGuard)
+  markAsRead(@CurrentUser() user: any, @Param('id') id: string) {
+    return this.chatService.markAsRead(user.id, +id);
   }
 
   // Sohbeti sil

@@ -69,6 +69,11 @@ export class UsersController {
     return this.usersService.findByUsername(username, userId);
   }
 
+  @Get('search-mentions')
+  async searchMentions(@Query('q') query: string) {
+    return this.usersService.searchMentions(query || '');
+  }
+
   // DINAMIK ROUTE'LAR (DAHA SONRA)
   @Get(':id')
   async getUserProfile(

@@ -9,6 +9,11 @@ export const useChatStore = defineStore("chat", () => {
   const activeConversation = ref<any | null>(null);
   const messages = ref<any[]>([]);
   const loading = ref(false);
+  const typingUsers = ref<Record<number, boolean>>({}); // convId -> isTyping
+
+  const setTypingStatus = (conversationId: number, isTyping: boolean) => {
+    typingUsers.value[conversationId] = isTyping;
+  };
 
   // Okunmamış sohbet sayısı
   const unreadCount = computed(() => {
@@ -61,6 +66,21 @@ export const useChatStore = defineStore("chat", () => {
         senderId: Number(msg.senderId),
         conversationId: Number(msg.conversationId),
       }));
+
+      // 3. Okundu olarak işaretle (Backend)
+      await apiClient.post(`/chat/${activeConversation.value.id}/read`);
+      
+      // 4. YEREL GÜNCELLEME (Frontend - Anında bildirim silme)
+      const conv = conversations.value.find(c => c.id === activeConversation.value.id);
+      if (conv) {
+        if (conv.lastMessage) {
+          conv.lastMessage.isRead = true;
+        }
+        // Eğer varsa diğer mesajları da işaretle (isteğe bağlı ama güvenli)
+        messages.value.forEach(m => {
+          if (Number(m.senderId) !== Number(authStore.userId)) m.isRead = true;
+        });
+      }
 
     } catch (error) {
       console.error("Select conversation error:", error);
@@ -150,5 +170,7 @@ export const useChatStore = defineStore("chat", () => {
     addMessage,
     deleteConversation,
     updateUserInChat,
+    typingUsers,
+    setTypingStatus,
   };
 });

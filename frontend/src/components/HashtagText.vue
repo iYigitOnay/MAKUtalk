@@ -17,13 +17,13 @@ const formattedText = computed(() => {
   // Hashtag'leri linkle
   formatted = formatted.replace(
     /#([a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+)/g,
-    '<a href="/hashtag/$1" class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium hover:underline">#$1</a>',
+    '<a href="/hashtag/$1" class="text-rose-600 dark:text-rose-500 font-bold hover:underline">#$1</a>',
   );
 
   // Mention'ları linkle (@username)
   formatted = formatted.replace(
     /@([a-zA-Z0-9_]+)/g,
-    '<a href="/user/username/$1" class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-medium hover:underline">@$1</a>',
+    '<a href="/profile/$1" class="text-indigo-600 dark:text-indigo-400 font-bold hover:underline">@$1</a>',
   );
 
   // URL'leri linkle

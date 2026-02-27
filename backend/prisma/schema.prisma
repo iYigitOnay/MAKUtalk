@@ -16,12 +16,12 @@ model User {
   avatarUrl String?
   coverUrl  String?  
   department String? // Bölüm bilgisi
-  class      String? // Sınıf bilgisi (Hazırlık, 1, 2, 3, 4, Mezun vb.)
-  isVerified Boolean  @default(false) // E-posta doğrulandı mı?
-  isPrivate  Boolean  @default(false) // Hesap gizli mi?
-  isBanned   Boolean  @default(false) // Banlı mı?
+  class      String? // Sınıf bilgisi
+  isVerified Boolean  @default(false)
+  isPrivate  Boolean  @default(false)
+  isBanned   Boolean  @default(false)
   role       UserRole @default(USER)
-  verificationCode String? // 6 haneli doğrulama kodu
+  verificationCode String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -38,6 +38,9 @@ model User {
   badges               UserBadge[]
   sentRequests         FollowRequest[] @relation("SentRequests")
   receivedRequests     FollowRequest[] @relation("ReceivedRequests")
+  foundedClubs         Club[]          @relation("ClubFounder")
+  advisorClubs         Club[]          @relation("ClubAdvisor")
+  clubMemberships      ClubMember[]
   
   feedbacks            Feedback[]
   reportsSent          Report[]        @relation("ReportedBy")
@@ -87,8 +90,8 @@ model Message {
 model Badge {
   id          Int         @id @default(autoincrement())
   name        String      @unique
-  icon        String?     // Emoji veya SVG adı
-  color       String      @default("#1E3A8A") // Varsayılan Navy Blue
+  icon        String?     
+  color       String      @default("#1E3A8A")
   description String?
   createdAt   DateTime    @default(now())
 
@@ -130,6 +133,7 @@ enum RequestStatus {
 enum UserRole {
   USER
   ADMIN
+  ACADEMIC
 }
 
 model Category {
@@ -147,12 +151,12 @@ model Category {
 model Post {
   id         Int      @id @default(autoincrement())
   content    String?  @db.Text
-  imageUrl   String?  // Yeni eklenen alan
+  imageUrl   String?  
   published  Boolean  @default(true)
   authorId   Int
   categoryId Int?
-  repostId   Int?     // Eğer bu bir repost ise orijinal postun ID'si
-  sentiment      String?  // positive, negative, neutral
+  repostId   Int?     
+  sentiment      String?  
   sentimentScore Float?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
@@ -235,8 +239,8 @@ model Notification {
 
 model Block {
   id          Int      @id @default(autoincrement())
-  blockerId   Int      // Engelleyen kullanıcı
-  blockedId   Int      // Engellenen kullanıcı
+  blockerId   Int      
+  blockedId   Int      
   createdAt   DateTime @default(now())
 
   blocker     User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
@@ -249,7 +253,7 @@ model Block {
 
 model Feedback {
   id        Int      @id @default(autoincrement())
-  type      String   // error, suggestion, complaint, other
+  type      String   
   message   String   @db.Text
   userId    Int?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
@@ -266,12 +270,55 @@ model Report {
   reportedPost     Post?    @relation(fields: [reportedPostId], references: [id])
   reason           String
   subReason        String?
-  status           String   @default("PENDING") // PENDING, REVIEWED, RESOLVED
+  status           String   @default("PENDING") 
   createdAt        DateTime @default(now())
 }
 
+model Club {
+  id               Int      @id @default(autoincrement())
+  name             String   @unique
+  slug             String   @unique
+  description      String   @db.Text
+  category         String   
+  emoji            String?  
+  logoUrl          String?  
+  memberCount      Int      @default(0)
+  status           ClubStatus @default(PENDING)
+  founderId        Int?
+  advisorName      String?
+  advisorEmail     String?
+  academicApproval Boolean  @default(false)
+  adminApproval    Boolean  @default(false)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  founder          User?    @relation("ClubFounder", fields: [founderId], references: [id])
+  advisor          User?    @relation("ClubAdvisor", fields: [advisorEmail], references: [email])
+  members          ClubMember[]
+}
+
+model ClubMember {
+  id        Int      @id @default(autoincrement())
+  clubId    Int
+  userId    Int
+  role      String   @default("MEMBER") 
+  joinedAt  DateTime @default(now())
+
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, userId])
+}
+
+enum ClubStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 enum NotificationType {
-  LIKE    // Biri postunu beğendi
-  COMMENT // Biri postuna yorum yaptı
-  FOLLOW  // Biri seni takip etti
+  LIKE    
+  COMMENT 
+  FOLLOW  
+  MENTION
 }

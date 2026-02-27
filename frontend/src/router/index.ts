@@ -103,9 +103,35 @@ const router = createRouter({
       }
     },
     {
+      path: "/academic",
+      name: "Academic",
+      component: () => import("@/views/Academic.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+      beforeEnter: (to, from, next) => {
+        const authStore = useAuthStore();
+        if (authStore.user?.role === 'ACADEMIC') {
+          next();
+        } else {
+          next('/');
+        }
+      }
+    },
+    {
       path: "/campus",
       name: "Campus",
       component: () => import("@/views/Campus.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+    },
+    {
+      path: "/campus/clubs",
+      name: "Clubs",
+      component: () => import("@/views/Clubs.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+    },
+    {
+      path: "/campus/clubs/:slug",
+      name: "ClubDetail",
+      component: () => import("@/views/ClubDetail.vue"),
       meta: { requiresAuth: true, layout: "main" },
     },
 

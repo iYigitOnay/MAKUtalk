@@ -33,6 +33,14 @@ export class UsersService {
     const hashedPassword = await bcrypt.hash(password, 10);
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6 haneli kod
 
+    // AKADEMİSYEN KONTROLÜ
+    let role: any = 'USER';
+    const isAcademicEmail = email.endsWith('@mehmetakif.edu.tr') && !email.includes('@ogr.mehmetakif.edu.tr');
+    
+    if (isAcademicEmail) {
+      role = 'ACADEMIC';
+    }
+
     const user = await this.prisma.user.create({
       data: {
         email,
@@ -41,8 +49,26 @@ export class UsersService {
         fullName,
         verificationCode,
         isVerified: false,
+        role: role,
       },
     });
+
+    // Otomatik Akademisyen Rozeti
+    if (isAcademicEmail) {
+      try {
+        let academicBadge = await this.prisma.badge.findUnique({ where: { name: 'Akademisyen' } });
+        if (!academicBadge) {
+          academicBadge = await this.prisma.badge.create({
+            data: { name: 'Akademisyen', icon: 'academic', color: '#1E3A8A', description: 'MAKÜ Akademik Personel' }
+          });
+        }
+        await this.prisma.userBadge.create({
+          data: { userId: user.id, badgeId: academicBadge.id }
+        });
+      } catch (err) {
+        console.error('Akademisyen rozeti atama hatası:', err);
+      }
+    }
 
     // Kayıt sonrası doğrulama kodunu gönder
     try {
@@ -545,5 +571,25 @@ export class UsersService {
   // Tüm mevcut rozetleri getir
   async getAllBadges() {
     return this.prisma.badge.findMany({ orderBy: { name: 'asc' } });
+  }
+
+  async searchMentions(query: string) {
+    return (this.prisma as any).user.findMany({
+      where: {
+        username: {
+          contains: query,
+          mode: 'insensitive',
+        },
+        isBanned: false,
+      },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        avatarUrl: true,
+        email: true, // KRİTİK: Email eklendi!
+      },
+      take: 5,
+    });
   }
 }

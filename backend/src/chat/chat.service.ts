@@ -129,6 +129,18 @@ export class ChatService {
     return this.prisma.message.findMany({ where: { conversationId }, orderBy: { createdAt: 'asc' }, include: { sender: { select: { id: true, username: true, avatarUrl: true } } } });
   }
 
+  // Mesajları okundu olarak işaretle
+  async markAsRead(userId: number, conversationId: number) {
+    return this.prisma.message.updateMany({
+      where: {
+        conversationId,
+        senderId: { not: userId },
+        isRead: false
+      },
+      data: { isRead: true }
+    });
+  }
+
   async deleteConversation(userId: number, conversationId: number) {
     return this.prisma.conversation.delete({ where: { id: conversationId } });
   }

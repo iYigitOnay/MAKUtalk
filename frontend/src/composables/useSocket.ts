@@ -82,7 +82,10 @@ export function useSocket() {
     });
 
     socket.on("user_typing", (data: any) => {
-      // Typing logic buraya gelebilir
+      console.log("⌨️ User typing received:", data);
+      if (data.conversationId) {
+        chatStore.setTypingStatus(Number(data.conversationId), data.isTyping);
+      }
     });
 
     (window as any).socket = socket;

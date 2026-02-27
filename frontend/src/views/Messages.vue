@@ -63,9 +63,14 @@
               <h3 class="text-[15px] font-bold text-slate-900 dark:text-white truncate tracking-tight">{{ conv.otherParticipant?.fullName || conv.otherParticipant?.username }}</h3>
               <span v-if="conv.lastMessage" class="text-[10px] font-medium text-slate-400 whitespace-nowrap">{{ formatTime(conv.lastMessage.createdAt) }}</span>
             </div>
-            <p class="text-sm truncate text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-              <span v-if="Number(conv.lastMessage?.senderId) === currentUserId" class="text-indigo-500 font-bold text-[11px] uppercase tracking-wider">Sen:</span>
-              {{ conv.lastMessage?.content ? decrypt(conv.lastMessage.content) : 'Sohbeti başlat...' }}
+            <p class="text-sm truncate flex items-center gap-1.5">
+              <template v-if="chatStore.typingUsers[conv.id]">
+                <span class="text-indigo-500 font-bold text-[11px] animate-pulse italic">yazıyor...</span>
+              </template>
+              <template v-else>
+                <span v-if="Number(conv.lastMessage?.senderId) === currentUserId" class="text-indigo-500 font-bold text-[11px] uppercase tracking-wider">Sen:</span>
+                <span class="text-slate-500 dark:text-slate-400 truncate">{{ conv.lastMessage?.content ? decrypt(conv.lastMessage.content) : 'Sohbeti başlat...' }}</span>
+              </template>
             </p>
           </div>
           <div v-if="conv.lastMessage && !conv.lastMessage.isRead && Number(conv.lastMessage.senderId) !== currentUserId" class="w-2.5 h-2.5 bg-indigo-600 rounded-full shadow-lg shadow-indigo-500/50 absolute right-4 bottom-7 animate-pulse"></div>
@@ -90,6 +95,24 @@
               </div>
               <div>
                 <h3 class="text-base font-black text-slate-900 dark:text-white leading-tight">{{ otherUser?.fullName || otherUser?.username }}</h3>
+                <!-- Yazıyor Göstergesi -->
+                <transition
+                  enter-active-class="transition duration-300 ease-out"
+                  enter-from-class="opacity-0 -translate-y-1"
+                  enter-to-class="opacity-100 translate-y-0"
+                  leave-active-class="transition duration-200 ease-in"
+                  leave-from-class="opacity-100 translate-y-0"
+                  leave-to-class="opacity-0 -translate-y-1"
+                >
+                  <p v-if="chatStore.typingUsers[chatStore.activeConversation?.id]" class="text-[11px] font-bold text-indigo-500 dark:text-indigo-400 flex items-center gap-1.5 mt-0.5">
+                    yazıyor
+                    <span class="flex gap-0.5">
+                      <span class="w-1 h-1 rounded-full bg-indigo-500 animate-bounce [animation-delay:-0.3s]"></span>
+                      <span class="w-1 h-1 rounded-full bg-indigo-500 animate-bounce [animation-delay:-0.15s]"></span>
+                      <span class="w-1 h-1 rounded-full bg-indigo-500 animate-bounce"></span>
+                    </span>
+                  </p>
+                </transition>
               </div>
             </div>
           </div>
