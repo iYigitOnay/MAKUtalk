@@ -8,6 +8,17 @@ export const usePostsStore = defineStore("posts", () => {
   const myPosts = ref<Post[]>([]);
   const loading = ref(false);
   const currentCategory = ref<number | null>(null);
+  
+  // Yeni post atıldığında tetiklenecek olan dinleyiciler
+  const postCreationListeners = ref<(() => void)[]>([]);
+
+  const onPostCreated = (callback: () => void) => {
+    postCreationListeners.value.push(callback);
+  };
+
+  const notifyPostCreated = () => {
+    postCreationListeners.value.forEach(callback => callback());
+  };
 
   // Tüm postları getir
   const fetchPosts = async (currentUserId?: number) => {
@@ -92,15 +103,23 @@ export const usePostsStore = defineStore("posts", () => {
     content: string,
     published = true,
     categoryId?: number,
+    image?: File,
   ) => {
     loading.value = true;
     try {
-      const response = await apiClient.post<Post>("/posts", {
-        content,
-        published,
-        categoryId,
+      const formData = new FormData();
+      if (content) formData.append("content", content);
+      formData.append("published", String(published));
+      if (categoryId) formData.append("categoryId", String(categoryId));
+      if (image) formData.append("image", image);
+
+      const response = await apiClient.post<Post>("/posts", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
       });
       posts.value.unshift(response.data);
+      notifyPostCreated();
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error;
@@ -116,6 +135,7 @@ export const usePostsStore = defineStore("posts", () => {
       await apiClient.delete(`/posts/${postId}`);
       posts.value = posts.value.filter((p) => p.id !== postId);
       myPosts.value = myPosts.value.filter((p) => p.id !== postId);
+      notifyPostCreated();
     } catch (error: any) {
       throw error.response?.data || error;
     } finally {
@@ -180,6 +200,24 @@ export const usePostsStore = defineStore("posts", () => {
     myPosts.value = updateInArray(myPosts.value);
   };
 
+  // Tüm postlardaki kullanıcı bilgisini güncelle (Canlı profil güncellemesi için)
+  const updateUserInPosts = (userId: number, updates: any) => {
+    const updateAuthor = (post: Post) => {
+      // Ana postun yazarı
+      if (post.authorId === userId) {
+        post.author = { ...post.author, ...updates };
+      }
+      // Eğer bir repost ise ve orijinal postun yazarı güncellenen kullanıcı ise
+      if (post.repostOf && post.repostOf.authorId === userId) {
+        post.repostOf.author = { ...post.repostOf.author, ...updates };
+      }
+      return post;
+    };
+
+    posts.value = posts.value.map(updateAuthor);
+    myPosts.value = myPosts.value.map(updateAuthor);
+  };
+
   // Kategori filtresini sıfırla
   const resetCategory = () => {
     currentCategory.value = null;
@@ -199,6 +237,9 @@ export const usePostsStore = defineStore("posts", () => {
     deletePost,
     updatePost,
     updatePostLocally,
+    updateUserInPosts,
     resetCategory,
+    onPostCreated,
+    notifyPostCreated,
   };
 });

@@ -2,16 +2,22 @@
   <div
     class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen"
   >
-    <!-- Header with Search Bar -->
     <div
-      class="sticky top-0 z-10 backdrop-blur bg-gradient-to-b from-white/90 to-white/80 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 px-4 py-4"
+      class="sticky top-0 z-10 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-6"
     >
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-3">Ara</h2>
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </div>
+        <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Keşfet</h2>
+      </div>
 
       <!-- Search Input -->
-      <div class="relative">
+      <div class="relative group">
         <svg
-          class="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400"
+          class="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -29,7 +35,7 @@
           @keydown.enter="handleSearch"
           type="text"
           placeholder="Gönderi, kişi veya hashtag ara..."
-          class="w-full pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-white rounded-full border border-gray-200 dark:border-primary-500/20 focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 outline-none transition-all"
+          class="w-full pl-11 pr-4 py-3 bg-slate-100/50 dark:bg-white/5 text-gray-900 dark:text-white rounded-2xl border-none focus:ring-2 focus:ring-blue-500/50 outline-none transition-all text-sm"
         />
       </div>
     </div>
@@ -299,4 +305,28 @@ watch(
     }
   },
 );
+
+// CANLI PROFİL GÜNCELLEMESİ: Kendi bilgilerimiz değişirse arama sonuçlarını tazele
+watch(() => authStore.user, (newUser) => {
+  if (!newUser || !hasResults.value) return;
+
+  const userId = Number(newUser.id);
+  
+  // 1. Kullanıcılar listesindeki kendimizi güncelle
+  if (results.value.users) {
+    results.value.users = results.value.users.map(u => 
+      Number(u.id) === userId ? { ...u, ...newUser } : u
+    );
+  }
+
+  // 2. Postlardaki yazar bilgilerimizi güncelle
+  if (results.value.posts) {
+    results.value.posts = results.value.posts.map(p => {
+      if (Number(p.authorId) === userId) {
+        return { ...p, author: { ...p.author, ...newUser } };
+      }
+      return p;
+    });
+  }
+}, { deep: true });
 </script>

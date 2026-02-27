@@ -42,6 +42,45 @@ model User {
   feedbacks            Feedback[]
   reportsSent          Report[]        @relation("ReportedBy")
   reportsAgainst       Report[]        @relation("ReportedUser")
+  
+  conversations        ConversationParticipant[]
+  messagesSent         Message[] @relation("SentMessages")
+}
+
+model Conversation {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             Int      @id @default(autoincrement())
+  conversationId Int
+  userId         Int
+  joinedAt       DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             Int      @id @default(autoincrement())
+  conversationId Int
+  senderId       Int
+  content        String   @db.Text
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@index([senderId])
 }
 
 model Badge {
@@ -107,6 +146,7 @@ model Category {
 model Post {
   id         Int      @id @default(autoincrement())
   content    String?  @db.Text
+  imageUrl   String?  // Yeni eklenen alan
   published  Boolean  @default(true)
   authorId   Int
   categoryId Int?

@@ -30,11 +30,19 @@ export class FollowService {
       throw new NotFoundException('Kullanıcı bulunamadı.');
     }
 
-    // Blok kontrolü
-    const isBlocked = await this.prisma.block.findUnique({
-      where: { blockerId_blockedId: { blockerId: followingId, blockedId: followerId } }
+    // Blok kontrolü (Çift Taraflı)
+    const blockExists = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: followerId, blockedId: followingId },
+          { blockerId: followingId, blockedId: followerId }
+        ]
+      }
     });
-    if (isBlocked) throw new BadRequestException('Bu kullanıcıyı takip edemezsiniz.');
+    
+    if (blockExists) {
+      throw new BadRequestException('Engellenmiş bir kullanıcıyla takipleşemezsiniz.');
+    }
 
     const existingFollow = await this.prisma.follow.findUnique({
       where: { followerId_followingId: { followerId, followingId } },

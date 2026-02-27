@@ -89,6 +89,16 @@ export const useNotificationsStore = defineStore("notifications", () => {
     }
   };
 
+  // Bildirimlerdeki kullanıcı bilgilerini tazele (Canlı profil güncellemesi için)
+  const updateUserInNotifications = (userId: number, updates: any) => {
+    notifications.value = notifications.value.map(notification => {
+      if (Number(notification.senderId) === userId && notification.sender) {
+        notification.sender = { ...notification.sender, ...updates };
+      }
+      return notification;
+    });
+  };
+
   return {
     notifications,
     unreadCount,
@@ -98,5 +108,6 @@ export const useNotificationsStore = defineStore("notifications", () => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    updateUserInNotifications,
   };
 });

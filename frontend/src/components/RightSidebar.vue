@@ -106,7 +106,7 @@
       <div
         class="px-4 py-3 border-b border-gray-200 dark:border-primary-900/20"
       >
-        <h2 class="font-bold text-gray-900 dark:text-white">
+        <h2 class="font-black text-gray-900 dark:text-white">
           Popüler Hashtagler
         </h2>
       </div>
@@ -201,6 +201,13 @@ const refreshData = async () => {
 onMounted(async () => {
   await categoriesStore.fetchCategories();
   await refreshData();
+  
+  // Canlı Güncelleme: Her post atıldığında trendleri hemen tazele
+  postsStore.onPostCreated(() => {
+    console.log("🔥 Yeni post algılandı, trendler güncelleniyor...");
+    refreshData();
+  });
+
   refreshInterval = setInterval(refreshData, 5 * 60 * 1000);
 });
 

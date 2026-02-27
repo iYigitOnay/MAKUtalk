@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, computed, watch } from "vue";
+import { ref, computed } from "vue";
 import apiClient from "@/api/client";
 import type {
   User,
@@ -13,21 +13,11 @@ export const useAuthStore = defineStore("auth", () => {
   const token = ref<string | null>(null);
   const loading = ref(false);
 
-  // User değiştikçe localStorage'ı güncelle
-  watch(
-    () => user.value,
-    (newUser) => {
-      if (newUser) {
-        localStorage.setItem("user", JSON.stringify(newUser));
-      } else {
-        localStorage.removeItem("user");
-      }
-    },
-    { deep: true }
-  );
-
   // Computed
-  const isAuthenticated = computed(() => !!token.value);
+  const isAuthenticated = computed(() => !!token.value && !!user.value);
+  
+  // KRITIK: ID'yi number olarak garanti et
+  const userId = computed(() => user.value?.id ? Number(user.value.id) : null);
 
   // Initialize - localStorage'dan token ve user'ı yükle
   const initialize = () => {
@@ -37,10 +27,14 @@ export const useAuthStore = defineStore("auth", () => {
     if (storedToken && storedUser) {
       token.value = storedToken;
       try {
-        user.value = JSON.parse(storedUser);
+        const parsedUser = JSON.parse(storedUser);
+        // ID'yi number'a çevir
+        user.value = {
+          ...parsedUser,
+          id: Number(parsedUser.id),
+        };
       } catch (error) {
         console.error("Error parsing user from localStorage:", error);
-        // Hatalı user datasını temizle
         localStorage.removeItem("user");
         localStorage.removeItem("access_token");
       }
@@ -58,13 +52,16 @@ export const useAuthStore = defineStore("auth", () => {
       const { access_token, user: userData } = response.data;
 
       token.value = access_token;
-      user.value = userData;
+      // ID'yi number olarak kaydet
+      user.value = {
+        ...userData,
+        id: Number(userData.id),
+      };
 
       localStorage.setItem("access_token", access_token);
-      // userData zaten object, JSON.stringify ile kaydet
-      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("user", JSON.stringify(user.value));
 
-      return userData;
+      return user.value;
     } catch (error: any) {
       console.error("Login error:", error);
       throw error.response?.data || error;
@@ -87,12 +84,33 @@ export const useAuthStore = defineStore("auth", () => {
     }
   };
 
-  // Logout
+  // Logout - SOCKET TEMİZLİĞİ EKLENDİ
   const logout = () => {
+    // 1. Socket disconnect et (eğer varsa)
+    if (window.socket && window.socket.connected) {
+      console.log("🔌 Disconnecting socket on logout...");
+      window.socket.disconnect();
+      window.socket = null;
+    }
+
+    // 2. State temizle
     user.value = null;
     token.value = null;
+
+    // 3. LocalStorage temizle
     localStorage.removeItem("access_token");
     localStorage.removeItem("user");
+
+    // 4. Axios default header temizle
+    delete apiClient.defaults.headers.common["Authorization"];
+  };
+
+  // Profile Update - Canlı güncelleme için
+  const updateUser = (userData: Partial<User>) => {
+    if (user.value) {
+      user.value = { ...user.value, ...userData };
+      localStorage.setItem("user", JSON.stringify(user.value));
+    }
   };
 
   return {
@@ -100,9 +118,11 @@ export const useAuthStore = defineStore("auth", () => {
     token,
     loading,
     isAuthenticated,
+    userId, // Export et
     initialize,
     login,
     register,
     logout,
+    updateUser,
   };
 });

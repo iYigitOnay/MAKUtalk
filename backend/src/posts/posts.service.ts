@@ -9,6 +9,9 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { AiService } from '../ai/ai.service';
+import sharp from 'sharp';
+import * as fs from 'fs';
+import * as path from 'path';
 
 @Injectable()
 export class PostsService {
@@ -19,14 +22,14 @@ export class PostsService {
     private aiService: AiService,
   ) {}
 
-  async create(userId: number, createPostDto: CreatePostDto) {
+  async create(userId: number, createPostDto: CreatePostDto, file?: Express.Multer.File) {
     // Eğer kategori seçilmemişse AI kategori ve duygu analizi yapacak
     const shouldIdentifyCategory = !createPostDto.categoryId;
-    const aiAnalysis = await this.aiService.analyzePost(createPostDto.content, shouldIdentifyCategory);
+    const aiAnalysis = await this.aiService.analyzePost(createPostDto.content || '', shouldIdentifyCategory);
 
     let categoryId = createPostDto.categoryId;
 
-    // AI'dan gelen slug'ı veritabanındaki ID ile eşleştir (ID karmaşasını önler)
+    // AI'dan gelen slug'ı veritabanındaki ID ile eşleştir
     if (!categoryId && aiAnalysis.suggestedCategorySlug) {
       const suggestedCategory = await this.prisma.category.findUnique({ 
         where: { slug: aiAnalysis.suggestedCategorySlug.toLowerCase().trim() } 
@@ -34,15 +37,38 @@ export class PostsService {
       categoryId = suggestedCategory?.id;
     }
 
-    // Hala kategori yoksa "Genel" bul
     if (!categoryId) {
       const generalCategory = await this.prisma.category.findUnique({ where: { slug: 'genel' } });
       categoryId = generalCategory?.id || 1;
     }
 
+    // GÖRSEL İŞLEME
+    let imageUrl: string | null = null;
+    if (file) {
+      const uploadDir = path.join(process.cwd(), 'uploads', 'posts');
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+
+      const fileName = `post-${Date.now()}-${Math.round(Math.random() * 1e9)}.webp`;
+      const filePath = path.join(uploadDir, fileName);
+
+      try {
+        await sharp(file.buffer)
+          .resize(1200, null, { withoutEnlargement: true })
+          .webp({ quality: 80 })
+          .toFile(filePath);
+        
+        imageUrl = `/uploads/posts/${fileName}`;
+      } catch (error) {
+        this.logger.error(`Görsel işleme hatası: ${error.message}`);
+      }
+    }
+
     return this.prisma.post.create({
       data: {
         content: createPostDto.content,
+        imageUrl: imageUrl,
         published: createPostDto.published ?? true,
         authorId: userId,
         categoryId: categoryId,
@@ -69,7 +95,6 @@ export class PostsService {
     });
   }
 
-  // Diğer metodlar orijinal hallerinde kalabilir...
   async toggleRepost(userId: number, postId: number) {
     const existingRepost = await this.prisma.post.findFirst({ where: { authorId: userId, repostId: postId } });
     if (existingRepost) {
@@ -99,12 +124,12 @@ export class PostsService {
       where: { 
         published: true,
         OR: [
-          { author: { isPrivate: false } }, // Herkese açık hesaplar
-          { authorId: userId },             // Kendi postları
+          { author: { isPrivate: false } },
+          { authorId: userId },
           { 
             author: { 
               followers: { 
-                some: { followerId: userId } // Takip ettiği gizli hesaplar
+                some: { followerId: userId }
               } 
             } 
           }
@@ -182,7 +207,6 @@ export class PostsService {
   }
 
   async findUserReposts(userId: number, currentUserId?: number) {
-    // Profil sahibinin gizlilik kontrolü
     const targetUser = await this.prisma.user.findUnique({ where: { id: userId } });
     if (targetUser?.isPrivate && userId !== currentUserId) {
       const isFollowing = await this.prisma.follow.findUnique({
@@ -211,7 +235,6 @@ export class PostsService {
   }
 
   async findLikedPosts(userId: number, currentUserId?: number) {
-    // Profil sahibinin gizlilik kontrolü
     const targetUser = await this.prisma.user.findUnique({ where: { id: userId } });
     if (targetUser?.isPrivate && userId !== currentUserId) {
       const isFollowing = await this.prisma.follow.findUnique({
@@ -231,7 +254,7 @@ export class PostsService {
               include: {
                 author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
                 category: true,
-                _count: { select: { likes: true, comments: true, reposts: true } }
+                _count: { select: { likes: true, comments: true, reposts: true } },
               }
             },
             _count: { select: { likes: true, comments: true, reposts: true } },
@@ -277,7 +300,6 @@ export class PostsService {
     });
     if (!post) return null;
 
-    // Gizlilik kontrolü
     if (post.author.isPrivate && post.authorId !== currentUserId) {
       const isFollowing = await this.prisma.follow.findUnique({
         where: { followerId_followingId: { followerId: currentUserId || 0, followingId: post.authorId } }

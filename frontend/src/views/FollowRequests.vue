@@ -3,31 +3,17 @@
     class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen pb-20"
   >
     <div
-      class="sticky top-0 z-10 backdrop-blur bg-gradient-to-b from-white/90 to-white/80 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-4"
+      class="sticky top-0 z-10 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-6"
     >
-      <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
+          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+        </div>
         <div>
-          <h2
-            class="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2"
-          >
-            <svg
-              class="w-6 h-6 text-primary-600 dark:text-primary-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-              />
-            </svg>
-            Takip İstekleri
-          </h2>
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            Gizli hesabın için gelen takip isteklerini yönet
-          </p>
+          <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight">İstekler</h2>
+          <p class="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Gelen takip isteklerini yönet</p>
         </div>
       </div>
     </div>
@@ -59,7 +45,7 @@
           />
         </svg>
       </div>
-      <h2 class="text-xl font-bold text-gray-900 dark:text-white mb-2">
+      <h2 class="text-xl font-black text-gray-900 dark:text-white mb-2">
         Henüz istek yok
       </h2>
       <p class="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
@@ -85,7 +71,7 @@
             />
             <div
               v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold border-2 border-white dark:border-gray-900"
+              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black border-2 border-white dark:border-gray-900"
             >
               {{ request.sender.username.charAt(0).toUpperCase() }}
             </div>
@@ -102,7 +88,7 @@
             </p>
             <p
               v-if="request.sender.department"
-              class="text-[10px] text-blue-500 dark:text-blue-400 font-bold uppercase mt-0.5"
+              class="text-[10px] text-blue-500 dark:text-blue-400 font-black uppercase mt-0.5"
             >
               {{ request.sender.department }}
             </p>

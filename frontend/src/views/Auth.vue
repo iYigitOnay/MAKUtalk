@@ -59,9 +59,9 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v10a2 2 0 002 2z" />
               </svg>
             </div>
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">E-postanı Doğrula</h2>
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2">E-postanı Doğrula</h2>
             <p class="text-slate-500 dark:text-gray-400 text-sm mb-8">
-              <span class="font-bold text-blue-600">{{ registerForm.email }}</span> adresine 6 haneli bir kod gönderdik.
+              <span class="font-black text-blue-600">{{ registerForm.email }}</span> adresine 6 haneli bir kod gönderdik.
             </p>
             
             <form @submit.prevent="handleVerify" class="space-y-6">
@@ -97,7 +97,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
             </div>
-            <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-2">Şifre Sıfırlama</h2>
+            <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2">Şifre Sıfırlama</h2>
             <p class="text-slate-500 dark:text-gray-400 text-sm mb-8">
               {{ forgotStep === 1 ? 'Hesabına bağlı e-posta adresini gir.' : 'E-postana gelen kodu ve yeni şifreni gir.' }}
             </p>
@@ -161,7 +161,7 @@
           "
         >
           <div class="w-full max-w-[340px]">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+            <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 text-center">
               Aramıza Katıl
             </h2>
             <form @submit.prevent="handleRegister" class="space-y-4">
@@ -212,7 +212,7 @@
                 <button
                   type="button"
                   @click="activeTab = 'login'"
-                  class="text-blue-600 dark:text-blue-400 font-bold hover:underline"
+                  class="text-blue-600 dark:text-blue-400 font-black hover:underline"
                 >
                   Giriş Yap
                 </button>
@@ -231,7 +231,7 @@
           "
         >
           <div class="w-full max-w-[340px]">
-            <h2 class="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
+            <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 text-center">
               Tekrar Hoş Geldin
             </h2>
             <form @submit.prevent="handleLogin" class="space-y-4">
@@ -244,7 +244,7 @@
                 />
                 <span 
                   v-if="loginForm.email && !loginForm.email.includes('@')"
-                  class="absolute right-4 text-[10px] font-bold text-slate-400 pointer-events-none select-none uppercase tracking-tighter"
+                  class="absolute right-4 text-[10px] font-black text-slate-400 pointer-events-none select-none uppercase tracking-tighter"
                 >
                   @ogr.mehmetakif.edu.tr
                 </span>
@@ -277,7 +277,7 @@
                 <button 
                   type="button" 
                   @click="forgotStep = 1; showForgotModal = true"
-                  class="text-xs font-bold text-slate-400 hover:bg-gradient-to-r hover:from-blue-400 hover:to-purple-400 hover:bg-clip-text hover:text-transparent transition-all duration-300"
+                  class="text-xs font-black text-slate-400 hover:bg-gradient-to-r hover:from-blue-400 hover:to-purple-400 hover:bg-clip-text hover:text-transparent transition-all duration-300"
                 >
                   Şifremi Unuttum
                 </button>
@@ -286,7 +286,7 @@
                   <button
                     type="button"
                     @click="activeTab = 'register'"
-                    class="text-blue-600 dark:text-blue-400 font-bold hover:underline ml-1"
+                    class="text-blue-600 dark:text-blue-400 font-black hover:underline ml-1"
                   >
                     Kayıt Ol
                   </button>
@@ -305,7 +305,7 @@
   @apply w-full px-4 py-3 rounded-xl bg-gray-100 dark:bg-[#1a1f2e] border border-gray-200 dark:border-white/[0.07] text-gray-900 dark:text-white focus:border-blue-500/50 dark:focus:border-blue-500/50 outline-none transition-all text-sm placeholder-gray-500 dark:placeholder-gray-500;
 }
 .auth-btn {
-  @apply w-full py-3 rounded-xl text-white text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply w-full py-3 rounded-xl text-white text-sm font-black bg-gradient-to-r from-blue-600 to-purple-600 hover:shadow-lg hover:shadow-blue-500/20 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed;
 }
 </style>
 
@@ -370,7 +370,7 @@ const handleRegister = async () => {
   try {
     await apiClient.post("/users/register", registerForm.value);
     toast.success("Kayıt başarılı! Lütfen mailini kontrol et. 🎉");
-    showVerification.value = true; // Doğrulama ekranını aç
+    showVerification.value = true;
   } catch (error: any) {
     console.error("Register error:", error);
     toast.error(error.response?.data?.message || "Kayıt sırasında bir hata oluştu.");
@@ -396,7 +396,6 @@ const handleVerify = async () => {
     showVerification.value = false;
     activeTab.value = "login";
     
-    // Otomatik giriş yapmak istersen:
     await authStore.login({
       email: registerForm.value.email,
       password: registerForm.value.password,

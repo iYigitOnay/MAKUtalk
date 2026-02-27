@@ -1,7 +1,7 @@
 <!-- src/views/Home.vue -->
 <template>
   <div
-    class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen"
+    class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen font-sans"
   >
     <!-- Post Composer Section -->
     <div
@@ -20,7 +20,7 @@
             />
             <div
               v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white dark:border-gray-950 flex items-center justify-center text-white font-bold"
+              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white dark:border-gray-950 flex items-center justify-center text-white font-black"
             >
               {{ authStore.user?.username?.charAt(0).toUpperCase() }}
             </div>
@@ -31,11 +31,22 @@
         <div class="flex-1 min-w-0">
           <textarea
             v-model="newPostContent"
-            placeholder="Ne düşünüyorsun?"
+            placeholder="Ne Düşünüyorsun?"
             class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium"
             rows="3"
             :disabled="postsStore.loading"
           />
+
+          <!-- Resim Önizleme Alanı -->
+          <div v-if="selectedImagePreview" class="relative mt-4 group">
+            <img :src="selectedImagePreview" class="w-full max-h-80 object-cover rounded-2xl border border-gray-100 dark:border-primary-900/20 shadow-sm" />
+            <button 
+              @click="removeSelectedImage"
+              class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
 
           <!-- POST ALANI MERKEZLİ YARIM DAİRE (ARC) -->
           <transition
@@ -43,13 +54,13 @@
             enter-from-class="opacity-0 translate-y-4 scale-95"
             enter-to-class="opacity-100 translate-y-0 scale-100"
           >
-            <div v-if="newPostContent.trim()" class="relative mt-2 h-24 flex items-center justify-center overflow-hidden">
+            <div v-if="newPostContent.trim() || selectedImage" class="relative mt-2 h-24 flex items-center justify-center overflow-hidden">
               <div 
                 ref="composerCategoryRef"
                 class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8"
                 @scroll="handleComposerScroll"
               >
-                <!-- 🎡 AKIŞ (GRADYANLI) -->
+                <!-- AKIŞ (GRADYANLI) -->
                 <button
                   @click="selectedCategoryId = null; centerComposerItem(0)"
                   class="flex-shrink-0 snap-center transition-all duration-300 flex flex-col items-center gap-1.5 group outline-none"
@@ -66,7 +77,7 @@
                   <span :class="['text-[10px] font-black tracking-tighter uppercase transition-all duration-300', !selectedCategoryId ? 'text-blue-600 opacity-100' : 'text-gray-400 opacity-70 group-hover:opacity-100']">Akış</span>
                 </button>
 
-                <!-- 🏷️ KATEGORİLER -->
+                <!-- KATEGORİLER -->
                 <button
                   v-for="(category, index) in sortedCategories"
                   :key="category.id"
@@ -96,9 +107,21 @@
           </transition>
 
           <!-- Footer Actions -->
-          <div v-if="newPostContent.trim()" class="mt-2 flex items-center justify-between border-t border-gray-50 dark:border-primary-900/5 pt-4">
+          <div v-if="newPostContent.trim() || selectedImage" class="mt-2 flex items-center justify-between border-t border-gray-50 dark:border-primary-900/5 pt-4">
             <div class="flex items-center gap-2">
-              <button type="button" class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all">
+              <input 
+                type="file" 
+                ref="imageInputRef" 
+                class="hidden" 
+                accept="image/*" 
+                @change="handleImageSelect"
+              />
+              <button 
+                type="button" 
+                @click="imageInputRef?.click()"
+                class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all"
+                title="Resim Ekle"
+              >
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
               </button>
               <EmojiPicker :modelValue="newPostContent" @update:modelValue="(e) => (newPostContent += e)" />
@@ -106,7 +129,7 @@
             
             <button
               @click="handleCreatePost"
-              :disabled="!newPostContent.trim() || postsStore.loading"
+              :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading"
               class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full transition-all duration-300 shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50"
             >
               {{ postsStore.loading ? "..." : "PAYLAŞ" }}
@@ -116,7 +139,7 @@
       </div>
     </div>
 
-    <!-- Kategori Filtre Çubuğu (STABIL) -->
+    <!-- Kategori Filtre Çubuğu -->
     <div class="sticky top-[116px] z-[5] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10">
       <div class="flex items-center gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
         <button
@@ -154,7 +177,7 @@
         <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
       </div>
       <div v-else-if="!postsStore.posts.length" class="flex flex-col items-center justify-center h-64 text-center border-b border-gray-200 dark:border-primary-900/30 p-8">
-        <p class="text-gray-500 dark:text-gray-400 font-bold">Henüz paylaşım yok</p>
+        <p class="text-gray-500 dark:text-gray-400 font-black italic uppercase tracking-widest">Henüz paylaşım yok</p>
       </div>
       <div v-else class="divide-y divide-gray-200 dark:divide-primary-900/20">
         <PostCard v-for="post in postsStore.posts" :key="post.id" :post="post" @delete="handleDeletePost" @showComments="handleShowComments" />
@@ -184,6 +207,29 @@ const toast = useToast();
 
 const newPostContent = ref("");
 const selectedCategoryId = ref<number | null>(null);
+const selectedImage = ref<File | null>(null);
+const selectedImagePreview = ref<string | null>(null);
+const imageInputRef = ref<HTMLInputElement | null>(null);
+
+const handleImageSelect = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  if (input.files && input.files[0]) {
+    const file = input.files[0];
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Dosya boyutu çok büyük (Max 5MB)");
+      return;
+    }
+    selectedImage.value = file;
+    selectedImagePreview.value = URL.createObjectURL(file);
+  }
+};
+
+const removeSelectedImage = () => {
+  selectedImage.value = null;
+  selectedImagePreview.value = null;
+  if (imageInputRef.value) imageInputRef.value.value = "";
+};
+
 const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
 const showDeleteModal = ref(false);
@@ -207,8 +253,6 @@ const handleComposerScroll = () => {
 
   const items = el.children;
   const containerRect = el.getBoundingClientRect();
-  
-  // 🎯 ODAK NOKTASI: Tam olarak yazı alanının (composer) merkezi
   const containerCenterX = containerRect.left + containerRect.width / 2;
 
   Array.from(items).forEach((item: any) => {
@@ -216,7 +260,6 @@ const handleComposerScroll = () => {
     const itemCenterX = rect.left + rect.width / 2;
     const distanceFromCenter = Math.abs(containerCenterX - itemCenterX);
     
-    // Parabolik Yay Faktörü
     const factor = Math.min(distanceFromCenter / (el.clientWidth / 1.5), 1);
     
     const translateY = Math.pow(factor, 2) * 35; 
@@ -233,7 +276,6 @@ const centerComposerItem = (index: number) => {
   if (!el) return;
   const target = el.children[index] as HTMLElement;
   if (target) {
-    // Yazı alanı merkezine göre hizala
     const scrollPos = target.offsetLeft - (el.clientWidth / 2) + (target.clientWidth / 2);
     el.scrollTo({ left: scrollPos, behavior: 'smooth' });
   }
@@ -245,11 +287,21 @@ const selectCategory = (id: number | null) => {
 };
 
 const handleCreatePost = async () => {
-  if (!newPostContent.value.trim()) return;
+  if (!newPostContent.value.trim() && !selectedImage.value) return;
   try {
-    await postsStore.createPost(newPostContent.value, true, selectedCategoryId.value || undefined);
-    newPostContent.value = ""; selectedCategoryId.value = null; toast.success("Paylaşıldı!");
-  } catch { toast.error("Hata!"); }
+    await postsStore.createPost(
+      newPostContent.value, 
+      true, 
+      selectedCategoryId.value || undefined,
+      selectedImage.value || undefined
+    );
+    newPostContent.value = ""; 
+    selectedCategoryId.value = null; 
+    removeSelectedImage();
+    toast.success("Paylaşıldı!");
+  } catch { 
+    toast.error("Hata!"); 
+  }
 };
 
 const handleDeletePost = (id: number) => { postIdToDelete.value = id; showDeleteModal.value = true; };
@@ -272,7 +324,6 @@ watch(newPostContent, async (val) => {
   if (val.trim().length === 1) {
     await nextTick();
     handleComposerScroll();
-    // AKIŞ'ı merkeze al (İndex 0)
     centerComposerItem(0);
   }
 });

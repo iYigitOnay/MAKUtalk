@@ -13,6 +13,9 @@ import { AiModule } from './ai/ai.module';
 import { MailModule } from './mail/mail.module';
 import { CampusModule } from './campus/campus.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { NotificationsModule } from './notifications/notifications.module';
+import { HashtagModule } from './hashtags/hashtag.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({
   imports: [
@@ -32,6 +35,9 @@ import { ScheduleModule } from '@nestjs/schedule';
     AiModule,
     MailModule,
     CampusModule,
+    NotificationsModule,
+    HashtagModule,
+    ChatModule,
   ],
 })
 export class AppModule {}

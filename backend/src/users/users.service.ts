@@ -419,7 +419,7 @@ export class UsersService {
       return { blocked: false, message: 'Engel kaldırıldı.' };
     }
 
-    // Engelleme gerçekleştiğinde takipleşmeyi bitir
+    // Engelleme gerçekleştiğinde takipleşmeyi ve istekleri bitir
     await Promise.all([
       this.prisma.block.create({ data: { blockerId, blockedId } }),
       this.prisma.follow.deleteMany({
@@ -427,6 +427,14 @@ export class UsersService {
           OR: [
             { followerId: blockerId, followingId: blockedId },
             { followerId: blockedId, followingId: blockerId },
+          ],
+        },
+      }),
+      this.prisma.followRequest.deleteMany({
+        where: {
+          OR: [
+            { senderId: blockerId, receiverId: blockedId },
+            { senderId: blockedId, receiverId: blockerId },
           ],
         },
       }),

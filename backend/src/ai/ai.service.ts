@@ -65,15 +65,31 @@ export class AiService implements OnModuleInit {
 
     try {
       const prompt = includeCategory 
-        ? `ANALİZ: "${content}"
-           GÖREV: Duygu analizi yap ve en uygun kategoriyi seç.
-           KATEGORİLER: "genel", "duyuru", "etkinlik", "ariza-kayip", "satilik", "soru-cevap".
+        ? `Aşağıdaki metni analiz et ve kesinlikle belirtilen JSON formatında yanıt ver.
+           
+           METİN: "${content}"
+
+           GÖREV 1: Metnin duygusunu (sentiment) ve 0 ile 1 arasında yoğunluk skorunu (sentimentScore) belirle.
            DUYGULAR: "Neşeli", "Hüzünlü", "Kızgın", "Endişeli", "Sakin", "Meraklı", "Ciddi".
-           FORMAT (JSON): {"sentiment": "...", "sentimentScore": 0.5, "category": "slug"}`
-        : `ANALİZ: "${content}"
-           GÖREV: SADECE duygu analizi yap. Kategori belirleme.
+
+           GÖREV 2: Metin için en uygun kategori slug'ını seç. 
+           KATEGORİ SEÇİM KURALLARI:
+           - "soru-cevap": Bir soru soruluyorsa, "ne düşünüyorsunuz", "nasıl", "nerede" gibi ifadeler varsa veya topluluğun fikri isteniyorsa (Örn: "Burası hakkında ne düşünüyorsunuz?").
+           - "satilik": Bir ürün satışı, takas veya satın alma isteği varsa.
+           - "ariza-kayip": Bir eşya kayıpsa, bulunduysa veya bir teknik arıza bildiriliyorsa.
+           - "etkinlik": Bir konser, buluşma, konferans gibi gelecekteki bir organizasyondan bahsediliyorsa.
+           - "duyuru": Resmi veya önemli bir bilgilendirme yapılıyorsa.
+           - "genel": Yukarıdakilere uymayan günlük paylaşımlar ve düşünceler.
+
+           FORMAT (SADECE JSON): {"sentiment": "Duygu Adı", "sentimentScore": 0.85, "category": "kategori-slug"}`
+        : `Aşağıdaki metni analiz et ve kesinlikle belirtilen JSON formatında yanıt ver.
+           
+           METİN: "${content}"
+
+           GÖREV: SADECE duygu analizi yap.
            DUYGULAR: "Neşeli", "Hüzünlü", "Kızgın", "Endişeli", "Sakin", "Meraklı", "Ciddi".
-           FORMAT (JSON): {"sentiment": "...", "sentimentScore": 0.5, "category": null}`;
+
+           FORMAT (SADECE JSON): {"sentiment": "Duygu Adı", "sentimentScore": 0.85, "category": null}`;
 
       const result = await this.model.generateContent(prompt);
       const responseText = result.response.text();

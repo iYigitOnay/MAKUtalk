@@ -1,4 +1,4 @@
-<!-- src/views/Campus.vue -->
+﻿<!-- src/views/Campus.vue -->
 <template>
   <div class="max-w-4xl mx-auto p-6 pb-20 bg-white dark:bg-gray-950 min-h-screen font-sans">
     <!-- Header -->
@@ -6,7 +6,7 @@
       <h1 class="text-4xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic mb-2 text-center sm:text-left">
         MAKÜ <span class="bg-gradient-to-r from-blue-600 via-blue-500 to-purple-600 bg-clip-text text-transparent pr-2">Rehberi</span>
       </h1>
-      <p class="text-gray-500 font-bold uppercase tracking-widest text-[10px] opacity-70 text-center sm:text-left">Kampüs hayatına dair her şey burada.</p>
+      <p class="text-gray-500 font-black uppercase tracking-widest text-[10px] opacity-70 text-center sm:text-left">Kampüs hayatına dair her şey burada.</p>
     </header>
 
     <!-- Services Grid -->
@@ -65,7 +65,7 @@
                 <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 2v7c0 1.1.9 2 2 2h4v10a1 1 0 002 0V11h4c1.1 0 2-.9 2-2V2M7 2v4M12 2v4M17 2v4" /></svg>
                 Yemek Listesi
               </h2>
-              <div class="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl w-full sm:w-max font-bold">
+              <div class="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl w-full sm:w-max font-black">
                 <button @click="activeWeek = 'this'" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="activeWeek === 'this' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'">Bu Hafta</button>
                 <button @click="activeWeek = 'next'" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="activeWeek === 'next' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'">Gelecek Hafta</button>
               </div>
@@ -77,7 +77,7 @@
             </div>
 
             <template v-else-if="currentWeekMenu.length > 0">
-              <div v-if="activeWeek === 'this' && todayMenu" class="p-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden mb-8 font-bold">
+              <div v-if="activeWeek === 'this' && todayMenu" class="p-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden mb-8 font-black">
                 <div class="absolute top-0 right-0 p-6 opacity-10"><svg class="w-32 h-32" fill="currentColor" viewBox="0 0 24 24"><path d="M3 2v7c0 1.1.9 2 2 2h4v10a1 1 0 002 0V11h4c1.1 0 2-.9 2-2V2M7 2v4M12 2v4M17 2v4"/></svg></div>
                 <div class="relative z-10">
                   <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-80 mb-2">Bugünün Menüsü • {{ todayMenu.day }} ({{ getFormattedDate(todayMenu.day, 'this') }})</p>
@@ -91,11 +91,11 @@
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div v-for="day in currentWeekMenu" :key="day.day" class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700/50 group/day hover:border-orange-200 transition-colors">
-                  <div class="flex justify-between items-start mb-3 font-bold text-center sm:text-left">
+                  <div class="flex justify-between items-start mb-3 font-black text-center sm:text-left">
                     <p class="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase tracking-widest">{{ day.day }}</p>
                     <p class="text-[9px] text-gray-400">{{ getFormattedDate(day.day, activeWeek) }}</p>
                   </div>
-                  <div class="space-y-1 font-bold text-center sm:text-left"><p v-for="item in day.items" :key="item" class="text-xs text-gray-700 dark:text-gray-300 leading-tight">{{ item }}</p></div>
+                  <div class="space-y-1 font-black text-center sm:text-left"><p v-for="item in day.items" :key="item" class="text-xs text-gray-700 dark:text-gray-300 leading-tight">{{ item }}</p></div>
                   <p class="text-[9px] font-black text-gray-400 uppercase mt-4 text-center sm:text-left">{{ day.calorie }}</p>
                 </div>
               </div>
@@ -106,69 +106,67 @@
           <div v-if="activeSubPage === 'eduroam'" class="space-y-8 pb-10">
             <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter flex items-center gap-3">
               <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071a9.05 9.05 0 0112.728 0M1 7.071a14.121 14.121 0 0120 0" /></svg>
-              Eduroam Kurulumu
+              Eduroam Hızlı Kurulum
             </h2>
-            <div class="p-6 bg-purple-50 dark:bg-purple-900/20 rounded-[2.5rem] border border-purple-100 dark:border-purple-800 space-y-3 font-medium italic">
-              <p class="text-sm text-gray-700 dark:text-gray-200 leading-relaxed">“eduroam” Üniversitemiz kablosuz internet erişim hizmeti yayınının adıdır. Bağlanmak için üniversitemize ait e-posta hesabına (@ogr.mehmetakif.edu.tr) sahip olmanız gerekir.</p>
+            
+            <div class="p-5 bg-purple-50 dark:bg-purple-900/20 rounded-3xl border border-purple-100 dark:border-purple-800 flex items-center gap-4">
+              <div class="w-12 h-12 bg-purple-600 text-white rounded-2xl flex items-center justify-center flex-shrink-0 font-black text-lg">!</div>
+              <p class="text-xs text-purple-900 dark:text-purple-200 font-black leading-tight">
+                Giriş yaparken kullanıcı adınızın sonuna mutlaka <span class="underline decoration-2 underline-offset-2 text-purple-600">@ogr.mehmetakif.edu.tr</span> eklemelisiniz.
+              </p>
             </div>
+
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <button v-for="device in [{id:'android', n:'Android'}, {id:'ios', n:'iOS'}, {id:'windows', n:'Windows'}, {id:'macos', n:'macOS'}]" :key="device.id" @click="activeDevice = device.id" class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 font-black" :class="activeDevice === device.id ? 'border-purple-500 bg-purple-500/5 text-purple-600' : 'border-gray-50 dark:border-gray-800 text-gray-400 hover:border-purple-200'">
-                <span class="text-[10px] uppercase tracking-widest">{{ device.n }}</span>
+              <button v-for="device in [{id:'android', n:'Android'}, {id:'ios', n:'iPhone/iPad'}, {id:'windows', n:'Windows'}, {id:'macos', n:'macOS'}]" :key="device.id" @click="activeDevice = device.id" class="p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 font-black" :class="activeDevice === device.id ? 'border-purple-500 bg-purple-500/5 text-purple-600' : 'border-gray-50 dark:border-gray-800 text-gray-400 hover:border-purple-200'">
+                <span class="text-[10px] uppercase tracking-widest text-center">{{ device.n }}</span>
               </button>
             </div>
-            <div class="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div v-if="activeDevice === 'android'" class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700">
-                <p class="text-xs font-black text-purple-600 uppercase tracking-widest mb-6">Android Ayarları</p>
-                <ul class="space-y-4 text-sm text-gray-600 dark:text-gray-300 font-medium">
-                  <li class="flex gap-3"><span>1.</span><span>Ayarlar > Bağlantılar > <strong>Wi-Fi</strong>'yi açın ve <strong>eduroam</strong> seçin.</span></li>
-                  <li class="flex gap-3"><span>2.</span>
-                    <div class="flex-1"><p class="mb-2 uppercase text-[9px] opacity-60">Teknik Detaylar:</p>
-                      <div class="p-4 bg-white dark:bg-gray-950 rounded-2xl border border-purple-100 text-xs space-y-2">
-                        <div class="flex justify-between"><span>EAP Yöntemi:</span><span class="font-black text-purple-600">TTLS</span></div>
-                        <div class="flex justify-between border-t border-gray-50 pt-2"><span>Faz 2 Yetkisi:</span><span class="font-black text-purple-600">PAP</span></div>
-                        <div class="flex justify-between border-t border-gray-50 pt-2"><span>CA Sertifika:</span><span class="font-black text-purple-600">Doğrulama</span></div>
-                      </div>
-                    </div>
-                  </li>
-                  <li class="flex gap-3"><span>3.</span>
-                    <div class="flex-1"><p class="mb-2 uppercase text-[9px] opacity-60">Kimlik:</p>
-                      <div class="p-4 bg-white dark:bg-gray-950 rounded-2xl border border-purple-100 text-xs font-bold leading-relaxed">
-                        <p><strong>Kullanıcı Adı:</strong> numaran@ogr.mehmetakif.edu.tr</p>
-                        <p><strong>İsimsiz Kimlik:</strong> numaran@ogr.mehmetakif.edu.tr</p>
-                        <p><strong>Parola:</strong> OBS Şifreniz</p>
-                      </div>
-                    </div>
-                  </li>
-                </ul>
-              </div>
-              <div v-if="activeDevice === 'ios'" class="space-y-6">
-                <div class="p-6 bg-purple-600 text-white rounded-[2.5rem] shadow-xl text-center space-y-4">
-                  <p class="text-xs font-black uppercase tracking-widest opacity-80">1. Aşama: Profil İndirme</p>
-                  <a href="https://bidb.mehmetakif.edu.tr/tr/content/17628/ios-cihazlar-icin-kablosuz-internet-ayarlari" target="_blank" class="inline-flex px-8 py-3 bg-white text-purple-600 text-xs font-black rounded-xl uppercase tracking-widest shadow-lg">İndirme Sayfasına Git</a>
-                </div>
-                <div class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700">
-                  <p class="text-xs font-black text-purple-600 uppercase tracking-widest mb-6 font-black">2. Aşama: Kurulum</p>
-                  <ul class="space-y-4 text-sm text-gray-600 dark:text-gray-300 font-bold leading-relaxed">
-                    <li class="flex gap-3"><span>1.</span><span>İndirilen profile tıklayın, <strong>YÜKLE</strong> deyin ve cihaz şifrenizi girin.</span></li>
-                    <li class="flex gap-3"><span>2.</span><span>Kullanıcı adını <strong>numaran@ogr.mehmetakif.edu.tr</strong> olarak yazın.</span></li>
-                    <li class="flex gap-3"><span>3.</span><span>Sertifika ekranında <strong>GÜVEN</strong> düğmesine basın.</span></li>
-                  </ul>
+
+            <div class="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
+              <!-- Android -->
+              <div v-if="activeDevice === 'android'" class="space-y-3">
+                <div v-for="(step, i) in [
+                  {t:'Wi-Fi Ayarları', d:'Wi-Fi listesinden eduroam ağını seçin.'},
+                  {t:'EAP / Faz 2', d:'EAP: TTLS | Faz 2: PAP (veya GTC) seçin.'},
+                  {t:'Sertifika', d:'CA Sertifikası: Doğrulama veya Sertifika Belirtilmedi.'},
+                  {t:'Kimlik Bilgileri', d:'Kullanıcı Adı: numaranız@ogr.mehmetakif.edu.tr | Şifre: OBS Şifreniz'}
+                ]" :key="i" class="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-100 dark:border-gray-700 flex gap-4 items-center">
+                  <span class="w-8 h-8 bg-white dark:bg-gray-900 rounded-lg flex items-center justify-center text-xs font-black text-purple-600 border border-purple-100">{{ i+1 }}</span>
+                  <div>
+                    <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">{{ step.t }}</p>
+                    <p class="text-sm font-black text-gray-700 dark:text-gray-200">{{ step.d }}</p>
+                  </div>
                 </div>
               </div>
-              <div v-if="activeDevice === 'windows'" class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700">
-                <p class="text-xs font-black text-purple-600 uppercase tracking-widest mb-4 font-black">Windows 8, 10 ve 11</p>
-                <p class="text-sm font-medium text-gray-600 leading-relaxed mb-6 italic">Ağ listesinden eduroam seçip bağlan deyin ve @ogr uzantılı mailinizle giriş yapın.</p>
-                <div class="p-6 bg-blue-50 dark:bg-blue-900/10 rounded-2xl text-[11px] text-blue-700 dark:text-blue-400 leading-relaxed border border-blue-100">
-                  <strong>Misafir:</strong> Rektörlük B-Blok 2. Kat Bilgi İşlem'e başvurun.
+
+              <!-- iOS -->
+              <div v-if="activeDevice === 'ios'" class="space-y-4">
+                <div class="p-6 bg-purple-600 text-white rounded-[2rem] shadow-lg flex flex-col items-center gap-4">
+                  <p class="text-xs font-black uppercase tracking-[0.2em]">Hızlı Profil Kurulumu</p>
+                  <a href="https://bidb.mehmetakif.edu.tr/tr/content/17628/ios-cihazlar-icin-kablosuz-internet-ayarlari" target="_blank" class="w-full py-3 bg-white text-purple-600 text-xs font-black rounded-xl uppercase tracking-widest text-center shadow-md hover:scale-[1.02] transition-transform">PROFiLi iNDiR</a>
+                </div>
+                <div class="p-5 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 space-y-4 font-black text-sm">
+                  <p class="flex gap-3"><span>1.</span><span>Ayarlar'da "Profil İndirildi" uyarısına tıklayın.</span></p>
+                  <p class="flex gap-3"><span>2.</span><span>Yükle deyin, @ogr uzantılı mailinizi ve OBS şifrenizi girin.</span></p>
+                  <p class="flex gap-3"><span>3.</span><span>Sertifika uyarısına "GÜVEN" diyerek bitirin.</span></p>
                 </div>
               </div>
-              <div v-if="activeDevice === 'macos'" class="space-y-6">
-                <div class="p-6 bg-purple-600 text-white rounded-[2.5rem] shadow-xl text-center space-y-4">
-                  <p class="text-xs font-black uppercase tracking-widest opacity-80">Profil İndir</p>
-                  <a href="https://bidb.mehmetakif.edu.tr/tr/content/17664/macos-cihazlar-icin-kablosuz-internet-ayarlari" target="_blank" class="inline-flex px-8 py-3 bg-white text-purple-600 text-xs font-black rounded-xl uppercase tracking-widest">Resmi Sayfaya Git</a>
-                </div>
-                <div class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 text-sm font-bold leading-relaxed">
-                  İndirilen dosyayı açıp 2 kez <strong>Sürdür</strong> deyin. Kullanıcı adı: <strong>numaran@ogr</strong> ve cihaz şifrenizle onaylayın.
+
+              <!-- Windows -->
+              <div v-if="activeDevice === 'windows'" class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 space-y-4 font-black">
+                <p class="text-[10px] font-black text-purple-600 uppercase tracking-widest">Windows 10/11 için 2 Adım:</p>
+                <p class="text-sm">1. Wi-Fi listesinden <span class="text-purple-600">eduroam</span>'ı seçip Bağlan'a basın.</p>
+                <p class="text-sm">2. Kullanıcı adına <span class="bg-gray-200 dark:bg-gray-900 px-2 py-1 rounded">numaranız@ogr.mehmetakif.edu.tr</span> yazıp OBS şifrenizle giriş yapın.</p>
+              </div>
+
+              <!-- macOS -->
+              <div v-if="activeDevice === 'macos'" class="space-y-4">
+                <a href="https://bidb.mehmetakif.edu.tr/tr/content/17664/macos-cihazlar-icin-kablosuz-internet-ayarlari" target="_blank" class="block p-5 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border-2 border-dashed border-purple-200 text-center">
+                  <p class="text-xs font-black text-purple-600 uppercase tracking-widest mb-1">Otomatik Konfigürasyon</p>
+                  <p class="text-[10px] text-gray-500">Profil indirmek için buraya tıkla</p>
+                </a>
+                <div class="p-5 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 font-black text-sm space-y-2 leading-relaxed">
+                  İndirilen dosyayı açın, "Sürdür" deyin ve <span class="text-purple-600">numaranız@ogr</span> kullanıcı adınızla sistem şifrenizi kullanarak kurulumu tamamlayın.
                 </div>
               </div>
             </div>
@@ -181,16 +179,16 @@
                 <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
               </div>
               <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">Veriler <span class="text-emerald-600">İşleniyor</span></h2>
-              <p class="text-sm text-gray-500 dark:text-gray-400 font-bold max-w-sm mx-auto leading-relaxed">MAKUtalk topluluğu büyüdükçe, kampüsün nabzını tutan algoritmalarımız burayı dolduracak.</p>
+              <p class="text-sm text-gray-500 dark:text-gray-400 font-black max-w-sm mx-auto leading-relaxed">MAKUtalk topluluğu büyüdükçe, kampüsün nabzını tutan algoritmalarımız burayı dolduracak.</p>
             </div>
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div v-for="feature in [{i:'🔥', t:'Popüler Kategoriler', d:'Haftanın en çok paylaşım yapılan konuları.'}, {i:'📊', t:'Etkileşim Zirvesi', d:'Kampüsün en çok konuşulan Remaküleri.'}, {i:'⏰', t:'Aktif Saatler', d:'Öğrencilerin en aktif olduğu zaman dilimleri.'}, {i:'🧠', t:'Duygu Analizi', d:'Topluluğun genel modu (Mutlu, heyecanlı vb.)'}]" :key="feature.t" class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 space-y-2">
+              <div v-for="feature in [{i:'🔥', t:'Popüler Kategoriler', d:'Haftanın en çok paylaşım yapılan konuları.'}, {i:'📈', t:'Etkileşim Zirvesi', d:'Kampüsün en çok konuşulan Remaküleri.'}, {i:'⏱️', t:'Aktif Saatler', d:'Öğrencilerin en aktif olduğu zaman dilimleri.'}, {i:'🧠', t:'Duygu Analizi', d:'Topluluğun genel modu (Mutlu, heyecanlı vb.)'}]" :key="feature.t" class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 space-y-2">
                 <div class="w-10 h-10 bg-white dark:bg-gray-900 rounded-xl flex items-center justify-center text-lg shadow-sm border border-gray-100 dark:border-gray-800">{{ feature.i }}</div>
                 <p class="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white">{{ feature.t }}</p>
                 <p class="text-[11px] text-gray-500 dark:text-gray-400 font-medium leading-tight">{{ feature.d }}</p>
               </div>
             </div>
-            <div class="p-6 bg-emerald-600 text-white rounded-[2rem] shadow-xl text-center"><p class="text-xs font-black uppercase tracking-[0.2em] mb-1">Çok Yakında</p><p class="text-sm font-bold opacity-90 italic">"Algoritmalarımız kampüsü tanıyor..."</p></div>
+            <div class="p-6 bg-emerald-600 text-white rounded-[2rem] shadow-xl text-center"><p class="text-xs font-black uppercase tracking-[0.2em] mb-1">Çok Yakında</p><p class="text-sm font-black opacity-90 italic">"Algoritmalarımız kampüsü tanıyor..."</p></div>
           </div>
         </div>
       </div>

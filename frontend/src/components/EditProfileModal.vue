@@ -21,13 +21,13 @@
           <div class="h-32 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl overflow-hidden relative group">
             <img v-if="editData.coverUrl" :src="editData.coverUrl" class="w-full h-full object-cover" />
             <div class="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <span class="text-white text-xs font-bold bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm">Kapak Fotoğrafı URL Değiştir</span>
+              <span class="text-white text-xs font-black bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-sm">Kapak Fotoğrafı URL Değiştir</span>
             </div>
           </div>
           <div class="absolute -bottom-10 left-6">
             <div class="p-1 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 shadow-xl relative group">
               <img v-if="editData.avatarUrl" :src="editData.avatarUrl" class="w-24 h-24 rounded-full border-4 border-white dark:border-gray-900 object-cover" />
-              <div v-else class="w-24 h-24 rounded-full border-4 border-white dark:border-gray-900 bg-blue-500 flex items-center justify-center text-white text-2xl font-bold">
+              <div v-else class="w-24 h-24 rounded-full border-4 border-white dark:border-gray-900 bg-blue-500 flex items-center justify-center text-white text-2xl font-black">
                 {{ userInitial }}
               </div>
               <div class="absolute inset-0 rounded-full bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
@@ -41,35 +41,35 @@
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="space-y-1.5">
             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ad Soyad</label>
-            <input v-model="editData.fullName" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-bold" placeholder="Adınız Soyadınız" />
+            <input v-model="editData.fullName" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-black" placeholder="Adınız Soyadınız" />
           </div>
           <div class="space-y-1.5">
             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kullanıcı Adı</label>
-            <input v-model="editData.username" type="text" disabled class="w-full px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800/50 border-2 border-transparent text-gray-400 outline-none text-sm font-bold cursor-not-allowed" />
+            <input v-model="editData.username" type="text" disabled class="w-full px-4 py-3 rounded-2xl bg-gray-100 dark:bg-gray-800/50 border-2 border-transparent text-gray-400 outline-none text-sm font-black cursor-not-allowed" />
           </div>
           <div class="space-y-1.5">
             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Bölüm</label>
-            <input v-model="editData.department" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-bold" placeholder="Örn: Bilgisayar Mühendisliği" />
+            <input v-model="editData.department" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-black" placeholder="Örn: Bilgisayar Mühendisliği" />
           </div>
           <div class="space-y-1.5">
             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sınıf / Yıl</label>
-            <input v-model="editData.class" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-bold" placeholder="Örn: 3. Sınıf" />
+            <input v-model="editData.class" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-black" placeholder="Örn: 3. Sınıf" />
           </div>
         </div>
 
         <div class="space-y-1.5">
           <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Biyografi</label>
-          <textarea v-model="editData.bio" rows="3" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-bold resize-none" placeholder="Kendinden bahset..."></textarea>
+          <textarea v-model="editData.bio" rows="3" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-black resize-none" placeholder="Kendinden bahset..."></textarea>
         </div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div class="space-y-1.5">
             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Profil Fotoğrafı URL</label>
-            <input v-model="editData.avatarUrl" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-bold" placeholder="https://..." />
+            <input v-model="editData.avatarUrl" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-black" placeholder="https://..." />
           </div>
           <div class="space-y-1.5">
             <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Kapak Fotoğrafı URL</label>
-            <input v-model="editData.coverUrl" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-bold" placeholder="https://..." />
+            <input v-model="editData.coverUrl" type="text" class="w-full px-4 py-3 rounded-2xl bg-gray-50 dark:bg-gray-800 border-2 border-transparent focus:border-blue-500 outline-none transition-all text-sm font-black" placeholder="https://..." />
           </div>
         </div>
 
@@ -80,8 +80,8 @@
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
             </div>
             <div>
-              <p class="text-sm font-bold text-gray-900 dark:text-white">Gizli Hesap</p>
-              <p class="text-[10px] text-gray-400 font-bold uppercase">Sadece takipçilerin görür</p>
+              <p class="text-sm font-black text-gray-900 dark:text-white">Gizli Hesap</p>
+              <p class="text-[10px] text-gray-400 font-black uppercase">Sadece takipçilerin görür</p>
             </div>
           </div>
           <button 

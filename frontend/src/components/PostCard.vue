@@ -5,24 +5,24 @@
     class="p-4 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-900/70 transition-colors cursor-pointer border-b border-gray-200 dark:border-primary-900/20"
   >
     <!-- Repost Header -->
-    <div v-if="post.repostOf" class="flex items-center gap-2 mb-2 ml-9 text-gray-500 dark:text-gray-400 text-sm font-semibold">
+    <div v-if="post.repostOf" class="flex items-center gap-2 mb-2 ml-9 text-gray-500 dark:text-gray-400 text-sm font-semibold" @click.stop>
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m0 0H15" />
       </svg>
-      <router-link :to="`/profile/${post.author?.username}`" @click.stop class="hover:underline">
+      <router-link :to="`/profile/${post.author?.username}`" class="hover:underline">
         {{ isMe ? 'Sen' : post.author?.fullName || post.author?.username }}
       </router-link> 
       remaküledi
     </div>
 
     <!-- Main Post Content -->
-    <div class="flex gap-4">
+    <div class="flex gap-4 items-start">
       <!-- Avatar -->
       <router-link
         v-if="displayPost.author"
         :to="`/profile/${displayPost.author.username}`"
         @click.stop
-        class="flex-shrink-0"
+        class="flex-shrink-0 relative z-10"
       >
         <img
           v-if="displayPost.author.avatarUrl"
@@ -42,11 +42,10 @@
       <div class="flex-1 min-w-0">
         <!-- Header Row -->
         <div class="flex items-center justify-between gap-2 mb-1">
-          <div class="flex items-center gap-2 min-w-0" v-if="displayPost.author">
+          <div class="flex items-center gap-2 min-w-0" v-if="displayPost.author" @click.stop>
             <router-link
               :to="`/profile/${displayPost.author.username}`"
-              @click.stop
-              class="font-bold text-gray-900 dark:text-white truncate hover:underline flex items-center gap-1.5"
+              class="font-black text-gray-900 dark:text-white truncate hover:underline flex items-center gap-1.5"
             >
               {{ displayPost.author.fullName || displayPost.author.username }}
               
@@ -82,7 +81,6 @@
             </router-link>
             <router-link
               :to="`/profile/${displayPost.author.username}`"
-              @click.stop
               class="text-gray-500 dark:text-gray-400 truncate text-sm"
             >
               @{{ displayPost.author.username }}
@@ -122,21 +120,31 @@
           <HashtagText :text="displayPost.content || ''" />
         </p>
 
+        <!-- Post Image -->
+        <div v-if="displayPost.imageUrl" class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 shadow-sm bg-slate-50 dark:bg-gray-800">
+          <img 
+            :src="getImageUrl(displayPost.imageUrl)" 
+            class="w-full h-auto max-h-[512px] object-cover hover:scale-[1.01] transition-transform duration-500" 
+            alt="Post content" 
+            loading="lazy"
+          />
+        </div>
+
         <!-- Action Buttons -->
         <div class="flex justify-between text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-50 dark:border-primary-900/10">
           <button v-if="authStore.isAuthenticated" @click.stop="handleLikeToggle" :disabled="likeLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 group" :class="{ 'text-red-600': displayPost.isLiked }">
             <svg class="w-5 h-5 transition-transform group-active:scale-125" :class="displayPost.isLiked ? 'fill-red-600' : 'fill-none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-            <span class="text-xs font-bold">{{ displayPost._count?.likes || 0 }}</span>
+            <span class="text-xs font-black">{{ displayPost._count?.likes || 0 }}</span>
           </button>
 
           <button @click.stop="$emit('showComments', displayPost.id)" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-primary-50 dark:hover:bg-primary-900/20 hover:text-primary-600 group">
             <svg class="w-5 h-5 transition-transform group-active:scale-125" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
-            <span class="text-xs font-bold">{{ displayPost._count?.comments || 0 }}</span>
+            <span class="text-xs font-black">{{ displayPost._count?.comments || 0 }}</span>
           </button>
 
           <button v-if="authStore.isAuthenticated" @click.stop="handleRepost" :disabled="repostLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-green-50 dark:hover:bg-green-900/20 hover:text-green-600 group" :class="{ 'text-green-600': displayPost.isReposted }">
             <svg class="w-5 h-5 transition-transform group-active:scale-125" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m0 0H15" /></svg>
-            <span class="text-xs font-bold">{{ displayPost._count?.reposts || 0 }}</span>
+            <span class="text-xs font-black">{{ displayPost._count?.reposts || 0 }}</span>
           </button>
         </div>
       </div>
@@ -230,5 +238,12 @@ const formatDate = (date: string) => {
   const diffHours = Math.floor(diffMs / 3600000);
   if (diffHours < 24) return `${diffHours}s`;
   return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+};
+
+const getImageUrl = (path: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
+  return `${baseUrl}${path}`;
 };
 </script>

@@ -110,8 +110,17 @@
         <p
           class="text-[17px] text-gray-900 dark:text-white leading-relaxed whitespace-pre-wrap break-words mb-4"
         >
-          <HashtagText :text="post.content" />
+          <HashtagText :text="post.content || ''" />
         </p>
+
+        <!-- Post Image -->
+        <div v-if="post.imageUrl" class="mb-6 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm bg-slate-50 dark:bg-gray-900/40">
+          <img 
+            :src="getImageUrl(post.imageUrl)" 
+            class="w-full h-auto max-h-[600px] object-contain mx-auto" 
+            alt="Post content" 
+          />
+        </div>
 
         <!-- Duygu Analizi -->
         <div v-if="post.sentiment" class="mb-4">
@@ -469,6 +478,14 @@ function focusCommentInput() {
   commentInput.value?.scrollIntoView({ behavior: "smooth", block: "center" });
 }
 
+const getImageUrl = (path: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  // Backend URL'ini çevre değişkeninden veya varsayılan değerden al
+  const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
+  return `${baseUrl}${path}`;
+};
+
 const sentimentClass = (s: string) =>
   ({
     POSITIVE:
@@ -508,5 +525,26 @@ const formatFullDate = (date: string) => {
   });
 };
 
-import { computed } from "vue";
+import { computed, watch } from "vue";
+
+// CANLI PROFİL GÜNCELLEMESİ: Kendi bilgilerimiz değişirse sayfadaki verileri tazele
+watch(() => authStore.user, (newUser) => {
+  if (!newUser) return;
+  const userId = Number(newUser.id);
+  
+  // 1. Eğer postun yazarı bizsek, post yazar bilgisini güncelle
+  if (post.value && Number(post.value.authorId || post.value.author?.id) === userId) {
+    post.value.author = { ...post.value.author, ...newUser };
+  }
+
+  // 2. Yorumlardaki kendi bilgilerimizi güncelle
+  if (comments.value.length > 0) {
+    comments.value = comments.value.map(c => {
+      if (Number(c.userId || c.author?.id) === userId) {
+        return { ...c, author: { ...c.author, ...newUser } };
+      }
+      return c;
+    });
+  }
+}, { deep: true });
 </script>
