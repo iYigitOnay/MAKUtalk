@@ -49,31 +49,15 @@
             >
               {{ displayPost.author.fullName || displayPost.author.username }}
               
-              <!-- Rozetler (Anasayfa Akışı - İsim Yanı) -->
+              <!-- Rozetler -->
               <div v-if="displayPost.author && (displayPost.author.badges?.length || displayPost.author.role === 'ADMIN')" class="flex gap-1 flex-shrink-0 items-center ml-1">
-                <!-- Kurucu (Admin Otomatik) -->
                 <div v-if="displayPost.author.role === 'ADMIN'" class="flex items-center justify-center group relative">
-                  <div 
-                    class="p-0.5 rounded-full text-white shadow-sm transition-transform hover:scale-110"
-                    :style="{ 
-                      backgroundColor: '#1E3A8A',
-                      boxShadow: '0 0 8px rgba(30, 58, 138, 0.4)'
-                    }"
-                  >
+                  <div class="p-0.5 rounded-full text-white shadow-sm transition-transform hover:scale-110" :style="{ backgroundColor: '#1E3A8A', boxShadow: '0 0 8px rgba(30, 58, 138, 0.4)' }">
                     <div class="w-2.5 h-2.5" v-html="getBadgeIcon('founder')"></div>
                   </div>
                 </div>
-
                 <div v-for="ub in displayPost.author.badges" :key="ub.id || ub.badge?.id" class="flex items-center justify-center group relative">
-                  <div 
-                    v-if="ub.badge"
-                    class="p-0.5 rounded-full shadow-sm transition-transform hover:scale-110 border"
-                    :style="{ 
-                      backgroundColor: ub.badge.color,
-                      color: ub.badge.color === '#FFFFFF' || ub.badge.color.toLowerCase() === '#ffffff' ? '#1e293b' : 'white',
-                      borderColor: ub.badge.color === '#FFFFFF' || ub.badge.color.toLowerCase() === '#ffffff' ? '#e2e8f0' : 'transparent'
-                    }"
-                  >
+                  <div v-if="ub.badge" class="p-0.5 rounded-full shadow-sm transition-transform hover:scale-110 border" :style="{ backgroundColor: ub.badge.color, color: ub.badge.color === '#FFFFFF' || ub.badge.color.toLowerCase() === '#ffffff' ? '#1e293b' : 'white', borderColor: ub.badge.color === '#FFFFFF' || ub.badge.color.toLowerCase() === '#ffffff' ? '#e2e8f0' : 'transparent' }">
                     <div class="w-2.5 h-2.5" v-html="getBadgeIcon(ub.badge.icon)"></div>
                   </div>
                 </div>
@@ -88,18 +72,79 @@
             <p class="text-gray-500 dark:text-gray-400 text-xs">· {{ formatDate(displayPost.createdAt) }}</p>
           </div>
 
-          <!-- Owner Actions -->
-          <div v-if="isOwner" class="flex gap-1">
+          <!-- Options Menu (Three Dots) -->
+          <div class="relative flex-shrink-0" @click.stop>
             <button
-              @click.stop="$emit('delete', post.id)"
-              class="p-2 text-gray-400 hover:text-red-600 rounded-full transition-colors"
+              @click="showMenu = !showMenu"
+              class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-all"
+              :class="{ 'text-blue-600 bg-blue-50 dark:bg-blue-900/20': showMenu }"
             >
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
               </svg>
             </button>
+
+            <!-- Dropdown -->
+            <transition
+              enter-active-class="transition duration-200 ease-out"
+              enter-from-class="opacity-0 scale-95 translate-y-[-10px]"
+              enter-to-class="opacity-100 scale-100 translate-y-0"
+              leave-active-class="transition duration-150 ease-in"
+              leave-from-class="opacity-100 scale-100 translate-y-0"
+              leave-to-class="opacity-0 scale-95 translate-y-[-10px]"
+            >
+              <div
+                v-if="showMenu"
+                class="absolute right-0 mt-1 w-48 bg-white/90 dark:bg-gray-900/95 backdrop-blur-xl border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl z-[100] py-1.5 overflow-hidden"
+              >
+                <!-- HERKES: Bağlantıyı Kopyala -->
+                <button
+                  @click="handleCopyLink"
+                  class="w-full text-left px-3 py-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2.5"
+                >
+                  <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                  Bağlantıyı Kopyala
+                </button>
+
+                <!-- DİĞERLERİ: Rapor Et -->
+                <button
+                  v-if="!isOwner"
+                  @click="handleReport"
+                  class="w-full text-left px-3 py-2 text-[13px] font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-950/20 transition-colors flex items-center gap-2.5"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                  Rapor Et
+                </button>
+
+                <!-- SAHİBİ: Sil -->
+                <button
+                  v-if="isOwner"
+                  @click="$emit('delete', post.id); showMenu = false"
+                  class="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors flex items-center gap-2.5"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                  Gönderiyi Sil
+                </button>
+
+                <!-- ADMIN: Özel Aksiyonlar -->
+                <div v-if="isAdmin" class="mt-1.5 pt-1.5 border-t border-gray-100 dark:border-white/5">
+                  <p class="px-3 py-1 text-[8px] font-bold text-gray-400 uppercase tracking-[0.2em] mb-0.5">YÖNETİCİ</p>
+                  
+                  <button
+                    @click="handleRefreshSentiment"
+                    class="w-full text-left px-3 py-2 text-[13px] font-semibold text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors flex items-center gap-2.5"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    AI Analizini Yenile
+                  </button>
+                </div>
+              </div>
+            </transition>
           </div>
         </div>
+
+        <!-- Global Overlay to close menu -->
+        <div v-if="showMenu" @click="showMenu = false" class="fixed inset-0 z-[90] bg-transparent"></div>
 
         <!-- Category & Sentiment Badges -->
         <div class="flex flex-wrap gap-2 mb-2">
@@ -169,6 +214,40 @@ const toast = useToast();
 
 const likeLoading = ref(false);
 const repostLoading = ref(false);
+const showMenu = ref(false);
+
+const isAdmin = computed(() => 
+  authStore.user?.role === 'ADMIN' || 
+  authStore.user?.email === '2312101063@ogr.mehmetakif.edu.tr'
+);
+
+const handleCopyLink = () => {
+  const url = `${window.location.origin}/post/${displayPost.value.id}`;
+  navigator.clipboard.writeText(url);
+  toast.success("Bağlantı kopyalandı! 🔗");
+  showMenu.value = false;
+};
+
+const handleReport = () => {
+  // Rapor modalını tetikle (PostDetail veya Profile üzerinden)
+  toast.info("İçerik bildirimi için post detayına gidin.");
+  showMenu.value = false;
+};
+
+const handleRefreshSentiment = async () => {
+  try {
+    const res = await postsStore.refreshSentiment(displayPost.value.id);
+    postsStore.updatePostLocally(displayPost.value.id, { 
+      sentiment: res.sentiment,
+      sentimentScore: res.sentimentScore 
+    });
+    toast.success("AI Analizi yenilendi! 🧠");
+  } catch (error) {
+    toast.error("AI analizi başarısız.");
+  } finally {
+    showMenu.value = false;
+  }
+};
 
 const emit = defineEmits<{
   edit: [post: Post];

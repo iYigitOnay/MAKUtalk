@@ -13,7 +13,8 @@ export function useSocket() {
   const connect = () => {
     // Zaten bağlı mı?
     if (socket && socket.connected) {
-      console.log("✅ Socket already connected");
+      console.log("✅ Socket already connected, resetting listeners");
+      setupListeners();
       return;
     }
 
@@ -35,6 +36,19 @@ export function useSocket() {
       transports: ["websocket", "polling"],
     });
 
+    setupListeners();
+  };
+
+  const setupListeners = () => {
+    if (!socket) return;
+
+    // Eskileri temizle (Duplicate engellemek için)
+    socket.off("connect");
+    socket.off("disconnect");
+    socket.off("connect_error");
+    socket.off("new_message");
+    socket.off("user_typing");
+
     socket.on("connect", () => {
       isConnected.value = true;
       console.log(`✅ Socket connected: ${socket?.id}`);
@@ -51,30 +65,26 @@ export function useSocket() {
 
     // Yeni mesaj geldiğinde
     socket.on("new_message", (message: any) => {
-      console.log("📩 New message received:", message);
+      console.log("📩 New message received via socket:", message.content.substring(0, 20));
       
-      // KRITIK: ID'leri normalize et
       const normalizedMessage = {
         ...message,
         senderId: Number(message.senderId),
         conversationId: Number(message.conversationId),
       };
 
-      // Aktif konuşmadaysa ekle
-      if (chatStore.activeConversation?.id === normalizedMessage.conversationId) {
+      const activeConvId = chatStore.activeConversation?.id;
+      if (activeConvId && Number(activeConvId) === Number(normalizedMessage.conversationId)) {
         chatStore.addMessage(normalizedMessage);
       }
 
-      // Konuşma listesini güncelle
       chatStore.fetchConversations();
     });
 
-    // Typing indicator
     socket.on("user_typing", (data: any) => {
-      console.log("⌨️ User typing:", data);
+      // Typing logic buraya gelebilir
     });
 
-    // Global socket referansı (logout için)
     (window as any).socket = socket;
   };
 

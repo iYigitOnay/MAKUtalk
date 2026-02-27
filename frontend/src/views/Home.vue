@@ -6,7 +6,7 @@
     <!-- Post Composer Section -->
     <div
       v-if="authStore.isAuthenticated"
-      class="sticky top-0 z-10 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-4"
+      class="sticky top-0 z-40 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-4"
     >
       <div class="flex gap-4">
         <!-- Avatar -->
@@ -140,7 +140,7 @@
     </div>
 
     <!-- Kategori Filtre Çubuğu -->
-    <div class="sticky top-[116px] z-[5] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10">
+    <div class="sticky top-[116px] z-30 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10">
       <div class="flex items-center gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
         <button
           @click="selectCategory(null)"

@@ -137,9 +137,9 @@
             </p>
           </div>
           <div v-else class="max-w-4xl mx-auto flex items-end gap-2 md:gap-3">
-            <div class="flex-1 bg-slate-100/80 dark:bg-white/5 rounded-3xl border border-transparent focus-within:border-indigo-500/30 focus-within:bg-white dark:focus-within:bg-[#0f172a] transition-all duration-300 flex items-end p-1.5 md:p-2 shadow-inner min-w-0">
+            <div class="flex-1 bg-slate-100/80 dark:bg-white/5 rounded-3xl border border-transparent focus-within:border-indigo-500/20 transition-all duration-300 flex items-end p-1.5 md:p-2 shadow-inner min-w-0">
               <div class="flex-shrink-0"><EmojiPicker :modelValue="messageInput" @update:modelValue="(e) => (messageInput += e)" class="mb-1.5 ml-1" /></div>
-              <textarea v-model="messageInput" @input="handleTyping" @keydown.enter.prevent="handleSendMessage" placeholder="Bir mesaj yazın..." rows="1" class="flex-1 bg-transparent border-none focus:ring-0 text-sm md:text-[15px] font-medium py-2.5 px-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none max-h-40 overflow-y-auto"></textarea>
+              <textarea v-model="messageInput" @input="handleTyping" @keydown.enter.prevent="handleSendMessage" placeholder="Bir mesaj yazın..." rows="1" class="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-sm md:text-[15px] font-medium py-2.5 px-2 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 resize-none max-h-40 overflow-y-auto"></textarea>
             </div>
             <button @click="handleSendMessage" :disabled="!messageInput.trim()" class="w-11 h-11 md:w-12 md:h-12 rounded-2xl text-white flex items-center justify-center transition-all shadow-lg active:scale-95 flex-shrink-0 mb-0.5 group" :style="{ backgroundColor: currentThemeColor, boxShadow: `0 10px 15px -3px ${currentThemeColor}40` }"><svg class="w-5 h-5 md:w-6 md:h-6 transform group-hover:rotate-12 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" /></svg></button>
           </div>
@@ -197,19 +197,35 @@ const themes = [
   { name: 'Mor', color: '#9333ea' },
 ];
 const currentThemeColor = ref('#4f46e5');
+
 const loadTheme = () => {
-  if (!chatStore.activeConversation) return;
-  const savedThemes = JSON.parse(localStorage.getItem('chat_themes') || '{}');
-  currentThemeColor.value = savedThemes[chatStore.activeConversation.id] || '#4f46e5';
+  if (chatStore.activeConversation?.themeColor) {
+    currentThemeColor.value = chatStore.activeConversation.themeColor;
+  } else {
+    currentThemeColor.value = '#4f46e5';
+  }
 };
-const setTheme = (color: string) => {
+
+const setTheme = async (color: string) => {
   if (!chatStore.activeConversation) return;
-  const savedThemes = JSON.parse(localStorage.getItem('chat_themes') || '{}');
-  savedThemes[chatStore.activeConversation.id] = color;
-  localStorage.setItem('chat_themes', JSON.stringify(savedThemes));
-  currentThemeColor.value = color;
-  showMoreMenu.value = false;
-  toast.success("Sohbet teması güncellendi ✨");
+  
+  try {
+    // 1. Backend'e kaydet
+    await apiClient.post(`/chat/theme/${chatStore.activeConversation.id}`, { color });
+    
+    // 2. Yerel state'i güncelle
+    currentThemeColor.value = color;
+    chatStore.activeConversation.themeColor = color;
+    
+    // 3. Konuşma listesindeki rengi de güncelle (Opsiyonel ama şık olur)
+    const conv = chatStore.conversations.find(c => c.id === chatStore.activeConversation?.id);
+    if (conv) conv.themeColor = color;
+
+    showMoreMenu.value = false;
+    toast.success("Sohbet teması kalıcı olarak güncellendi ✨");
+  } catch (error) {
+    toast.error("Tema güncellenemedi.");
+  }
 };
 
 // Şikayet Kategorileri
@@ -268,12 +284,25 @@ const decrypt = (encryptedText: string) => {
 const isMyMessage = (senderId: number | string) => Number(senderId) === currentUserId.value;
 const handleSendMessage = () => {
   if (!messageInput.value.trim() || !chatStore.activeConversation || !currentUserId.value) return;
-  if (chatStore.activeConversation.isBlockedByMe || chatStore.activeConversation.amIBlocked || chatStore.activeConversation.isPrivateAndNotFollowing) { toast.error("Mesaj gönderilemedi."); return; }
+  if (chatStore.activeConversation.isBlockedByMe || chatStore.activeConversation.amIBlocked || chatStore.activeConversation.isPrivateAndNotFollowing) { 
+    toast.error("Mesaj gönderilemedi."); 
+    return; 
+  }
+  
   const otherId = otherUser.value?.id;
-  if (!otherId) { toast.error("Alıcı bulunamadı"); return; }
-  sendMessage(chatStore.activeConversation.id, CryptoJS.AES.encrypt(messageInput.value.trim(), secretKey).toString(), Number(otherId));
+  if (!otherId) { 
+    toast.error("Alıcı bulunamadı"); 
+    return; 
+  }
+
+  // Mesajı şifrele ve gönder
+  const encryptedContent = CryptoJS.AES.encrypt(messageInput.value.trim(), secretKey).toString();
+  sendMessage(chatStore.activeConversation.id, encryptedContent, Number(otherId));
+  
+  // Kutuyu temizle
   messageInput.value = "";
-  scrollToBottom();
+  
+  // Mesaj eklendiği için otomatik aşağı kayacak (watch chatStore.messages.length)
 };
 let typingTimeout: any = null;
 const handleTyping = () => {

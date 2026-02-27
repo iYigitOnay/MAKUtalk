@@ -60,6 +60,7 @@ model ConversationParticipant {
   id             Int      @id @default(autoincrement())
   conversationId Int
   userId         Int
+  themeColor     String   @default("#4f46e5")
   joinedAt       DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)

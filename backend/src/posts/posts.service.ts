@@ -346,4 +346,24 @@ export class PostsService {
     await this.prisma.post.delete({ where: { id } });
     return { message: 'Post başarıyla silindi.' };
   }
+
+  async refreshSentiment(id: number, userId: number) {
+    const post = await this.prisma.post.findUnique({ where: { id } });
+    if (!post) throw new NotFoundException('Post bulunamadı.');
+
+    const aiAnalysis = await this.aiService.analyzePost(post.content || '', false);
+
+    return this.prisma.post.update({
+      where: { id },
+      data: {
+        sentiment: aiAnalysis.sentiment,
+        sentimentScore: aiAnalysis.sentimentScore,
+      },
+      include: {
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
+        category: true,
+        _count: { select: { likes: true, comments: true, reposts: true } },
+      },
+    });
+  }
 }

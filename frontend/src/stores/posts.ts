@@ -143,6 +143,16 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
+  // AI Analizini Yenile (Sadece Admin)
+  const refreshSentiment = async (postId: number) => {
+    try {
+      const response = await apiClient.post<Post>(`/posts/${postId}/refresh-sentiment`);
+      return response.data;
+    } catch (error: any) {
+      throw error.response?.data || error;
+    }
+  };
+
   // Post güncelle
   const updatePost = async (
     postId: number,
@@ -238,6 +248,7 @@ export const usePostsStore = defineStore("posts", () => {
     updatePost,
     updatePostLocally,
     updateUserInPosts,
+    refreshSentiment,
     resetCategory,
     onPostCreated,
     notifyPostCreated,

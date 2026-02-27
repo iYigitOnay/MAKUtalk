@@ -31,4 +31,14 @@ export class ChatController {
   async deleteConversation(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
     return this.chatService.deleteConversation(user.id, +conversationId);
   }
+
+  // Sohbet rengini güncelle
+  @Post('theme/:conversationId')
+  async updateThemeColor(
+    @CurrentUser() user: any,
+    @Param('conversationId') conversationId: string,
+    @Body('color') color: string
+  ) {
+    return this.chatService.updateThemeColor(user.id, +conversationId, color);
+  }
 }

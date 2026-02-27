@@ -112,4 +112,10 @@ export class PostsController {
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
     return this.postsService.remove(id, user.id);
   }
+
+  @Post(':id/refresh-sentiment')
+  @UseGuards(JwtAuthGuard)
+  refreshSentiment(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
+    return this.postsService.refreshSentiment(id, user.id);
+  }
 }

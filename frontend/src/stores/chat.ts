@@ -70,15 +70,20 @@ export const useChatStore = defineStore("chat", () => {
   };
 
   const addMessage = (message: any) => {
-    // KRITIK: ID'yi number olarak ekle
+    // ID ve ConversationID'leri normalize et
     const normalizedMessage = {
       ...message,
+      id: message.id, // Backend'den gelen asıl ID
       senderId: Number(message.senderId),
       conversationId: Number(message.conversationId),
     };
 
-    // Duplicate kontrolü
-    if (!messages.value.find(m => m.id === normalizedMessage.id)) {
+    console.log("📍 Adding message to store:", normalizedMessage.content.substring(0, 20));
+
+    // Duplicate kontrolü (Asıl ID varsa ona göre, yoksa geçici bir kontrol)
+    const exists = messages.value.some(m => m.id === normalizedMessage.id);
+    
+    if (!exists) {
       messages.value.push(normalizedMessage);
     }
   };
