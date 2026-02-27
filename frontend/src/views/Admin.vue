@@ -14,7 +14,7 @@
           <h1 class="text-4xl font-black text-white uppercase tracking-tighter italic leading-none">
             Komuta <span class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Merkezi</span>
           </h1>
-          <p class="text-slate-400 text-sm font-bold mt-2 uppercase tracking-widest opacity-70">MAKUtalk v1.3.5 • Denetim Paneli</p>
+          <p class="text-slate-400 text-sm font-bold mt-2 uppercase tracking-widest opacity-70">MAKUtalk v1.4.0 • Denetim Paneli</p>
         </div>
         <div class="hidden sm:block text-right">
           <p class="text-white font-black text-xl italic tracking-tighter">{{ stats.totalUsers }}</p>

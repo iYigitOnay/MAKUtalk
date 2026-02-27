@@ -640,7 +640,7 @@
           <p
             class="text-[10px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-[0.5em]"
           >
-            MAKUtalk v1.3.5
+            MAKUtalk v1.4.0
           </p>
         </div>
       </div>
