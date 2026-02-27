@@ -84,14 +84,30 @@ export class ClubsService {
   }
 
   async findOne(slug: string, userId?: number) {
-    const club = await (this.prisma as any).club.findUnique({ where: { slug }, include: { founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } }, _count: { select: { members: true } } } });
+    const club = await (this.prisma as any).club.findUnique({
+      where: { slug },
+      include: {
+        founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+        _count: { select: { members: true } }
+      }
+    });
     if (!club) throw new NotFoundException('Bulunamadı.');
+
+    // DANIŞMAN HOCAYI BUL
+    let advisorUser = null;
+    if (club.advisorEmail) {
+      advisorUser = await this.prisma.user.findUnique({
+        where: { email: club.advisorEmail },
+        select: { id: true, username: true, fullName: true, avatarUrl: true }
+      });
+    }
+
     let isJoined = false;
     if (userId) {
       const membership = await (this.prisma as any).clubMember.findUnique({ where: { clubId_userId: { clubId: club.id, userId } } });
       isJoined = !!membership;
     }
-    return { ...club, isJoined, memberCount: club._count.members };
+    return { ...club, isJoined, memberCount: club._count.members, advisorUser };
   }
 
   async toggleJoin(userId: number, clubId: number) {
