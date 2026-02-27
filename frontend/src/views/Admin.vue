@@ -74,17 +74,40 @@
           </div>
 
           <!-- 2. TOPLULUKLAR -->
-          <div v-else-if="activeTab === 'clubs'" class="space-y-6 max-w-4xl mx-auto">
+          <div v-else-if="activeTab === 'clubs'" class="space-y-6 max-w-4xl mx-auto px-2">
             <div v-if="pendingClubs.length === 0" class="py-24 text-center opacity-30 font-black uppercase text-xs tracking-widest italic border-2 border-dashed border-gray-100 dark:border-white/5 rounded-[3rem]">Henüz başvuru yapılmamış.</div>
-            <div v-for="club in pendingClubs" :key="club.id" class="bg-white dark:bg-gray-900 border-2 border-gray-50 dark:border-white/5 rounded-[2.5rem] p-8 shadow-xl flex flex-col gap-6">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-5"><div class="w-16 h-16 bg-rose-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-4xl shadow-inner">{{ club.emoji }}</div><div><span class="text-[9px] font-black text-rose-600 uppercase tracking-widest">{{ club.category }}</span><h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mt-1">{{ club.name }}</h3></div></div>
-                <div class="text-right"><p class="text-[10px] font-black" :class="club.academicApproval ? 'text-emerald-500' : 'text-amber-500'">{{ club.academicApproval ? 'HOCA ONAYLADI ✅' : 'HOCA BEKLENİYOR ⏳' }}</p><p class="text-[9px] text-gray-400 uppercase tracking-widest mt-1">Kurucu: @{{ club.founder?.username }}</p></div>
+            <div v-for="club in pendingClubs" :key="club.id" class="bg-white dark:bg-gray-900 border-2 border-gray-50 dark:border-white/5 rounded-[3rem] p-8 shadow-2xl flex flex-col gap-8 transition-all hover:border-blue-500/20">
+              <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div class="flex items-center gap-6 min-w-0 flex-1">
+                  <!-- LOGO KUTUSU (Geliştirilmiş) -->
+                  <div class="w-20 h-20 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner flex-shrink-0 border border-gray-100 dark:border-white/5 overflow-hidden" :style="{ backgroundColor: club.color + '15', color: club.color }">
+                    <span v-if="isEmoji(club.emoji)">{{ club.emoji }}</span>
+                    <span v-else class="text-xl font-black uppercase tracking-tighter">{{ club.emoji }}</span>
+                  </div>
+                  <div class="min-w-0">
+                    <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[8px] font-black uppercase tracking-widest rounded-full border border-gray-200 dark:border-white/5">{{ club.category }}</span>
+                    <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mt-2 truncate">{{ club.name }}</h3>
+                  </div>
+                </div>
+                <div class="text-right flex-shrink-0">
+                  <p class="text-[10px] font-black" :class="club.academicApproval ? 'text-emerald-500' : 'text-amber-500'">{{ club.academicApproval ? 'HOCA ONAYLADI ✅' : 'HOCA BEKLENİYOR ⏳' }}</p>
+                  <p class="text-[9px] text-gray-400 uppercase tracking-widest mt-1">Kurucu: @{{ club.founder?.username }}</p>
+                </div>
               </div>
-              <div class="p-5 bg-slate-50 dark:bg-black/20 rounded-3xl italic text-sm text-gray-600 dark:text-gray-400">"{{ club.description }}"</div>
-              <div class="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-white/5">
-                <div class="flex items-center gap-2"><span class="text-[9px] font-black text-gray-400 uppercase">Danışman:</span><p class="text-xs font-black text-blue-600 uppercase">{{ club.advisorName }}</p></div>
-                <div class="flex gap-3"><button @click="handleRejectClub(club.id)" class="px-6 py-2.5 text-red-500 text-[10px] font-black uppercase rounded-xl hover:bg-red-50">Reddet</button><button @click="handleApproveClub(club.id)" class="px-8 py-2.5 bg-blue-600 text-white text-[10px] font-black rounded-xl uppercase hover:bg-blue-700 shadow-lg active:scale-95 transition-all">Kesin Onay</button></div>
+              <!-- AÇIKLAMA: Taşıma Engellendi -->
+              <div class="p-6 bg-slate-50 dark:bg-black/40 rounded-[2rem] italic text-sm text-gray-600 dark:text-gray-400 leading-relaxed border border-gray-100/50 dark:border-white/5 shadow-inner line-clamp-4 overflow-hidden break-words">"{{ club.description }}"</div>
+              <div class="flex items-center justify-between pt-6 border-t border-gray-50 dark:border-white/5">
+                <div class="flex items-center gap-3">
+                  <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Danışman:</span>
+                  <div class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-xl border border-blue-100 dark:border-blue-900/30">
+                    <div v-if="club.advisor?.avatarUrl" class="w-5 h-5 rounded-full overflow-hidden"><img :src="club.advisor.avatarUrl" class="w-full h-full object-cover" /></div>
+                    <p class="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">{{ club.advisor?.fullName || club.advisorName }}</p>
+                  </div>
+                </div>
+                <div class="flex gap-4">
+                  <button @click="handleRejectClub(club.id)" class="px-8 py-3 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 text-[10px] font-black uppercase rounded-2xl transition-all border border-transparent hover:border-red-500/20 active:scale-95">Reddet</button>
+                  <button @click="handleApproveClub(club.id)" class="px-10 py-3 bg-blue-600 text-white text-[10px] font-black rounded-2xl uppercase hover:bg-blue-700 shadow-xl shadow-blue-500/30 active:scale-95 transition-all">Kesin Onay</button>
+                </div>
               </div>
             </div>
           </div>
@@ -203,6 +226,11 @@ const handleBanToggle = async (user: any) => {
 };
 
 const formatDate = (d: string) => new Date(d).toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+const isEmoji = (str: string) => {
+  if (!str) return true;
+  return /\p{Emoji}/u.test(str) && str.length <= 2;
+};
 
 onMounted(fetchAllData);
 </script>

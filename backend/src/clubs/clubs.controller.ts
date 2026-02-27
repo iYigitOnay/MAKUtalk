@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, UseGuards, Query } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, UseGuards, Query, Delete } from '@nestjs/common';
 import { ClubsService } from './clubs.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -60,6 +60,18 @@ export class ClubsController {
   @UseGuards(JwtAuthGuard)
   toggleJoin(@CurrentUser() user: any, @Param('id') id: string) {
     return this.clubsService.toggleJoin(user.id, +id);
+  }
+
+  // ROZET İŞLEMLERİ
+  @Get('badges/all')
+  getAllBadges() {
+    return this.clubsService.getAllBadges();
+  }
+
+  @Post(':id/badges')
+  @UseGuards(JwtAuthGuard)
+  assignBadge(@CurrentUser() user: any, @Param('id') id: string, @Body('badgeId') badgeId: number) {
+    return this.clubsService.assignBadge(user.id, +id, badgeId);
   }
 
   @Delete(':id')

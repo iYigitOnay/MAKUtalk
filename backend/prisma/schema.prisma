@@ -87,15 +87,22 @@ model Message {
   @@index([senderId])
 }
 
+enum BadgeType {
+  USER
+  CLUB
+}
+
 model Badge {
   id          Int         @id @default(autoincrement())
   name        String      @unique
   icon        String?     
   color       String      @default("#1E3A8A")
   description String?
+  type        BadgeType   @default(USER)
   createdAt   DateTime    @default(now())
 
   users       UserBadge[]
+  clubs       ClubBadge[]
 }
 
 model UserBadge {
@@ -108,6 +115,18 @@ model UserBadge {
   badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, badgeId])
+}
+
+model ClubBadge {
+  id        Int      @id @default(autoincrement())
+  clubId    Int
+  badgeId   Int
+  assignedAt DateTime @default(now())
+
+  club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([clubId, badgeId])
 }
 
 model FollowRequest {
@@ -281,6 +300,7 @@ model Club {
   description      String   @db.Text
   category         String   
   emoji            String?  
+  color            String   @default("#e11d48")
   logoUrl          String?  
   memberCount      Int      @default(0)
   status           ClubStatus @default(PENDING)
@@ -295,6 +315,7 @@ model Club {
   founder          User?    @relation("ClubFounder", fields: [founderId], references: [id])
   advisor          User?    @relation("ClubAdvisor", fields: [advisorEmail], references: [email])
   members          ClubMember[]
+  badges           ClubBadge[]
 }
 
 model ClubMember {

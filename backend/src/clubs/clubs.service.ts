@@ -9,7 +9,7 @@ export class ClubsService {
     const clubs = await (this.prisma as any).club.findMany({
       where: { status: 'APPROVED' },
       orderBy: { name: 'asc' },
-      include: { _count: { select: { members: true } } }
+      include: { _count: { select: { members: true } }, badges: { include: { badge: true } } }
     });
 
     if (userId) {
@@ -21,16 +21,20 @@ export class ClubsService {
       return clubs.map((club: any) => ({
         ...club,
         isJoined: joinedClubIds.has(club.id),
-        memberCount: club._count.members
+        memberCount: club._count.members,
+        earnedBadges: club.badges.map((b: any) => b.badge)
       }));
     }
-    return clubs.map((club: any) => ({ ...club, memberCount: club._count.members }));
+    return clubs.map((club: any) => ({ ...club, memberCount: club._count.members, earnedBadges: club.badges.map((b: any) => b.badge) }));
   }
 
   async getPendingProposalsForAdmin() {
     return (this.prisma as any).club.findMany({
       where: { status: 'PENDING' },
-      include: { founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } } },
+      include: { 
+        founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+        advisor: { select: { id: true, username: true, fullName: true, avatarUrl: true } }
+      },
       orderBy: { createdAt: 'desc' }
     });
   }
@@ -38,7 +42,10 @@ export class ClubsService {
   async getProposalsForAcademic(email: string) {
     return (this.prisma as any).club.findMany({
       where: { advisorEmail: email, status: 'PENDING' },
-      include: { founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } } },
+      include: { 
+        founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+        advisor: { select: { id: true, username: true, fullName: true, avatarUrl: true } }
+      },
       orderBy: { createdAt: 'desc' }
     });
   }
@@ -46,16 +53,12 @@ export class ClubsService {
   async approveByAcademic(userId: number, clubId: number) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.role !== 'ACADEMIC') throw new ForbiddenException('Yetkiniz yok.');
-    const club = await (this.prisma as any).club.findUnique({ where: { id: clubId } });
-    if (!club) throw new NotFoundException('Başvuru bulunamadı.');
     return (this.prisma as any).club.update({ where: { id: clubId }, data: { academicApproval: true } });
   }
 
   async approveByAdmin(userId: number, clubId: number) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.role !== 'ADMIN') throw new ForbiddenException('Yetkiniz yok.');
-    const club = await (this.prisma as any).club.findUnique({ where: { id: clubId } });
-    if (!club) throw new NotFoundException('Başvuru bulunamadı.');
     const updatedClub = await (this.prisma as any).club.update({ where: { id: clubId }, data: { adminApproval: true, status: 'APPROVED' } });
     if (updatedClub.founderId) {
       await (this.prisma as any).clubMember.create({ data: { clubId: updatedClub.id, userId: updatedClub.founderId, role: 'ADMIN' } });
@@ -69,17 +72,35 @@ export class ClubsService {
     return (this.prisma as any).club.update({ where: { id: clubId }, data: { status: 'REJECTED' } });
   }
 
-  async createProposal(userId: number, data: any) {
-    const slug = data.name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[ğ]/g, 'g').replace(/[ü]/g, 'u').replace(/[ş]/g, 's').replace(/[ı]/g, 'i').replace(/[ö]/g, 'o').replace(/[ç]/g, 'c');
-    const existing = await (this.prisma as any).club.findFirst({ where: { OR: [{ name: data.name }, { slug }] } });
-    if (existing) throw new ConflictException('Bu isimde bir topluluk zaten mevcut.');
-    const club = await (this.prisma as any).club.create({ data: { ...data, slug, founderId: userId, status: 'PENDING' } });
-    if (data.advisorEmail) {
-      try {
-        const academic = await this.prisma.user.findUnique({ where: { email: data.advisorEmail } });
-        if (academic) { await (this.prisma as any).notification.create({ data: { type: 'FOLLOW', recipientId: academic.id, senderId: userId, read: false } }); }
-      } catch (err) { console.warn("Notification error:", err.message); }
+  async assignBadge(userId: number, clubId: number, badgeId: number) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const club = await (this.prisma as any).club.findUnique({ where: { id: clubId } });
+    
+    if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
+    if (!club) throw new NotFoundException('Topluluk bulunamadı.');
+
+    const isAdvisor = club.advisorEmail === user.email;
+    if (user.role !== 'ADMIN' && !isAdvisor) {
+      throw new ForbiddenException('Sadece Admin veya Danışman hoca rozet verebilir.');
     }
+
+    return (this.prisma as any).clubBadge.upsert({
+      where: { clubId_badgeId: { clubId, badgeId } },
+      update: {},
+      create: { clubId, badgeId }
+    });
+  }
+
+  async getAllBadges() {
+    return this.prisma.badge.findMany({ where: { type: 'CLUB' } }); // Sadece topluluk rozetlerini getir
+  }
+
+  async createProposal(userId: number, data: any) {
+    const { name, category, emoji, color, advisorEmail, description } = data;
+    const slug = name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[ğ]/g, 'g').replace(/[ü]/g, 'u').replace(/[ş]/g, 's').replace(/[ı]/g, 'i').replace(/[ö]/g, 'o').replace(/[ç]/g, 'c').replace(/[^a-z0-9-]/g, '');
+    const existing = await (this.prisma as any).club.findFirst({ where: { OR: [{ name }, { slug }] } });
+    if (existing) throw new ConflictException('Bu isimde bir topluluk zaten mevcut.');
+    const club = await (this.prisma as any).club.create({ data: { name, category, emoji, color: color || '#e11d48', advisorEmail, description, slug, founderId: userId, status: 'PENDING' } });
     return club;
   }
 
@@ -88,26 +109,18 @@ export class ClubsService {
       where: { slug },
       include: {
         founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
-        _count: { select: { members: true } }
+        advisor: { select: { id: true, username: true, fullName: true, avatarUrl: true, email: true } },
+        _count: { select: { members: true } },
+        badges: { include: { badge: true } }
       }
     });
     if (!club) throw new NotFoundException('Bulunamadı.');
-
-    // DANIŞMAN HOCAYI BUL
-    let advisorUser = null;
-    if (club.advisorEmail) {
-      advisorUser = await this.prisma.user.findUnique({
-        where: { email: club.advisorEmail },
-        select: { id: true, username: true, fullName: true, avatarUrl: true }
-      });
-    }
-
     let isJoined = false;
     if (userId) {
       const membership = await (this.prisma as any).clubMember.findUnique({ where: { clubId_userId: { clubId: club.id, userId } } });
       isJoined = !!membership;
     }
-    return { ...club, isJoined, memberCount: club._count.members, advisorUser };
+    return { ...club, isJoined, memberCount: club._count.members, advisorUser: club.advisor, earnedBadges: club.badges.map((b: any) => b.badge) };
   }
 
   async toggleJoin(userId: number, clubId: number) {
@@ -126,12 +139,18 @@ export class ClubsService {
   }
 
   async createInitialClubs() {
-    const initialClubs = [
-      { name: "Yazılım ve Bilişim Topluluğu", slug: "yazilim-bilisim", description: "Kod dünyasında projeler üretmek.", category: "BİLİM", emoji: "💻", status: "APPROVED", adminApproval: true, academicApproval: true },
-      { name: "Tiyatro Topluluğu", slug: "tiyatro", description: "Sahne ışıklarının altında kendini bul.", category: "SANAT", emoji: "🎭", status: "APPROVED", adminApproval: true, academicApproval: true }
+    const initialBadges = [
+      { name: "Öncü Ruh", icon: "🏆", color: "#F59E0B", description: "Sistemin kuruluşunda yer alan topluluk.", type: 'CLUB' },
+      { name: "Yüzler Kulübü", icon: "💯", color: "#EF4444", description: "100+ üyeye ulaşan büyük topluluk.", type: 'CLUB' },
+      { name: "Altın Etkinlik", icon: "🌟", color: "#FACC15", description: "Yılın en ses getiren organizasyonu.", type: 'CLUB' },
+      { name: "Akademik Yıldız", icon: "🎓", color: "#10B981", description: "Bilimsel takdir kazanan topluluk.", type: 'CLUB' },
+      { name: "Sosyal Kelebek", icon: "🦋", color: "#EC4899", description: "En aktif ve sosyal topluluk.", type: 'CLUB' },
+      { name: "Teknoloji Lideri", icon: "💻", color: "#3B82F6", description: "İnovasyon odaklı projeler.", type: 'CLUB' },
+      { name: "Doğa Dostu", icon: "🌿", color: "#22C55E", description: "Çevre bilinci yüksek topluluk.", type: 'CLUB' },
+      { name: "Zirve Takımı", icon: "🏔️", color: "#6366F1", description: "Her alanda üstün başarı.", type: 'CLUB' }
     ];
-    for (const club of initialClubs) {
-      await (this.prisma as any).club.upsert({ where: { slug: club.slug }, update: { status: 'APPROVED', adminApproval: true }, create: club });
+    for (const badge of initialBadges) {
+      await this.prisma.badge.upsert({ where: { name: badge.name }, update: { type: 'CLUB' as any }, create: badge as any });
     }
     return { message: "Seed OK" };
   }

@@ -41,11 +41,14 @@
       <div v-for="club in filteredClubs" :key="club.id" class="group bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/5 rounded-[2.5rem] p-7 hover:shadow-2xl transition-all duration-500 flex flex-col justify-between hover:-translate-y-1">
         <div>
           <div class="flex justify-between items-start mb-6 text-left">
-            <div class="w-16 h-16 bg-gray-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center text-4xl shadow-inner border border-gray-100 dark:border-white/5 group-hover:rotate-6 transition-transform">{{ club.emoji }}</div>
+            <div class="w-16 h-16 rounded-2xl flex items-center justify-center shadow-inner border border-gray-100 dark:border-white/5 group-hover:rotate-6 transition-transform overflow-hidden" :style="{ backgroundColor: club.color + '15', color: club.color }">
+              <span v-if="isEmoji(club.emoji)" class="text-4xl">{{ club.emoji }}</span>
+              <span v-else class="text-xl font-black uppercase tracking-tighter">{{ club.emoji }}</span>
+            </div>
             <span class="px-3 py-1 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-[8px] font-black rounded-full border border-rose-100 dark:border-rose-800 uppercase tracking-widest">{{ club.category }}</span>
           </div>
           <h3 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-3 leading-tight truncate text-left">{{ club.name }}</h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400 font-medium leading-relaxed mb-8 line-clamp-2 italic text-left">"{{ club.description }}"</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 font-medium leading-relaxed mb-8 line-clamp-3 overflow-hidden break-words italic text-left h-12">"{{ club.description }}"</p>
         </div>
         <div class="flex items-center justify-between pt-5 border-t border-gray-50 dark:border-white/5">
           <div class="flex flex-col"><span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Üye</span><span class="text-base font-black text-gray-900 dark:text-white">{{ club.memberCount }}</span></div>
@@ -80,16 +83,28 @@
                 </transition>
               </div>
 
-              <!-- İKON SEÇİCİ (DİNAMİK) -->
+              <!-- İKON & RENK (KOMBO) -->
               <div class="space-y-1 text-left relative">
-                <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">İkon</label>
-                <button type="button" @click="showEmojiGrid = !showEmojiGrid" class="w-full h-14 bg-slate-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-gray-700 transition-all shadow-inner border-2 border-transparent overflow-hidden" :class="{'border-rose-500/20': showEmojiGrid}">
-                  <span v-if="form.emoji" class="text-2xl">{{ form.emoji }}</span>
-                  <span v-else class="text-[10px] font-black text-gray-400 uppercase tracking-widest">İkon Seç</span>
-                </button>
+                <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Logo Stili & Renk</label>
+                <div class="flex gap-3">
+                  <button type="button" @click="showEmojiGrid = !showEmojiGrid; showColorPicker = false" class="flex-1 h-14 bg-slate-50 dark:bg-gray-800 rounded-2xl flex items-center justify-center hover:bg-slate-100 dark:hover:bg-gray-700 transition-all shadow-inner border-2 border-transparent" :class="{'border-rose-500/40': showEmojiGrid}">
+                    <span v-if="form.emoji" :class="isEmoji(form.emoji) ? 'text-2xl' : 'text-xs font-black uppercase tracking-tighter'" :style="{ color: isEmoji(form.emoji) ? '' : form.color }">{{ form.emoji }}</span>
+                    <span v-else class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Logo</span>
+                  </button>
+                  <div class="relative">
+                    <button type="button" @click="showColorPicker = !showColorPicker; showEmojiGrid = false" class="w-14 h-14 rounded-2xl shadow-lg border-4 border-white dark:border-gray-800 transition-transform hover:scale-105" :style="{ backgroundColor: form.color }"></button>
+                    <transition name="fade">
+                      <div v-if="showColorPicker" class="absolute right-0 top-full mt-3 p-4 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 rounded-3xl shadow-2xl z-[200] grid grid-cols-3 gap-3 w-40">
+                        <button v-for="color in chatThemes" :key="color" @click="form.color = color; showColorPicker = false" type="button" class="w-8 h-8 rounded-full border-2 border-white dark:border-gray-800 shadow-sm transition-transform hover:scale-125" :style="{ backgroundColor: color }"></button>
+                      </div>
+                    </transition>
+                  </div>
+                </div>
                 <transition name="fade">
-                  <div v-if="showEmojiGrid" class="absolute z-[180] right-0 top-full mt-2 w-64 bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl p-3 grid grid-cols-6 gap-2">
-                    <button v-for="e in clubEmojis" :key="e" @click="form.emoji = e; showEmojiGrid = false" type="button" class="text-xl hover:scale-125 transition-transform p-1 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg">{{ e }}</button>
+                  <div v-if="showEmojiGrid" class="absolute z-[190] right-0 top-full mt-3 w-72 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/10 rounded-[2.5rem] shadow-2xl p-6 space-y-4">
+                    <div class="space-y-2"><p class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Kısa İsim (Max 3 Harf)</p><input v-model="customIconText" maxlength="3" @input="form.emoji = customIconText.toUpperCase()" type="text" placeholder="Örn: MTU" class="w-full px-5 py-4 bg-slate-50 dark:bg-gray-800 rounded-2xl outline-none text-[10px] font-black uppercase tracking-widest shadow-inner" :style="{ color: form.color }" /></div>
+                    <div class="h-px bg-gray-50 dark:bg-white/5 w-full"></div>
+                    <div class="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto custom-scrollbar pr-1"><button v-for="e in clubEmojis" :key="e" @click="form.emoji = e; customIconText = ''; showEmojiGrid = false" type="button" class="text-xl hover:scale-125 transition-transform p-1 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg">{{ e }}</button></div>
                   </div>
                 </transition>
               </div>
@@ -148,8 +163,16 @@ const categoryNavRef = ref<HTMLElement | null>(null);
 
 // Form UI State
 const showEmojiGrid = ref(false);
+const showColorPicker = ref(false);
 const showCategoryDropdown = ref(false);
+const customIconText = ref("");
 const clubEmojis = ['🎭', '💻', '🏔️', '📸', '🏥', '🎸', '⚽', '🎨', '🚀', '🧠', '♟️', '🌍', '📐', '🥘', '🎥', '🌱', '🛡️', '⚔️', '⚖️', '🚲', '👟', '🧵', '🎼', '🧩'];
+const chatThemes = ['#4f46e5', '#e11d48', '#2563eb', '#eab308', '#16a34a', '#9333ea'];
+
+const isEmoji = (str: string) => {
+  if (!str) return true;
+  return /\p{Emoji}/u.test(str) && str.length <= 2;
+};
 
 // Advisor State
 const advisorSearchQuery = ref("");
@@ -158,7 +181,7 @@ const showAdvisorSuggestions = ref(false);
 const selectedAdvisor = ref<any | null>(null);
 
 const clubCategories = ["KÜLTÜR", "SPOR", "BİLİM", "TÜMÜ", "SANAT", "SOSYAL"];
-const form = ref({ name: "", category: "KÜLTÜR", emoji: "", advisorName: "", advisorEmail: "", description: "" });
+const form = ref({ name: "", category: "KÜLTÜR", emoji: "", color: "#e11d48", advisorName: "", advisorEmail: "", description: "" });
 
 const handleAdvisorSearch = async (e: any) => {
   const q = e.target.value.replace('@', '').trim();

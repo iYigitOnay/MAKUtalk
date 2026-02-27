@@ -44,18 +44,23 @@
     <div v-else-if="pendingClubs.length > 0" class="space-y-6">
       <h2 class="text-xs font-black text-gray-400 uppercase tracking-[0.4em] ml-4 mb-6">Onayınızı Bekleyen Topluluklar</h2>
       
-      <div v-for="club in pendingClubs" :key="club.id" class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[2.5rem] p-8 shadow-xl flex flex-col md:flex-row items-center gap-8 group hover:-translate-y-1 transition-all">
-        <div class="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-3xl flex items-center justify-center text-4xl shadow-inner">{{ club.emoji }}</div>
-        <div class="flex-1 text-center md:text-left space-y-2">
+      <div v-for="club in pendingClubs" :key="club.id" class="bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[2.5rem] p-8 shadow-xl flex flex-col md:flex-row items-center gap-8 group hover:-translate-y-1 transition-all overflow-hidden">
+        <!-- LOGO KUTUSU (Renkli Destek) -->
+        <div class="w-20 h-20 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner flex-shrink-0 border border-gray-100 dark:border-white/5 overflow-hidden" :style="{ backgroundColor: club.color + '15', color: club.color }">
+          <span v-if="isEmoji(club.emoji)">{{ club.emoji }}</span>
+          <span v-else class="text-xl font-black uppercase tracking-tighter">{{ club.emoji }}</span>
+        </div>
+        
+        <div class="flex-1 text-center md:text-left space-y-2 min-w-0">
           <div class="flex flex-col md:flex-row md:items-center gap-2">
             <span class="px-3 py-1 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 text-[8px] font-black rounded-full border border-emerald-100 uppercase tracking-widest">{{ club.category }}</span>
             <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Kurucu: @{{ club.founder?.username }}</span>
           </div>
-          <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">{{ club.name }}</h3>
-          <p class="text-xs text-gray-500 dark:text-gray-400 font-medium italic line-clamp-2 italic">"{{ club.description }}"</p>
+          <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter truncate">{{ club.name }}</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400 font-medium italic line-clamp-3 overflow-hidden break-words">"{{ club.description }}"</p>
         </div>
-        <div class="flex items-center gap-3">
-          <button @click="handleReject(club.id)" class="px-6 py-3 text-red-500 text-[10px] font-black uppercase rounded-xl hover:bg-red-50 transition-all">Reddet</button>
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+          <button @click="handleReject(club.id)" class="px-6 py-3 text-red-500 text-[10px] font-black uppercase rounded-xl hover:bg-red-50 transition-all border border-transparent hover:border-red-100">Reddet</button>
           <button @click="handleApprove(club.id)" class="px-8 py-3 bg-emerald-600 text-white text-[10px] font-black rounded-xl uppercase hover:bg-emerald-700 shadow-lg active:scale-95 transition-all">Uygundur Onayla</button>
         </div>
       </div>
@@ -91,6 +96,11 @@ const handleApprove = async (id: number) => {
 const handleReject = async (id: number) => {
   try { await apiClient.post(`/clubs/${id}/reject`); toast.warning("Başvuru reddedildi."); fetchPendingClubs(); }
   catch { toast.error("İşlem başarısız."); }
+};
+
+const isEmoji = (str: string) => {
+  if (!str) return true;
+  return /\p{Emoji}/u.test(str) && str.length <= 2;
 };
 
 onMounted(fetchPendingClubs);
