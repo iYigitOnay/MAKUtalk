@@ -28,19 +28,20 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # 'EOF' tırnak içinde (Daha Güvenli): GitHub'dan gelen verileri olduğu gibi dosyaya yazar.
+            # DİKKAT: Satır başındaki boşluklar tamamen kaldırıldı!
+            # Bu sayede .env dosyası tıkır tıkır çalışacak.
             cat <<'EOF' > .env
-            DB_USERNAME=admin
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            DB_NAME=makutalk_db
-            DATABASE_URL=${{ secrets.DATABASE_URL }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            SMTP_FROM=${{ secrets.SMTP_FROM }}
-            VITE_API_URL=${{ secrets.VITE_API_URL }}
-            FRONTEND_URL=${{ secrets.FRONTEND_URL }}
-            EOF
+DB_USERNAME=admin
+DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+DB_NAME=makutalk_db
+DATABASE_URL=${{ secrets.DATABASE_URL }}
+JWT_SECRET=${{ secrets.JWT_SECRET }}
+RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+SMTP_FROM=${{ secrets.SMTP_FROM }}
+VITE_API_URL=${{ secrets.VITE_API_URL }}
+FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+EOF
 
             sudo docker-compose down
             sudo docker-compose up -d --build
