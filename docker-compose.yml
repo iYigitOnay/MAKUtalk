@@ -26,7 +26,7 @@ services:
       DATABASE_URL: postgresql://${DB_USERNAME:-admin}:${DB_PASSWORD:-makupassword123}@db:5432/${DB_NAME:-makutalk_db}?schema=public
       JWT_SECRET: ${JWT_SECRET:-your_super_secret_jwt_key_here}
       RESEND_API_KEY: ${RESEND_API_KEY}
-      SMTP_FROM: ${SMTP_FROM:-"MAKUtalk <onboarding@resend.dev>"}
+      SMTP_FROM: ${SMTP_FROM:-"MAKUtalk <noreply@makutalk.com>"}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       PORT: 3000
     ports:
