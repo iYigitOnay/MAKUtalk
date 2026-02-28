@@ -9,13 +9,12 @@ export const useChatStore = defineStore("chat", () => {
   const activeConversation = ref<any | null>(null);
   const messages = ref<any[]>([]);
   const loading = ref(false);
-  const typingUsers = ref<Record<number, boolean>>({}); // convId -> isTyping
+  const typingUsers = ref<Record<number, boolean>>({});
 
   const setTypingStatus = (conversationId: number, isTyping: boolean) => {
     typingUsers.value[conversationId] = isTyping;
   };
 
-  // Okunmamış sohbet sayısı
   const unreadCount = computed(() => {
     return conversations.value.filter(conv => {
       const lastMsg = conv.lastMessage;
@@ -24,9 +23,7 @@ export const useChatStore = defineStore("chat", () => {
     }).length;
   });
 
-  // KRITIK: Reset fonksiyonu - Logout'ta çağrılacak
   const resetStore = () => {
-    console.log("🧹 Resetting chat store...");
     conversations.value = [];
     activeConversation.value = null;
     messages.value = [];
@@ -45,43 +42,29 @@ export const useChatStore = defineStore("chat", () => {
     }
   };
 
-  const selectConversation = async (targetUserId: number) => {
-    // KRITIK: State temizle ÖNCE
+  const selectConversation = async (targetUserId: number, fromSpot: boolean = false) => {
     activeConversation.value = null;
     messages.value = [];
 
     try {
       loading.value = true;
-
-      // 1. Konuşmayı getir/oluştur
-      const convRes = await apiClient.get(`/chat/conversation/${targetUserId}`);
+      // fromSpot bilgisini API'ye gönderiyoruz (Gizlilik bypass için)
+      const convRes = await apiClient.get(`/chat/conversation/${targetUserId}?fromSpot=${fromSpot}`);
       activeConversation.value = convRes.data;
 
-      // 2. Mesajları getir
       const msgRes = await apiClient.get(`/chat/messages/${activeConversation.value.id}`);
-      
-      // KRITIK: ID'leri number'a çevir
       messages.value = msgRes.data.map((msg: any) => ({
         ...msg,
         senderId: Number(msg.senderId),
         conversationId: Number(msg.conversationId),
       }));
 
-      // 3. Okundu olarak işaretle (Backend)
       await apiClient.post(`/chat/${activeConversation.value.id}/read`);
       
-      // 4. YEREL GÜNCELLEME (Frontend - Anında bildirim silme)
       const conv = conversations.value.find(c => c.id === activeConversation.value.id);
-      if (conv) {
-        if (conv.lastMessage) {
-          conv.lastMessage.isRead = true;
-        }
-        // Eğer varsa diğer mesajları da işaretle (isteğe bağlı ama güvenli)
-        messages.value.forEach(m => {
-          if (Number(m.senderId) !== Number(authStore.userId)) m.isRead = true;
-        });
+      if (conv && conv.lastMessage) {
+        conv.lastMessage.isRead = true;
       }
-
     } catch (error) {
       console.error("Select conversation error:", error);
     } finally {
@@ -90,87 +73,44 @@ export const useChatStore = defineStore("chat", () => {
   };
 
   const addMessage = (message: any) => {
-    // ID ve ConversationID'leri normalize et
     const normalizedMessage = {
       ...message,
-      id: message.id, // Backend'den gelen asıl ID
       senderId: Number(message.senderId),
       conversationId: Number(message.conversationId),
     };
-
-    console.log("📍 Adding message to store:", normalizedMessage.content.substring(0, 20));
-
-    // Duplicate kontrolü (Asıl ID varsa ona göre, yoksa geçici bir kontrol)
     const exists = messages.value.some(m => m.id === normalizedMessage.id);
-    
-    if (!exists) {
-      messages.value.push(normalizedMessage);
-    }
+    if (!exists) messages.value.push(normalizedMessage);
   };
 
   const deleteConversation = async (conversationId: number) => {
     try {
       await apiClient.post(`/chat/delete/${conversationId}`);
-      
-      // State'ten kaldır
       conversations.value = conversations.value.filter(c => c.id !== conversationId);
-      
-      // Aktif konuşma siliniyorsa temizle
       if (activeConversation.value?.id === conversationId) {
         activeConversation.value = null;
         messages.value = [];
       }
-    } catch (error) {
-      console.error("Delete conversation error:", error);
-      throw error;
-    }
+    } catch (error) { console.error(error); throw error; }
   };
 
-  // Canlı profil güncellemesi için chat bilgilerini tazele
   const updateUserInChat = (userId: number, updates: any) => {
-    // 1. Konuşmalar listesini güncelle
     conversations.value = conversations.value.map(conv => {
       if (conv.participants) {
-        conv.participants = conv.participants.map((p: any) => 
-          Number(p.id) === userId ? { ...p, ...updates } : p
-        );
+        conv.participants = conv.participants.map((p: any) => Number(p.id) === userId ? { ...p, ...updates } : p);
       }
-      // Son mesajın göndericisi güncellenen kullanıcı ise
       if (conv.lastMessage && Number(conv.lastMessage.senderId) === userId) {
         conv.lastMessage.sender = { ...conv.lastMessage.sender, ...updates };
       }
       return conv;
     });
-
-    // 2. Aktif konuşmayı güncelle
     if (activeConversation.value && activeConversation.value.participants) {
-      activeConversation.value.participants = activeConversation.value.participants.map((p: any) => 
-        Number(p.id) === userId ? { ...p, ...updates } : p
-      );
+      activeConversation.value.participants = activeConversation.value.participants.map((p: any) => Number(p.id) === userId ? { ...p, ...updates } : p);
     }
-
-    // 3. Mesajları güncelle
     messages.value = messages.value.map(msg => {
-      if (Number(msg.senderId) === userId && msg.sender) {
-        msg.sender = { ...msg.sender, ...updates };
-      }
+      if (Number(msg.senderId) === userId && msg.sender) msg.sender = { ...msg.sender, ...updates };
       return msg;
     });
   };
 
-  return {
-    conversations,
-    activeConversation,
-    messages,
-    loading,
-    unreadCount,
-    resetStore, // Export et
-    fetchConversations,
-    selectConversation,
-    addMessage,
-    deleteConversation,
-    updateUserInChat,
-    typingUsers,
-    setTypingStatus,
-  };
+  return { conversations, activeConversation, messages, loading, unreadCount, resetStore, fetchConversations, selectConversation, addMessage, deleteConversation, updateUserInChat, typingUsers, setTypingStatus };
 });

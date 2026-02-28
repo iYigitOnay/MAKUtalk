@@ -134,6 +134,18 @@ const router = createRouter({
       component: () => import("@/views/ClubDetail.vue"),
       meta: { requiresAuth: true, layout: "main" },
     },
+    {
+      path: "/campus/spot",
+      name: "Spot",
+      component: () => import("@/views/Spot.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+    },
+    {
+      path: "/campus/spot/:id",
+      name: "SpotDetail",
+      component: () => import("@/views/SpotDetail.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+    },
 
     // ── 404 ───────────────────────────────────────────────
     {

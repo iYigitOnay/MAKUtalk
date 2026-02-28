@@ -48,12 +48,15 @@ model User {
   
   conversations        ConversationParticipant[]
   messagesSent         Message[] @relation("SentMessages")
+  spotListings         SpotListing[]
 }
 
 model Conversation {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  isAccepted  Boolean  @default(true)
+  isRejected  Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   participants ConversationParticipant[]
   messages     Message[]
@@ -342,4 +345,38 @@ enum NotificationType {
   COMMENT 
   FOLLOW  
   MENTION
+}
+
+model SpotListing {
+  id          Int          @id @default(autoincrement())
+  title       String       
+  description String       @db.Text
+  price       Float?       
+  imageUrl    String?      
+  category    SpotCategory @default(AL_SAT)
+  status      ListingStatus @default(ACTIVE) 
+  location    String?      // Örn: İstiklal Yerleşkesi, KYK Yurdu vb.
+  contactInfo String?      // WhatsApp veya iletişim tercihi
+  isNegotiable Boolean     @default(false) // Pazarlık payı var mı?
+  authorId    Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+}
+
+enum SpotCategory {
+  AL_SAT        // İkinci El / Al-Sat
+  EV_ARKADASI   // Ev arkadaşı / Konaklama
+  KAMPUS_RADARI // İndirimler / Yemek Fırsatları
+  YOL_ARKADASI  // Araç paylaşımı / Yolculuk
+  ODUNC         // Ödünç Al-Ver
+  YETENEK       // Freelance işler / Yetenekler
+  STAJ_IS       // Staj ve İş Fırsatları
+}
+
+enum ListingStatus {
+  ACTIVE        // Yayında
+  SOLD          // Satıldı / Bulundu
+  CLOSED        // Kapandı
 }

@@ -17,8 +17,8 @@ export class ChatController {
 
   // İki kişi arasındaki konuşmayı getir veya oluştur
   @Get('conversation/:targetUserId')
-  getConversation(@CurrentUser() user: any, @Param('targetUserId') targetUserId: string) {
-    return this.chatService.getOrCreateConversation(user.id, +targetUserId);
+  getConversation(@CurrentUser() user: any, @Param('targetUserId') targetUserId: string, @Query('fromSpot') fromSpot?: string) {
+    return this.chatService.getOrCreateConversation(user.id, +targetUserId, fromSpot === 'true');
   }
 
   // Mesaj geçmişini getir (FIXED: Service method called correctly)
@@ -48,5 +48,17 @@ export class ChatController {
     @Body('color') color: string
   ) {
     return this.chatService.updateThemeColor(user.id, +conversationId, color);
+  }
+
+  @Post('accept/:conversationId')
+  @UseGuards(JwtAuthGuard)
+  acceptRequest(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
+    return this.chatService.acceptRequest(user.id, +conversationId);
+  }
+
+  @Post('reject/:conversationId')
+  @UseGuards(JwtAuthGuard)
+  rejectRequest(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
+    return this.chatService.rejectRequest(user.id, +conversationId);
   }
 }

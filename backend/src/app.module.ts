@@ -17,6 +17,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { HashtagModule } from './hashtags/hashtag.module';
 import { ChatModule } from './chat/chat.module';
 import { ClubsModule } from './clubs/clubs.module';
+import { SpotModule } from './spot/spot.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { ClubsModule } from './clubs/clubs.module';
     HashtagModule,
     ChatModule,
     ClubsModule,
+    SpotModule,
   ],
 })
 export class AppModule {}

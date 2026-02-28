@@ -48,7 +48,7 @@
       </div>
 
       <!-- 4. MAKÜ-Spot (Sarı - Ticaret) -->
-      <div @click="activeSubPage = 'market'" class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-amber-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left">
+      <div @click="$router.push('/campus/spot')" class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-amber-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left">
         <div class="absolute top-0 right-0 w-32 h-32 bg-amber-500/5 rounded-full blur-3xl group-hover:bg-amber-500/10 transition-all"></div>
         <div class="relative z-10 text-amber-600">
           <div class="w-14 h-14 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-2xl flex items-center justify-center mb-6 mx-auto sm:mx-0 group-hover:scale-110 transition-transform duration-500">
