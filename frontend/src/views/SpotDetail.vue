@@ -132,12 +132,12 @@ const contactSeller = async () => {
   if (!listing.value) return;
   const autoMessage = `Merhaba, "${listing.value.title}" ilanınız için yazıyorum.`;
   
-  // Mesajlar sayfasına userId ve ilan referansıyla yönlendir
   router.push({ 
     path: '/messages',
     query: { 
       userId: listing.value.authorId,
       fromSpot: 'true',
+      listingId: listing.value.id, // Yeni eklenen
       initialMessage: autoMessage 
     } 
   });

@@ -1,46 +1,64 @@
-import { Controller, Get, Param, Post, Body, UseGuards, Query } from '@nestjs/common';
-import { ClubsService } from '../clubs/clubs.service';
+import { Controller, Get, Param, Post, Body, UseGuards, Query, BadRequestException } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Controller('chat')
 @UseGuards(JwtAuthGuard)
 export class ChatController {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly prisma: PrismaService
+  ) {}
 
-  // Konuşma listesini getir
   @Get('conversations')
   getConversations(@CurrentUser() user: any) {
     return this.chatService.getUserConversations(user.id);
   }
 
-  // İki kişi arasındaki konuşmayı getir veya oluştur
   @Get('conversation/:targetUserId')
-  getConversation(@CurrentUser() user: any, @Param('targetUserId') targetUserId: string, @Query('fromSpot') fromSpot?: string) {
-    return this.chatService.getOrCreateConversation(user.id, +targetUserId, fromSpot === 'true');
+  async getConversation(
+    @CurrentUser() user: any, 
+    @Param('targetUserId') targetUserId: string, 
+    @Query('fromSpot') fromSpot?: string,
+    @Query('listingId') listingId?: string
+  ) {
+    let isFromSpot = fromSpot === 'true';
+
+    // SPOT BYPASS KORUMASI: Eğer fromSpot true ise, gerçekten bir ilan var mı kontrol et!
+    if (isFromSpot && listingId) {
+      const listing = await this.prisma.spotListing.findUnique({ where: { id: +listingId } });
+      if (!listing) {
+        throw new BadRequestException('Geçersiz ilan referansı.');
+      }
+      // Opsiyonel: İlanın sahibinin targetUserId olup olmadığı da kontrol edilebilir
+      if (listing.authorId !== +targetUserId) {
+        throw new BadRequestException('Bu ilan bu kullanıcıya ait değil.');
+      }
+    } else if (isFromSpot && !listingId) {
+       // listingId yoksa ama fromSpot true ise şüpheli durum, normal gizlilik kurallarını uygula
+       isFromSpot = false;
+    }
+
+    return this.chatService.getOrCreateConversation(user.id, +targetUserId, isFromSpot);
   }
 
-  // Mesaj geçmişini getir (FIXED: Service method called correctly)
   @Get('messages/:conversationId')
   getMessages(@Param('conversationId') conversationId: string) {
     return this.chatService.getMessages(+conversationId);
   }
 
-  // Mesajları okundu olarak işaretle
   @Post(':id/read')
-  @UseGuards(JwtAuthGuard)
   markAsRead(@CurrentUser() user: any, @Param('id') id: string) {
     return this.chatService.markAsRead(user.id, +id);
   }
 
-  // Sohbeti sil
   @Post('delete/:conversationId')
   async deleteConversation(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
     return this.chatService.deleteConversation(user.id, +conversationId);
   }
 
-  // Sohbet rengini güncelle
   @Post('theme/:conversationId')
   async updateThemeColor(
     @CurrentUser() user: any,
@@ -51,13 +69,11 @@ export class ChatController {
   }
 
   @Post('accept/:conversationId')
-  @UseGuards(JwtAuthGuard)
   acceptRequest(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
     return this.chatService.acceptRequest(user.id, +conversationId);
   }
 
   @Post('reject/:conversationId')
-  @UseGuards(JwtAuthGuard)
   rejectRequest(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
     return this.chatService.rejectRequest(user.id, +conversationId);
   }

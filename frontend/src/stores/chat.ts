@@ -42,15 +42,24 @@ export const useChatStore = defineStore("chat", () => {
     }
   };
 
-  const selectConversation = async (targetUserId: number, fromSpot: boolean = false) => {
+  const selectConversation = async (targetUserId: number, fromSpot: boolean = false, listingId?: number) => {
     activeConversation.value = null;
     messages.value = [];
 
     try {
       loading.value = true;
-      // fromSpot bilgisini API'ye gönderiyoruz (Gizlilik bypass için)
-      const convRes = await apiClient.get(`/chat/conversation/${targetUserId}?fromSpot=${fromSpot}`);
+      // fromSpot ve listingId bilgilerini API'ye gönderiyoruz (Güvenlik doğrulaması için)
+      let url = `/chat/conversation/${targetUserId}?fromSpot=${fromSpot}`;
+      if (listingId) url += `&listingId=${listingId}`;
+      
+      const convRes = await apiClient.get(url);
       activeConversation.value = convRes.data;
+
+      // Eğer id 0 gelirse (Gizli hesap engeli), mesajları çekmeye çalışma
+      if (activeConversation.value.id === 0) {
+        loading.value = false;
+        return;
+      }
 
       const msgRes = await apiClient.get(`/chat/messages/${activeConversation.value.id}`);
       messages.value = msgRes.data.map((msg: any) => ({

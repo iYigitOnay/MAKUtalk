@@ -10,6 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ChatService } from './chat.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { Logger, UsePipes, ValidationPipe } from '@nestjs/common';
 import { SendMessageDto, TypingDto } from './dto/chat.dto';
 
@@ -27,6 +28,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   constructor(
     private chatService: ChatService,
     private jwtService: JwtService,
+    private prisma: PrismaService,
   ) {}
 
   async handleConnection(client: Socket) {
@@ -37,7 +39,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const payload = this.jwtService.verify(token);
       client.data.userId = payload.sub;
       
-      // Kullanıcıyı kendi özel odasına al (Örn: "user_5")
       const userRoom = `user_${client.data.userId}`;
       await client.join(userRoom);
       this.logger.log(`Client connected: ${client.id} to room ${userRoom}`);
@@ -50,7 +51,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 
-  // Mesaj gönderme olayı
   @SubscribeMessage('send_message')
   @UsePipes(new ValidationPipe({ transform: true }))
   async handleMessage(
@@ -59,44 +59,67 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       const senderId = client.data.userId;
-      if (!senderId) throw new Error("Socket data içinde userId bulunamadı!");
+      if (!senderId) throw new Error("Yetkisiz erişim!");
 
-      this.logger.log(`📩 Mesaj Geldi -> Gönderen: ${senderId}, Alıcı: ${data.receiverId}, İçerik: ${data.content.substring(0, 20)}...`);
-      
-      // 1. Veritabanına kaydet
+      // 1. DOĞRULAMA (Audit Log önerisiyle): 
+      // Client'ın gönderdiği receiverId'ye GÜVENME. Conversation üzerinden doğrula!
+      const conversation = await this.prisma.conversation.findUnique({
+        where: { id: data.conversationId },
+        include: { participants: true }
+      });
+
+      if (!conversation) throw new Error("Sohbet bulunamadı.");
+      const isParticipant = conversation.participants.some(p => p.userId === senderId);
+      if (!isParticipant) throw new Error("Bu sohbete mesaj gönderme yetkiniz yok.");
+
+      const actualReceiver = conversation.participants.find(p => p.userId !== senderId);
+      if (!actualReceiver) throw new Error("Alıcı bulunamadı.");
+
+      // 2. Veritabanına kaydet (Service içinde auth ve transaction kuralları çalışır)
       const message = await this.chatService.sendMessage(
         senderId,
         data.conversationId,
         data.content,
       );
 
-      // 2. Mesajı gönderene onayla
+      // 3. Mesajı gönderene onayla
       client.emit('new_message', message);
 
-      // 3. Alıcıya gerçek zamanlı ilet
-      const receiverRoom = `user_${data.receiverId}`;
+      // 4. ALICIYA DOĞRULANMIŞ ODA ÜZERİNDEN İLET
+      const receiverRoom = `user_${actualReceiver.userId}`;
       this.server.to(receiverRoom).emit('new_message', message);
       
-      this.logger.log(`📤 Mesaj iletildi: ${receiverRoom}`);
+      this.logger.log(`📤 Mesaj iletildi: ${senderId} -> ${actualReceiver.userId}`);
 
       return message;
     } catch (error) {
       this.logger.error(`❌ Mesaj Gönderme Hatası: ${error.message}`);
-      client.emit('error', { message: 'Mesaj gönderilemedi.' });
+      client.emit('error', { message: 'Mesaj gönderilemedi: ' + error.message });
     }
   }
 
-  // Yazıyor... durumunu ilet
   @SubscribeMessage('typing')
   @UsePipes(new ValidationPipe())
-  handleTyping(
+  async handleTyping(
     @ConnectedSocket() client: Socket,
     @MessageBody() data: TypingDto,
   ) {
-    this.server.to(`user_${data.receiverId}`).emit('user_typing', {
-      conversationId: data.conversationId,
-      senderId: client.data.userId,
-      isTyping: data.isTyping,
+    const senderId = client.data.userId;
+    // Typing durumu için de katılımcı doğrulaması (Opsiyonel ama önerilen güvenlik)
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: data.conversationId },
+      include: { participants: { select: { userId: true } } }
     });
+
+    if (conversation && conversation.participants.some(p => p.userId === senderId)) {
+      const receiver = conversation.participants.find(p => p.userId !== senderId);
+      if (receiver) {
+        this.server.to(`user_${receiver.userId}`).emit('user_typing', {
+          conversationId: data.conversationId,
+          senderId: senderId,
+          isTyping: data.isTyping,
+        });
+      }
+    }
   }
 }
