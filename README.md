@@ -1,31 +1,29 @@
 # 🎓 MAKUtalk
 
-MAKUtalk, Burdur Mehmet Akif Ersoy Üniversitesi (MAKÜ) öğrencileri için özel olarak tasarlanmış, kampüs içi etkileşimi artıran modern bir dijital sosyal platformdur. Öğrencilerin duyuru yapabileceği, yardımlaşabileceği ve kampüs hayatını paylaşabileceği güvenli bir ekosistem sunar.
+MAKUtalk, Burdur Mehmet Akif Ersoy Üniversitesi (MAKÜ) öğrencileri için özel olarak tasarlanmış, kampüs içi etkileşimi artıran modern bir dijital sosyal platformdur. Öğrencilerin duyuru yapabileceği, yardımlaşabileceği, eşyalarını alıp satabileceği ve kampüs hayatını paylaşabileceği güvenli bir ekosistem sunar.
 
 ![MAKUtalk Logo](frontend/public/makutalklogo.png)
 
 ## ✨ Özellikler
 
-- **🤖 Yapay Zeka Destekli Duygu Analizi:** Paylaşımlarınızın tonu otomatik olarak analiz edilir (Pozitif, Negatif, Nötr).
+- **🤖 Yapay Zeka Destekli Duygu Analizi:** Paylaşımlarınızın tonu Gemini AI ile otomatik olarak analiz edilir ve kategorize edilir.
 - **📱 Modern Sosyal Medya Deneyimi:** Beğeni, yorum, "Remakü" (repost) ve takip sistemi.
-- **🏷️ Kategorize Edilmiş İçerik:** Genel, Duyuru, Etkinlik, Arıza/Kayıp, Satılık ve Soru-Cevap kategorileri.
-- **🔍 Gelişmiş Arama:** Kullanıcı, hashtag ve içerik bazlı dinamik arama motoru.
-- **✉️ Güvenli Kimlik Doğrulama:** E-posta doğrulama kodu (OTP) ve şifre sıfırlama sistemi.
+- **🔒 Gelişmiş Gizlilik & Güvenlik:** Açık ve Gizli hesap seçenekleri. Özel mesajlaşma altyapısı (Mesaj İstekleri ve Otomatik Onay mekanizmaları).
+- **🛒 MAKÜ-Spot (Pazaryeri):** Öğrenciden öğrenciye ikinci el alım-satım, ev/yol arkadaşı bulma ve akademik fırsatlar.
+- **💬 Gerçek Zamanlı Mesajlaşma:** Socket.io tabanlı, uçtan uca şifreli, "yazıyor..." bildirimli güvenli DM sistemi.
+- **✉️ Güvenli Kimlik Doğrulama:** Üniversite e-posta doğrulama kodu (OTP) ile sadece gerçek öğrencilere ve akademisyenlere açık ağ.
 - **🌓 Dark/Light Mode:** Göz yormayan, modern ve kullanıcı dostu arayüz.
-- **🔔 Anlık Bildirimler:** Etkileşimlerden anında haberdar olma.
 
 ## 🛠️ Teknoloji Yığını
 
 ### Backend
-
-- **Framework:** [NestJS](https://nestjs.com/) (Node.js)
+- **Framework:** [NestJS](https://nestjs.com/) (Node.js v20+)
 - **ORM:** [Prisma](https://www.prisma.io/)
-- **Veritabanı:** [PostgreSQL](https://www.postgresql.org/)
-- **Güvenlik:** JWT (JSON Web Tokens) & Bcryptjs
-- **E-posta:** Nodemailer (Gmail SMTP)
+- **Veritabanı:** [PostgreSQL](https://www.postgresql.org/) (v15)
+- **Gerçek Zamanlı İletişim:** Socket.io
+- **Güvenlik:** JWT, Bcryptjs, Rate Limiting
 
 ### Frontend
-
 - **Framework:** [Vue 3](https://vuejs.org/) (Composition API)
 - **Build Tool:** [Vite](https://vitejs.dev/)
 - **State Management:** [Pinia](https://pinia.vuejs.org/)
@@ -33,89 +31,104 @@ MAKUtalk, Burdur Mehmet Akif Ersoy Üniversitesi (MAKÜ) öğrencileri için öz
 - **İkonlar:** [Lucide Vue Next](https://lucide.dev/)
 
 ### DevOps & Deployment
-
 - **Containerization:** Docker & Docker Compose
-- **CI/CD:** GitHub Actions
-- **Web Server:** Nginx (Frontend için)
-
-## 🚀 Hızlı Başlangıç
-
-### Ön Gereksinimler
-
-- Node.js (v18+)
-- Docker & Docker Compose (Opsiyonel)
-- PostgreSQL
-
-### Yerel Geliştirme (Docker Olmadan)
-
-1.  **Depoyu Klonlayın:**
-
-    ```bash
-    git clone https://github.com/kullaniciadi/MAKUtalk.git
-    cd MAKUtalk
-    ```
-
-2.  **Backend Kurulumu:**
-
-    ```bash
-    cd backend
-    npm install
-    # .env dosyasını oluşturun ve veritabanı bilgilerinizi girin
-    npx prisma migrate dev
-    npm run start:dev
-    ```
-
-3.  **Frontend Kurulumu:**
-    ```bash
-    cd ../frontend
-    npm install
-    npm run dev
-    ```
-
-### Docker ile Çalıştırma (Önerilen)
-
-Sadece tek bir komutla tüm sistemi (DB, Backend, Frontend) ayağa kaldırın:
-
-```bash
-docker-compose up --build -d
-```
-
-Sistem şu adreslerde hazır olacaktır:
-
-- **Frontend:** `http://localhost:5173`
-- **Backend API:** `http://localhost:3001/api`
-
-## 🔒 Ortam Değişkenleri
-
-Uygulamanın çalışması için aşağıdaki değişkenlerin `.env` dosyasında tanımlı olması gerekir:
-
-```env
-DATABASE_URL="postgresql://user:pass@localhost:5432/db"
-JWT_SECRET="gizli_anahtar"
-SMTP_USER="makutalk.iletisim@gmail.com"
-SMTP_PASS="uygulama_sifresi"
-```
-
-## 📈 Deployment
-
-Bu proje GitHub Actions ile entegre edilmiştir. `main` branch'ine yapılan her push işlemi:
-
-1.  Docker imajlarını build eder.
-2.  GitHub Container Registry (GHCR)'ye yükler.
-3.  Sunucunuzdaki (`self-hosted runner`) konteynırları otomatik günceller.
-
-## 🤝 Katkıda Bulunma
-
-1.  Projeyi Fork'layın.
-2.  Yeni bir Feature Branch oluşturun (`git checkout -b feature/yeniOzellik`).
-3.  Değişikliklerinizi Commit edin (`git commit -m 'Yeni özellik eklendi'`).
-4.  Branch'inizi Push edin (`git push origin feature/yeniOzellik`).
-5.  Pull Request açın.
-
-## 📄 Lisans
-
-Bu proje MIT lisansı altında lisanslanmıştır. Daha fazla bilgi için `LICENSE` dosyasına göz atın.
+- **Web Server:** Nginx
 
 ---
 
-⭐ Bu projeyi beğendiyseniz yıldız vermeyi unutmayın!
+## 🚀 Canlıya Alma (Production Deployment)
+
+Bu proje, bir VPS (Örn: DigitalOcean Droplet, AWS EC2, Hetzner) üzerinde **Docker Compose** ile profesyonel bir şekilde çalıştırılmak üzere optimize edilmiştir.
+
+### 1. Sunucu Hazırlığı
+Sunucunuza (Droplet) SSH ile bağlanın ve gerekli araçların kurulu olduğundan emin olun:
+```bash
+# Docker ve Git kurulumu (Ubuntu/Debian için)
+sudo apt update
+sudo apt install -y git docker.io docker-compose
+```
+
+### 2. Projeyi Klonlama
+```bash
+git clone https://github.com/iYigitOnay/MAKUtalk.git
+cd MAKUtalk
+```
+
+### 3. Çevre Değişkenleri (.env)
+Proje kök dizininde bir `.env` dosyası oluşturun ve üretim (production) değişkenlerinizi tanımlayın:
+
+```bash
+nano .env
+```
+
+**.env İçeriği Örneği:**
+```env
+# Veritabanı Ayarları
+DB_USERNAME=admin
+DB_PASSWORD=cok_guclu_bir_sifre
+DB_NAME=makutalk_prod
+
+# Güvenlik Anahtarları
+JWT_SECRET=super_gizli_ve_uzun_jwt_anahtariniz
+
+# Mail Ayarları (Resend vb.)
+RESEND_API_KEY=re_123456789_xxxxxxxx
+SMTP_FROM="MAKUtalk <noreply@makutalk.com>"
+
+# API URL Ayarları (Sunucunuzun IP adresi veya Domain'i olmalıdır)
+# ÖNEMLİ: Sonunda '/' olmamalıdır ve localhost yazmamalıdır!
+VITE_API_URL=http://167.X.X.X:3000
+FRONTEND_URL=http://167.X.X.X
+```
+
+### 4. Docker ile Sistemi Ayağa Kaldırma
+Sadece tek bir komutla Veritabanı, Backend ve Frontend'i üretim modunda ayağa kaldırın:
+
+```bash
+sudo docker-compose build --no-cache
+sudo docker-compose up -d
+```
+
+### 5. Deployment Notları
+- **Veritabanı Göçleri (Migrations):** Backend container'ı başlatıldığında `npx prisma migrate deploy` komutu otomatik olarak çalışır ve veritabanı şemasını günceller. Ekstra bir işlem yapmanıza gerek yoktur.
+- **Portlar:** 
+  - Frontend, sunucunun **80** portunda (HTTP) doğrudan yayın yapar.
+  - Backend API, sunucunun **3000** portunda yayın yapar.
+- **Güncellemeler:** Projede değişiklik yaptığınızda (yeni bir özellik eklediğinizde), sunucuda şu komutları çalıştırmanız yeterlidir:
+  ```bash
+  git pull origin main
+  sudo docker-compose up -d --build
+  ```
+
+---
+
+## 💻 Yerel Geliştirme (Local Development)
+
+Projeyi kendi bilgisayarınızda geliştirmek istiyorsanız:
+
+1. Depoyu klonlayın ve kök dizinde `npm install` çalıştırın (Opsiyonel ama araçlar için iyi olabilir).
+2. PostgreSQL veritabanınızı başlatın (veya `docker-compose up db -d` ile sadece DB'yi ayağa kaldırın).
+3. **Backend:**
+   ```bash
+   cd backend
+   npm install
+   npx prisma migrate dev
+   npm run start:dev
+   ```
+4. **Frontend:**
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+## 🤝 Katkıda Bulunma
+
+1. Projeyi Fork'layın.
+2. Yeni bir Feature Branch oluşturun (`git checkout -b feature/yeni-fikir`).
+3. Değişikliklerinizi Commit edin (`git commit -m 'feat: Yeni özellik eklendi'`).
+4. Branch'inizi Push edin (`git push origin feature/yeni-fikir`).
+5. Pull Request açın.
+
+## 📄 Lisans
+Bu proje MIT lisansı altında lisanslanmıştır.
