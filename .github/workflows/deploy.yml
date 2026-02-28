@@ -28,9 +28,7 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # TÜM DEĞİŞKENLERİ TEK TEK VE GARANTİ ŞEKİLDE OLUŞTURUYORUZ
-            # Not: Veritabanı container'ı içindeki host adı 'db' olduğu için buraya 'db' yazıyoruz.
-            
+            # TÜM DEĞİŞKENLERİ TEK TEK VE KUSURSUZ ŞEKİLDE .env DOSYASINA YAZIYORUZ
             cat <<EOF > .env
             DB_USERNAME=admin
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
@@ -44,7 +42,7 @@ jobs:
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
             EOF
 
-            # Docker'ı sıfırla ve yeni ayarlarla başlat
+            # Docker'ı tamamen sıfırlayıp tertemiz ayağa kaldırıyoruz
             sudo docker-compose down
             sudo docker-compose up -d --build
             sudo docker image prune -f

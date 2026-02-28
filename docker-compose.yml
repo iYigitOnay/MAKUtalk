@@ -6,11 +6,11 @@ services:
     container_name: makutalk_db
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${DB_USERNAME:-admin}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-makupassword123}
-      POSTGRES_DB: ${DB_NAME:-makutalk_db}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
     ports:
-      - "${DB_PORT_EXTERNAL:-5432}:5432"
+      - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -23,12 +23,12 @@ services:
     container_name: makutalk_backend
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${DB_USERNAME:-admin}:${DB_PASSWORD:-makupassword123}@db:5432/${DB_NAME:-makutalk_db}?schema=public
+      DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY}
       GEMINI_API_KEY: ${GEMINI_API_KEY}
-      SMTP_FROM: ${SMTP_FROM:-"MAKUtalk <noreply@makutalk.com>"}
-      FRONTEND_URL: ${FRONTEND_URL:-http://makutalk.com}
+      SMTP_FROM: ${SMTP_FROM}
+      FRONTEND_URL: ${FRONTEND_URL}
       PORT: 3000
     ports:
       - "3000:3000"
@@ -42,11 +42,11 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - VITE_API_URL=${VITE_API_URL:-http://makutalk.com:3000}
+        - VITE_API_URL=${VITE_API_URL}
     container_name: makutalk_frontend
     restart: unless-stopped
     ports:
-      - "8080:80" # Reverse proxy için 8080'e çektik
+      - "80:80" # Siteyi 80'e geri aldım, hemen açılacak!
     depends_on:
       - backend
     networks:
