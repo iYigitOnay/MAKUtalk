@@ -28,21 +28,20 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # TÜM DEĞİŞKENLERİ TEK TEK VE KUSURSUZ ŞEKİLDE .env DOSYASINA YAZIYORUZ
-            cat <<EOF > .env
+            # 'EOF' tırnak içinde (Daha Güvenli): GitHub'dan gelen verileri olduğu gibi dosyaya yazar.
+            cat <<'EOF' > .env
             DB_USERNAME=admin
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DB_NAME=makutalk_db
-            DATABASE_URL="postgresql://admin:${{ secrets.DB_PASSWORD }}@db:5432/makutalk_db?schema=public"
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
             GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            SMTP_FROM="${{ secrets.SMTP_FROM }}"
+            SMTP_FROM=${{ secrets.SMTP_FROM }}
             VITE_API_URL=${{ secrets.VITE_API_URL }}
             FRONTEND_URL=${{ secrets.FRONTEND_URL }}
             EOF
 
-            # Docker'ı tamamen sıfırlayıp tertemiz ayağa kaldırıyoruz
             sudo docker-compose down
             sudo docker-compose up -d --build
             sudo docker image prune -f
