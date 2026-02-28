@@ -18,9 +18,11 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            # Proje klasörüne gir veya oluştur
             mkdir -p ~/MAKUtalk
             cd ~/MAKUtalk
 
+            # Repoyu güncelle
             if [ ! -d ".git" ]; then
               git clone https://github.com/${{ github.repository }}.git .
             else
@@ -28,22 +30,11 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # YAML yapısını bozmadan, .env dosyasını güvenle oluşturuyoruz.
-            # Değişkenleri tek tek 'echo' ile basarak boşluk riskini sıfırlıyoruz.
-            echo "DB_USERNAME=admin" > .env
-            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-            echo "DB_NAME=makutalk_db" >> .env
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-            echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
-            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
-            echo "SMTP_FROM=${{ secrets.SMTP_FROM }}" >> .env
-            echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
-            echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
-            
-            # Backend klasörüne de kopyala
-            cp .env backend/.env
+            # .env dosyasını oluştururken shell interpolation riskini 'cat' ile sıfırlıyoruz.
+            # Tek bir büyük blok halinde, YAML boşluk kurallarına uygun.
+            printf "DB_USERNAME=admin\nDB_PASSWORD=${{ secrets.DB_PASSWORD }}\nDB_NAME=makutalk_db\nDATABASE_URL=${{ secrets.DATABASE_URL }}\nJWT_SECRET=${{ secrets.JWT_SECRET }}\nRESEND_API_KEY=${{ secrets.RESEND_API_KEY }}\nGEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}\nSMTP_FROM=${{ secrets.SMTP_FROM }}\nVITE_API_URL=${{ secrets.VITE_API_URL }}\nFRONTEND_URL=${{ secrets.FRONTEND_URL }}" > .env
 
-            sudo docker-compose down
+            # Docker'ı tamamen sıfırla ve her şeyi taze build et
+            sudo docker-compose down --remove-orphans
             sudo docker-compose up -d --build
             sudo docker image prune -f

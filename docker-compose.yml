@@ -22,9 +22,7 @@ services:
       dockerfile: Dockerfile
     container_name: makutalk_backend
     restart: unless-stopped
-    # KRİTİK MÜDAHALE: .env dosyasını konteynırın içine enjekte ediyoruz
-    env_file:
-      - .env
+    # .env dosyasını bir kenara bırakıp doğrudan environment bloklarını kullanıyoruz
     environment:
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
@@ -48,8 +46,6 @@ services:
         - VITE_API_URL=${VITE_API_URL}
     container_name: makutalk_frontend
     restart: unless-stopped
-    env_file:
-      - .env
     ports:
       - "80:80"
     depends_on:
