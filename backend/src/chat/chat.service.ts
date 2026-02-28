@@ -71,6 +71,8 @@ export class ChatService {
     if (!conversation) throw new NotFoundException();
     
     const other = conversation.participants.find(p => p.userId !== senderId);
+    if (!other) throw new ForbiddenException('Sohbet katılımcısı bulunamadı.');
+
     const auth = await this.canUserChatMessage(senderId, other.userId, conversationId);
 
     // İsteklerde sadece ilk atan yazabilir
