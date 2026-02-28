@@ -24,10 +24,11 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://${DB_USERNAME:-admin}:${DB_PASSWORD:-makupassword123}@db:5432/${DB_NAME:-makutalk_db}?schema=public
-      JWT_SECRET: ${JWT_SECRET:-your_super_secret_jwt_key_here}
+      JWT_SECRET: ${JWT_SECRET}
       RESEND_API_KEY: ${RESEND_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
       SMTP_FROM: ${SMTP_FROM:-"MAKUtalk <noreply@makutalk.com>"}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      FRONTEND_URL: ${FRONTEND_URL:-http://makutalk.com}
       PORT: 3000
     ports:
       - "3000:3000"
@@ -41,13 +42,11 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        # VITE_API_URL, uygulamanın çalışacağı sunucunun veya domainin IP'si olmalıdır.
-        # Örn: VITE_API_URL=http://167.x.x.x:3000
-        - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+        - VITE_API_URL=${VITE_API_URL:-http://makutalk.com:3000}
     container_name: makutalk_frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80" # Reverse proxy için 8080'e çektik
     depends_on:
       - backend
     networks:
