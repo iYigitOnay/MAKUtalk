@@ -28,21 +28,20 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # 1. .env dosyasını ana dizinde oluştur
-            cat <<'EOF' > .env
-DB_USERNAME=admin
-DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-DB_NAME=makutalk_db
-DATABASE_URL=${{ secrets.DATABASE_URL }}
-JWT_SECRET=${{ secrets.JWT_SECRET }}
-RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-SMTP_FROM=${{ secrets.SMTP_FROM }}
-VITE_API_URL=${{ secrets.VITE_API_URL }}
-FRONTEND_URL=${{ secrets.FRONTEND_URL }}
-EOF
+            # YAML yapısını bozmadan, .env dosyasını güvenle oluşturuyoruz.
+            # Değişkenleri tek tek 'echo' ile basarak boşluk riskini sıfırlıyoruz.
+            echo "DB_USERNAME=admin" > .env
+            echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+            echo "DB_NAME=makutalk_db" >> .env
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+            echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}" >> .env
+            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> .env
+            echo "SMTP_FROM=${{ secrets.SMTP_FROM }}" >> .env
+            echo "VITE_API_URL=${{ secrets.VITE_API_URL }}" >> .env
+            echo "FRONTEND_URL=${{ secrets.FRONTEND_URL }}" >> .env
             
-            # 2. .env dosyasını backend dizinine de kopyala (Prisma garanti görsün)
+            # Backend klasörüne de kopyala
             cp .env backend/.env
 
             sudo docker-compose down
