@@ -14,7 +14,10 @@
         <Sidebar class="hidden sm:flex" />
 
         <!-- Main Content Area -->
-        <main class="flex-1 overflow-y-auto border-x border-slate-100 dark:border-primary-900/20 pb-20 sm:pb-0">
+        <main
+          ref="mainContent"
+          class="flex-1 overflow-y-auto border-x border-slate-100 dark:border-primary-900/20 pb-20 sm:pb-0"
+        >
           <router-view />
         </main>
 
@@ -38,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 import Sidebar from "@/components/Sidebar.vue";
 import RightSidebar from "@/components/RightSidebar.vue";
@@ -49,6 +52,17 @@ import { useDarkMode } from "@/composables/useDarkMode";
 useDarkMode();
 
 const route = useRoute();
+const mainContent = ref<HTMLElement | null>(null);
+
+// Sayfa değiştiğinde en üste kaydır
+watch(
+  () => route.fullPath,
+  () => {
+    if (mainContent.value) {
+      mainContent.value.scrollTo({ top: 0, behavior: "instant" });
+    }
+  }
+);
 
 const showMainLayout = computed(() => {
   return (route.meta.layout as string) === "main";

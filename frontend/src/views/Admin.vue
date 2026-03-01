@@ -24,15 +24,15 @@
     </header>
 
     <!-- 6'LI STATS GRID (ZARIF IKONLAR) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
-      <div v-for="s in statItems" :key="s.label" class="bg-white dark:bg-gray-900 p-6 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-xl flex items-center gap-4 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 mb-16">
+      <div v-for="s in statItems" :key="s.label" class="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-xl flex flex-col sm:flex-row items-center gap-3 sm:gap-4 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
         <div class="absolute -right-4 -bottom-4 w-24 h-24 rounded-full blur-2xl opacity-5 transition-opacity duration-500 group-hover:opacity-10" :style="{ backgroundColor: s.color }"></div>
-        <div class="w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner transition-colors duration-500" :style="{ backgroundColor: s.bg, color: s.color, borderColor: s.border }">
-          <div class="w-6 h-6 flex items-center justify-center" v-html="s.icon"></div>
+        <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center border shadow-inner transition-colors duration-500" :style="{ backgroundColor: s.bg, color: s.color, borderColor: s.border }">
+          <div class="w-5 h-5 sm:w-6 sm:h-6 flex items-center justify-center" v-html="s.icon"></div>
         </div>
-        <div class="relative z-10">
-          <p class="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{{ s.label }}</p>
-          <p class="text-xl font-black text-gray-900 dark:text-white italic tracking-tighter leading-none">{{ s.value }}</p>
+        <div class="relative z-10 text-center sm:text-left">
+          <p class="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest mb-0.5">{{ s.label }}</p>
+          <p class="text-lg sm:text-xl font-black text-gray-900 dark:text-white italic tracking-tighter leading-none">{{ s.value }}</p>
         </div>
       </div>
     </div>
@@ -60,53 +60,70 @@
       <transition name="fade" mode="out-in">
         <div :key="activeTab">
           <!-- 1. KULLANICILAR -->
-          <div v-if="activeTab === 'users'" class="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 overflow-hidden shadow-2xl">
-            <table class="w-full text-left">
-              <thead><tr class="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-white/5"><th class="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Kullanıcı</th><th class="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Durum</th><th class="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Eylem</th></tr></thead>
-              <tbody class="divide-y divide-gray-50 dark:divide-white/5">
-                <tr v-for="user in users" :key="user.id" class="hover:bg-blue-50/30 dark:hover:bg-blue-900/5 transition-all duration-300 group">
-                  <td class="p-8"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner group-hover:rotate-3 transition-transform">{{ user.username.charAt(0) }}</div><div><p class="text-sm font-black text-gray-900 dark:text-white">@{{ user.username }}</p><p class="text-[10px] text-gray-400 font-bold uppercase">{{ user.email }}</p></div></div></td>
-                  <td class="p-8 text-center"><span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase border" :class="user.isBanned ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'">{{ user.isBanned ? 'YASAKLI' : 'AKTİF' }}</span></td>
-                  <td class="p-8 text-right"><button @click="handleBanToggle(user)" class="p-2 text-red-500 hover:scale-110 transition-transform"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></button></td>
-                </tr>
-              </tbody>
-            </table>
+          <div v-if="activeTab === 'users'">
+            <!-- Masaüstü Tablo -->
+            <div class="hidden md:block bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-white/5 overflow-hidden shadow-2xl">
+              <table class="w-full text-left">
+                <thead><tr class="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-white/5"><th class="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Kullanıcı</th><th class="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Durum</th><th class="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Eylem</th></tr></thead>
+                <tbody class="divide-y divide-gray-50 dark:divide-white/5">
+                  <tr v-for="user in users" :key="user.id" class="hover:bg-blue-50/30 dark:hover:bg-blue-900/5 transition-all duration-300 group">
+                    <td class="p-8"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner group-hover:rotate-3 transition-transform">{{ user.username.charAt(0) }}</div><div><p class="text-sm font-black text-gray-900 dark:text-white">@{{ user.username }}</p><p class="text-[10px] text-gray-400 font-bold uppercase">{{ user.email }}</p></div></div></td>
+                    <td class="p-8 text-center"><span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase border" :class="user.isBanned ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'">{{ user.isBanned ? 'YASAKLI' : 'AKTİF' }}</span></td>
+                    <td class="p-8 text-right"><button @click="handleBanToggle(user)" class="p-2 text-red-500 hover:scale-110 transition-transform"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></button></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <!-- Mobil Kartlar -->
+            <div class="md:hidden space-y-4">
+              <div v-for="user in users" :key="user.id" class="bg-white dark:bg-gray-900 p-5 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-lg flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                  <div class="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner">{{ user.username.charAt(0) }}</div>
+                  <div>
+                    <p class="text-sm font-black text-gray-900 dark:text-white leading-tight">@{{ user.username }}</p>
+                    <p class="text-[9px] text-gray-400 font-bold uppercase truncate max-w-[150px] mb-1">{{ user.email }}</p>
+                    <span class="px-2 py-0.5 rounded-md text-[7px] font-black uppercase border" :class="user.isBanned ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'">{{ user.isBanned ? 'YASAKLI' : 'AKTİF' }}</span>
+                  </div>
+                </div>
+                <button @click="handleBanToggle(user)" class="w-10 h-10 flex items-center justify-center bg-red-50 dark:bg-red-900/10 text-red-500 rounded-xl active:scale-90 transition-transform">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" /></svg>
+                </button>
+              </div>
+            </div>
           </div>
 
           <!-- 2. TOPLULUKLAR -->
-          <div v-else-if="activeTab === 'clubs'" class="space-y-6 max-w-4xl mx-auto px-2">
-            <div v-if="pendingClubs.length === 0" class="py-24 text-center opacity-30 font-black uppercase text-xs tracking-widest italic border-2 border-dashed border-gray-100 dark:border-white/5 rounded-[3rem]">Henüz başvuru yapılmamış.</div>
-            <div v-for="club in pendingClubs" :key="club.id" class="bg-white dark:bg-gray-900 border-2 border-gray-50 dark:border-white/5 rounded-[3rem] p-8 shadow-2xl flex flex-col gap-8 transition-all hover:border-blue-500/20">
-              <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div class="flex items-center gap-6 min-w-0 flex-1">
-                  <!-- LOGO KUTUSU (Geliştirilmiş) -->
-                  <div class="w-20 h-20 rounded-[2rem] flex items-center justify-center text-4xl shadow-inner flex-shrink-0 border border-gray-100 dark:border-white/5 overflow-hidden" :style="{ backgroundColor: club.color + '15', color: club.color }">
+          <div v-else-if="activeTab === 'clubs'" class="space-y-6 max-w-4xl mx-auto px-1 sm:px-2">
+            <div v-if="pendingClubs.length === 0" class="py-24 text-center opacity-30 font-black uppercase text-xs tracking-widest italic border-2 border-dashed border-gray-100 dark:border-white/5 rounded-[2.5rem] sm:rounded-[3rem]">Henüz başvuru yapılmamış.</div>
+            <div v-for="club in pendingClubs" :key="club.id" class="bg-white dark:bg-gray-900 border-2 border-gray-50 dark:border-white/5 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-8 shadow-2xl flex flex-col gap-6 sm:gap-8 transition-all hover:border-blue-500/20">
+              <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 sm:gap-6">
+                <div class="flex items-center gap-4 sm:gap-6 min-w-0 flex-1">
+                  <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-[1.5rem] sm:rounded-[2rem] flex items-center justify-center text-3xl sm:text-4xl shadow-inner flex-shrink-0 border border-gray-100 dark:border-white/5 overflow-hidden" :style="{ backgroundColor: club.color + '15', color: club.color }">
                     <span v-if="isEmoji(club.emoji)">{{ club.emoji }}</span>
-                    <span v-else class="text-xl font-black uppercase tracking-tighter">{{ club.emoji }}</span>
+                    <span v-else class="text-lg sm:text-xl font-black uppercase tracking-tighter">{{ club.emoji }}</span>
                   </div>
                   <div class="min-w-0">
-                    <span class="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[8px] font-black uppercase tracking-widest rounded-full border border-gray-200 dark:border-white/5">{{ club.category }}</span>
-                    <h3 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mt-2 truncate">{{ club.name }}</h3>
+                    <span class="px-2 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[7px] sm:text-[8px] font-black uppercase tracking-widest rounded-full border border-gray-200 dark:border-white/5">{{ club.category }}</span>
+                    <h3 class="text-xl sm:text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mt-1 truncate">{{ club.name }}</h3>
                   </div>
                 </div>
-                <div class="text-right flex-shrink-0">
-                  <p class="text-[10px] font-black" :class="club.academicApproval ? 'text-emerald-500' : 'text-amber-500'">{{ club.academicApproval ? 'HOCA ONAYLADI ✅' : 'HOCA BEKLENİYOR ⏳' }}</p>
-                  <p class="text-[9px] text-gray-400 uppercase tracking-widest mt-1">Kurucu: @{{ club.founder?.username }}</p>
+                <div class="text-left sm:text-right flex-shrink-0 w-full sm:w-auto">
+                  <p class="text-[9px] sm:text-[10px] font-black" :class="club.academicApproval ? 'text-emerald-500' : 'text-amber-500'">{{ club.academicApproval ? 'HOCA ONAYLADI ✅' : 'HOCA BEKLENİYOR ⏳' }}</p>
+                  <p class="text-[8px] sm:text-[9px] text-gray-400 uppercase tracking-widest mt-0.5">Kurucu: @{{ club.founder?.username }}</p>
                 </div>
               </div>
-              <!-- AÇIKLAMA: Taşıma Engellendi -->
-              <div class="p-6 bg-slate-50 dark:bg-black/40 rounded-[2rem] italic text-sm text-gray-600 dark:text-gray-400 leading-relaxed border border-gray-100/50 dark:border-white/5 shadow-inner line-clamp-4 overflow-hidden break-words">"{{ club.description }}"</div>
-              <div class="flex items-center justify-between pt-6 border-t border-gray-50 dark:border-white/5">
+              <div class="p-5 sm:p-6 bg-slate-50 dark:bg-black/40 rounded-[1.5rem] sm:rounded-[2rem] italic text-xs sm:text-sm text-gray-600 dark:text-gray-400 leading-relaxed border border-gray-100/50 dark:border-white/5 shadow-inner line-clamp-4 overflow-hidden break-words">"{{ club.description }}"</div>
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pt-6 border-t border-gray-50 dark:border-white/5">
                 <div class="flex items-center gap-3">
-                  <span class="text-[9px] font-black text-gray-400 uppercase tracking-widest">Danışman:</span>
+                  <span class="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">Danışman:</span>
                   <div class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-xl border border-blue-100 dark:border-blue-900/30">
                     <div v-if="club.advisor?.avatarUrl" class="w-5 h-5 rounded-full overflow-hidden"><img :src="club.advisor.avatarUrl" class="w-full h-full object-cover" /></div>
-                    <p class="text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">{{ club.advisor?.fullName || club.advisorName }}</p>
+                    <p class="text-[10px] sm:text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">{{ club.advisor?.fullName || club.advisorName }}</p>
                   </div>
                 </div>
-                <div class="flex gap-4">
-                  <button @click="handleRejectClub(club.id)" class="px-8 py-3 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 text-[10px] font-black uppercase rounded-2xl transition-all border border-transparent hover:border-red-500/20 active:scale-95">Reddet</button>
-                  <button @click="handleApproveClub(club.id)" class="px-10 py-3 bg-blue-600 text-white text-[10px] font-black rounded-2xl uppercase hover:bg-blue-700 shadow-xl shadow-blue-500/30 active:scale-95 transition-all">Kesin Onay</button>
+                <div class="flex gap-3 sm:gap-4">
+                  <button @click="handleRejectClub(club.id)" class="flex-1 sm:flex-none px-6 sm:px-8 py-3 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/10 text-[9px] sm:text-[10px] font-black uppercase rounded-2xl transition-all border border-transparent hover:border-red-500/20 active:scale-95">Reddet</button>
+                  <button @click="handleApproveClub(club.id)" class="flex-2 sm:flex-none px-8 sm:px-10 py-3 bg-blue-600 text-white text-[9px] sm:text-[10px] font-black rounded-2xl uppercase hover:bg-blue-700 shadow-xl shadow-blue-500/30 active:scale-95 transition-all">Kesin Onay</button>
                 </div>
               </div>
             </div>
