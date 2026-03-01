@@ -89,9 +89,9 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   async reportUser(
     @CurrentUser() user,
-    @Body() body: { reportedUsername: string; reason: string; subReason: string },
+    @Body() body: { reportedUserId?: number; reportedPostId?: number; reportedCommentId?: number; reason: string; subReason?: string },
   ) {
-    return this.usersService.reportUser(user.username, body.reportedUsername, body.reason, body.subReason);
+    return this.usersService.createReport(user.id, body);
   }
 
   @Post(':id/ban')
