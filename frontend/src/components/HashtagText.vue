@@ -54,6 +54,9 @@ const handleLinkClick = (event: MouseEvent) => {
   
   if (!link) return;
 
+  // KRİTİK: Tıklama olayının üst elementlere (PostCard gibi) sıçramasını engelle
+  event.stopPropagation();
+
   const href = link.getAttribute('href');
   const type = link.getAttribute('data-type');
   const value = link.getAttribute('data-value');
