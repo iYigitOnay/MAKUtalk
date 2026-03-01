@@ -342,7 +342,15 @@ export class PostsService {
   async remove(id: number, userId: number) {
     const post = await this.prisma.post.findUnique({ where: { id } });
     if (!post) throw new NotFoundException('Post bulunamadı.');
-    if (post.authorId !== userId) throw new ForbiddenException('Bu postu silme yetkiniz yok.');
+
+    // Kullanıcı admin mi kontrol et
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const isAdmin = user?.role === 'ADMIN' || user?.email === '2312101063@ogr.mehmetakif.edu.tr';
+
+    if (post.authorId !== userId && !isAdmin) {
+      throw new ForbiddenException('Bu postu silme yetkiniz yok.');
+    }
+
     await this.prisma.post.delete({ where: { id } });
     return { message: 'Post başarıyla silindi.' };
   }

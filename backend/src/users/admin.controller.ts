@@ -6,26 +6,18 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @Controller('admin')
 @UseGuards(JwtAuthGuard)
 export class AdminController {
-  constructor(private prisma: PrismaService) {}
-
-  private checkAdmin(user: any) {
-    // CurrentUser'dan gelen nesnenin yapısına göre kontrol edelim
-    const email = user.email;
-    const role = user.role;
-    
-    if (role !== 'ADMIN' && email !== '2312101063@ogr.mehmetakif.edu.tr') {
-      throw new ForbiddenException('Bu bölüme erişim yetkiniz yok.');
-    }
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   @Get('stats')
   async getStats(@CurrentUser() user) {
-    this.checkAdmin(user);
-    const prisma = this.prisma as any;
+    if (user.role !== 'ADMIN' && user.email !== '2312101063@ogr.mehmetakif.edu.tr') {
+      throw new ForbiddenException('Yetkisiz erişim.');
+    }
+
     const [totalUsers, totalReports, totalFeedbacks] = await Promise.all([
       this.prisma.user.count(),
-      prisma.report.count({ where: { status: 'PENDING' } }),
-      prisma.feedback.count(),
+      this.prisma.report.count({ where: { status: 'PENDING' } }),
+      this.prisma.feedback.count(),
     ]);
 
     return {
@@ -37,7 +29,9 @@ export class AdminController {
 
   @Get('users')
   async getUsers(@CurrentUser() user) {
-    this.checkAdmin(user);
+    if (user.role !== 'ADMIN' && user.email !== '2312101063@ogr.mehmetakif.edu.tr') {
+      throw new ForbiddenException('Yetkisiz erişim.');
+    }
     return this.prisma.user.findMany({
       orderBy: { createdAt: 'desc' },
       select: {
@@ -54,28 +48,29 @@ export class AdminController {
 
   @Get('feedbacks')
   async getFeedbacks(@CurrentUser() user) {
-    this.checkAdmin(user);
-    return (this.prisma as any).feedback.findMany({
+    if (user.role !== 'ADMIN' && user.email !== '2312101063@ogr.mehmetakif.edu.tr') {
+      throw new ForbiddenException('Yetkisiz erişim.');
+    }
+    return this.prisma.feedback.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        user: {
-          select: {
-            username: true,
-          },
-        },
+        user: { select: { username: true } },
       },
     });
   }
 
   @Get('reports')
   async getReports(@CurrentUser() user) {
-    this.checkAdmin(user);
-    return (this.prisma as any).report.findMany({
+    if (user.role !== 'ADMIN' && user.email !== '2312101063@ogr.mehmetakif.edu.tr') {
+      throw new ForbiddenException('Yetkisiz erişim.');
+    }
+    return this.prisma.report.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
         reporter: { select: { username: true } },
         reportedUser: { select: { username: true } },
-        reportedPost: { select: { id: true, content: true } }
+        reportedPost: { select: { id: true, content: true, author: { select: { username: true } } } },
+        reportedComment: { select: { id: true, content: true, user: { select: { username: true } } } }
       },
     });
   }

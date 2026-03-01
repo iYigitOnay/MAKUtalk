@@ -15,8 +15,8 @@ model User {
   bio       String?  @db.Text
   avatarUrl String?
   coverUrl  String?  
-  department String? // Bölüm bilgisi
-  class      String? // Sınıf bilgisi
+  department String? 
+  class      String? 
   isVerified Boolean  @default(false)
   isPrivate  Boolean  @default(false)
   isBanned   Boolean  @default(false)
@@ -25,7 +25,6 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Relations
   posts                Post[]
   likes                Like[]
   comments             Comment[]
@@ -220,8 +219,9 @@ model Comment {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  reports Report[]
 
   @@index([postId])
   @@index([userId])
@@ -250,7 +250,7 @@ model Notification {
   read       Boolean          @default(false)
   createdAt  DateTime         @default(now())
 
-  recipient User  @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
+  recipient User @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
   sender    User? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
   post      Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
 
@@ -283,17 +283,19 @@ model Feedback {
 }
 
 model Report {
-  id               Int      @id @default(autoincrement())
-  reporterId       Int
-  reporter         User     @relation("ReportedBy", fields: [reporterId], references: [id])
-  reportedUserId   Int?
-  reportedUser     User?    @relation("ReportedUser", fields: [reportedUserId], references: [id])
-  reportedPostId   Int?
-  reportedPost     Post?    @relation(fields: [reportedPostId], references: [id])
-  reason           String
-  subReason        String?
-  status           String   @default("PENDING") 
-  createdAt        DateTime @default(now())
+  id                Int      @id @default(autoincrement())
+  reporterId        Int
+  reporter          User     @relation("ReportedBy", fields: [reporterId], references: [id])
+  reportedUserId    Int?
+  reportedUser      User?    @relation("ReportedUser", fields: [reportedUserId], references: [id])
+  reportedPostId    Int?
+  reportedPost      Post?    @relation(fields: [reportedPostId], references: [id])
+  reportedCommentId Int?
+  reportedComment   Comment? @relation(fields: [reportedCommentId], references: [id])
+  reason            String
+  subReason         String?
+  status            String   @default("PENDING") 
+  createdAt         DateTime @default(now())
 }
 
 model Club {
@@ -355,9 +357,9 @@ model SpotListing {
   imageUrl    String?      
   category    SpotCategory @default(AL_SAT)
   status      ListingStatus @default(ACTIVE) 
-  location    String?      // Örn: İstiklal Yerleşkesi, KYK Yurdu vb.
-  contactInfo String?      // WhatsApp veya iletişim tercihi
-  isNegotiable Boolean     @default(false) // Pazarlık payı var mı?
+  location    String?      
+  contactInfo String?      
+  isNegotiable Boolean     @default(false) 
   authorId    Int
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -366,17 +368,17 @@ model SpotListing {
 }
 
 enum SpotCategory {
-  AL_SAT        // İkinci El / Al-Sat
-  EV_ARKADASI   // Ev arkadaşı / Konaklama
-  KAMPUS_RADARI // İndirimler / Yemek Fırsatları
-  YOL_ARKADASI  // Araç paylaşımı / Yolculuk
-  ODUNC         // Ödünç Al-Ver
-  YETENEK       // Freelance işler / Yetenekler
-  STAJ_IS       // Staj ve İş Fırsatları
+  AL_SAT        
+  EV_ARKADASI   
+  KAMPUS_RADARI 
+  YOL_ARKADASI  
+  ODUNC         
+  YETENEK       
+  STAJ_IS       
 }
 
 enum ListingStatus {
-  ACTIVE        // Yayında
-  SOLD          // Satıldı / Bulundu
-  CLOSED        // Kapandı
+  ACTIVE        
+  SOLD          
+  CLOSED        
 }

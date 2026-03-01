@@ -71,7 +71,12 @@ export class CommentsService {
     });
 
     if (!comment) throw new NotFoundException('Yorum bulunamadı.');
-    if (comment.userId !== userId)
+
+    // Kullanıcı admin mi kontrol et
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const isAdmin = user?.role === 'ADMIN' || user?.email === '2312101063@ogr.mehmetakif.edu.tr';
+
+    if (comment.userId !== userId && !isAdmin)
       throw new ForbiddenException('Bu yorumu silme yetkiniz yok.');
 
     await this.prisma.comment.delete({ where: { id: commentId } });

@@ -1,146 +1,99 @@
 <!-- src/views/Home.vue -->
 <template>
-  <div
-    class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen font-sans"
-  >
-    <!-- Post Composer Section (Web'de Sticky, Mobilde Akışta) -->
-    <div
-      v-if="authStore.isAuthenticated"
-      class="sm:sticky top-0 z-40 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-4"
-    >
-      <div class="flex gap-4">
-        <!-- Avatar -->
-        <div class="relative group flex-shrink-0">
-          <div class="p-[2px] rounded-full bg-gradient-to-tr from-blue-400 to-purple-400 shadow-sm transition-transform group-hover:scale-105">
-            <img
-              v-if="authStore.user?.avatarUrl"
-              :src="authStore.user.avatarUrl"
-              :alt="authStore.user.username"
-              class="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-950"
-            />
-            <div
-              v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white dark:border-gray-950 flex items-center justify-center text-white font-black"
-            >
-              {{ authStore.user?.username?.charAt(0).toUpperCase() }}
-            </div>
-          </div>
+  <div class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen font-sans">
+    
+    <!-- MODERATION OVERLAYS -->
+    <transition name="fade">
+      <div v-if="showReportModal" class="fixed inset-0 z-[110] bg-white dark:bg-gray-950 flex flex-col">
+        <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/5">
+          <button v-if="reportStep === 2" @click="reportStep = 1" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+          <div v-else class="w-9"></div>
+          <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Gönderiyi Bildir</h3>
+          <button @click="closeReport" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
         </div>
-
-        <!-- Composer Area -->
-        <div class="flex-1 min-w-0 relative">
-          <textarea
-            v-model="newPostContent"
-            @input="handleInput"
-            placeholder="Ne Düşünüyorsun?"
-            class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium"
-            rows="3"
-            :disabled="postsStore.loading"
-          />
-
-          <!-- MENTION ÖNERİ LİSTESİ -->
-          <Transition
-            enter-active-class="transition duration-300 ease-out"
-            enter-from-class="opacity-0 -translate-y-2 scale-95"
-            enter-to-class="opacity-100 translate-y-0 scale-100"
-            leave-active-class="transition duration-200 ease-in"
-            leave-from-class="opacity-100 translate-y-0 scale-100"
-            leave-to-class="opacity-0 -translate-y-2 scale-95"
-          >
-            <div v-if="showMentions" class="flex items-center gap-2 overflow-x-auto py-2 mb-2 scrollbar-hide no-scrollbar">
-              <button
-                v-for="u in mentionUsers"
-                :key="u.id"
-                @click="selectMention(u.username)"
-                class="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-slate-200 dark:border-white/10 rounded-full shadow-sm hover:border-blue-500 dark:hover:border-blue-400 transition-all active:scale-95"
-              >
-                <img v-if="u.avatarUrl" :src="u.avatarUrl" class="w-6 h-6 rounded-full object-cover border border-slate-100 dark:border-gray-700" />
-                <div v-else class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-[10px]">{{ u.username.charAt(0).toUpperCase() }}</div>
-                <span class="text-xs font-black text-slate-900 dark:text-white">@{{ u.username }}</span>
-              </button>
-            </div>
-          </Transition>
-
-          <!-- Resim Önizleme -->
-          <div v-if="selectedImagePreview" class="relative mt-4 group">
-            <img :src="selectedImagePreview" class="w-full max-h-80 object-cover rounded-2xl border border-gray-100 dark:border-primary-900/20 shadow-sm" />
-            <button @click="removeSelectedImage" class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+        <div class="flex-1 overflow-y-auto p-6 space-y-2 no-scrollbar">
+          <div v-if="reportStep === 1">
+            <button v-for="(cat, name) in reportCategories" :key="name" @click="selectReportCategory(name as string)" class="w-full text-left p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent hover:border-gray-100 dark:hover:border-white/10 transition-all flex items-center justify-between group">
+              <span class="font-bold text-gray-700 dark:text-gray-300">{{ name }}</span>
+              <svg class="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
+          <div v-else class="space-y-2">
+            <button v-for="sub in reportCategories[selectedCategory]" :key="sub" @click="submitReport(sub)" class="w-full text-left p-4 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:border-blue-900/30 transition-all">
+              <span class="font-bold text-gray-700 dark:text-gray-300 group-hover:text-blue-600">{{ sub }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
 
-          <!-- POST ALANI KATEGORİ ÇARKI -->
-          <transition
-            enter-active-class="transition duration-500 ease-out"
-            enter-from-class="opacity-0 translate-y-4 scale-95"
-            enter-to-class="opacity-100 translate-y-0 scale-100"
-            @after-enter="initComposerScroll"
-          >
-            <div v-if="newPostContent.trim() || selectedImage" class="relative mt-2 h-24 flex items-center justify-center overflow-hidden -ml-16">
-              <div ref="composerCategoryRef" class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth" @scroll="handleComposerScroll">
-                <div v-for="(item, index) in allItems" :key="`comp-${item.id}-${index}`" class="flex-shrink-0 snap-center composer-item">
-                  <button @click="selectedCategoryId = item.id; centerComposerItem(index)" class="flex flex-col items-center gap-1.5 group outline-none">
-                    <div :class="['w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border-2', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'text-white scale-110' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-primary-900/10 text-gray-400 scale-90']" :style="((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? { backgroundColor: item.color, borderColor: 'rgba(255,255,255,0.2)', boxShadow: `0 8px 25px -5px ${item.color}60` } : {}">
-                      <svg v-if="item.id === null" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                      <span v-else class="w-2 h-2 rounded-full" :style="{ backgroundColor: selectedCategoryId === item.id ? 'white' : item.color }"></span>
-                    </div>
-                    <span :class="['text-[9px] font-black tracking-tighter uppercase transition-all duration-300', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'opacity-100' : 'text-gray-400 opacity-70']" :style="selectedCategoryId === item.id ? { color: item.color } : {}">{{ item.name }}</span>
-                  </button>
-                </div>
+    <!-- Post Composer Section -->
+    <div v-if="authStore.isAuthenticated" class="sm:sticky top-0 z-40 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-4">
+      <div class="flex gap-4">
+        <div class="relative group flex-shrink-0">
+          <div class="p-[2px] rounded-full bg-gradient-to-tr from-blue-400 to-purple-400 shadow-sm transition-transform group-hover:scale-105">
+            <img v-if="authStore.user?.avatarUrl" :src="authStore.user.avatarUrl" :alt="authStore.user.username" class="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-950" />
+            <div v-else class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white dark:border-gray-950 flex items-center justify-center text-white font-black">{{ authStore.user?.username?.charAt(0).toUpperCase() }}</div>
+          </div>
+        </div>
+        <div class="flex-1 min-w-0 relative">
+          <textarea v-model="newPostContent" @input="handleInput" placeholder="Ne Düşünüyorsun?" class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium" rows="3" :disabled="postsStore.loading" />
+          
+          <div v-if="selectedImagePreview" class="relative mt-4 group">
+            <img :src="selectedImagePreview" class="w-full max-h-80 object-cover rounded-2xl border border-gray-100 dark:border-primary-900/20 shadow-sm" />
+            <button @click="removeSelectedImage" class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+          </div>
+
+          <!-- POST KATEGORİ ÇARKI (Sadece yazı veya resim varken çıkar) -->
+          <div v-if="newPostContent.trim() || selectedImage" class="relative mt-2 h-24 flex items-center justify-center overflow-hidden -ml-16">
+            <div ref="composerCategoryRef" class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth" @scroll="handleComposerScroll">
+              <div v-for="(item, index) in allItems" :key="index" class="flex-shrink-0 snap-center composer-item">
+                <button @click="selectedCategoryId = item.id; centerComposerItem(index)" class="flex flex-col items-center gap-1.5 group outline-none">
+                  <div :class="['w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border-2', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'text-white scale-110' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-primary-900/10 text-gray-400 scale-90']" :style="((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? { backgroundColor: item.color || '#4f46e5', borderColor: 'rgba(255,255,255,0.2)' } : {}">
+                    <svg v-if="item.id === null" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                    <span v-else class="w-2 h-2 rounded-full" :style="{ backgroundColor: selectedCategoryId === item.id ? 'white' : item.color }"></span>
+                  </div>
+                  <span :class="['text-[9px] font-black tracking-tighter uppercase transition-all duration-300', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'opacity-100' : 'text-gray-400 opacity-70']" :style="selectedCategoryId === item.id ? { color: item.color } : {}">{{ item.name }}</span>
+                </button>
               </div>
             </div>
-          </transition>
+          </div>
 
-          <!-- Footer Actions -->
           <div v-if="newPostContent.trim() || selectedImage" class="mt-2 flex items-center justify-between border-t border-gray-50 dark:border-primary-900/5 pt-4">
             <div class="flex items-center gap-2">
               <input type="file" ref="imageInputRef" class="hidden" accept="image/*" @change="handleImageSelect" />
-              <button type="button" @click="imageInputRef?.click()" class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all" title="Resim Ekle">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              </button>
+              <button @click="imageInputRef?.click()" class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></button>
               <EmojiPicker :modelValue="newPostContent" @update:modelValue="(e) => (newPostContent += e)" />
             </div>
-            <button @click="handleCreatePost" :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading" class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full transition-all duration-300 shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50">
-              {{ postsStore.loading ? "..." : "PAYLAŞ" }}
-            </button>
+            <button @click="handleCreatePost" :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading" class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg active:scale-95 disabled:opacity-50">PAYLAŞ</button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- KATEGORİ ÇARKI (Web'de Sticky, Mobilde Akışta) -->
+    <!-- ANA KATEGORİ ÇARKI (Akış Ortada) -->
     <div class="sm:sticky top-[116px] z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden">
       <div ref="categoryNavRef" @scroll="handleCarouselScroll" class="flex items-center gap-4 overflow-x-auto px-[35%] scrollbar-hide snap-x snap-mandatory scroll-smooth h-20">
-        <div v-for="(item, index) in allItems" :key="`nav-${item.id}-${index}`" class="flex-shrink-0 snap-center carousel-item">
-          <button @click="selectCategory(item.id); centerCarouselItem(index)" :class="['w-28 h-12 rounded-xl flex items-center justify-center gap-2 transition-all duration-500 border-2 px-3', (item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id ? 'scale-110 text-white shadow-lg' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-white/5 text-gray-400 scale-90 opacity-60']" :style="((item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id) ? { backgroundColor: item.color || '#3b82f6', borderColor: 'rgba(255,255,255,0.3)', boxShadow: `0 10px 20px -5px ${item.color || '#3b82f6'}80` } : {}">
-            <div v-if="item.id === null" class="flex items-center gap-2">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-              <span class="text-[10px] font-black uppercase tracking-tight">Akış</span>
-            </div>
-            <div v-else class="flex items-center gap-2">
-              <span class="w-2 h-2 rounded-full flex-shrink-0" :style="{ backgroundColor: postsStore.currentCategory === item.id ? 'white' : item.color }"></span>
-              <span class="text-[10px] font-black uppercase truncate leading-none tracking-tight">{{ item.name }}</span>
-            </div>
+        <div v-for="(item, index) in allItems" :key="index" class="flex-shrink-0 snap-center carousel-item">
+          <button @click="selectCategory(item.id); centerCarouselItem(index)" :class="['w-28 h-12 rounded-xl flex items-center justify-center gap-2 transition-all duration-500 border-2 px-3', (item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id ? 'scale-110 text-white shadow-lg' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-white/5 text-gray-400 scale-90 opacity-60']" :style="((item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id) ? { backgroundColor: item.color || '#3b82f6', borderColor: 'rgba(255,255,255,0.3)' } : {}">
+            <svg v-if="item.id === null" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+            <span v-else class="w-2 h-2 rounded-full" :style="{ backgroundColor: postsStore.currentCategory === item.id ? 'white' : item.color }"></span>
+            <span class="text-[10px] font-black uppercase truncate tracking-tight">{{ item.name }}</span>
           </button>
         </div>
       </div>
     </div>
 
-    <!-- Posts Feed -->
+    <!-- Feed -->
     <div class="pb-20">
-      <div v-if="postsStore.loading && !postsStore.posts.length" class="flex justify-center items-center h-64">
-        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
-      <div v-else-if="!postsStore.posts.length" class="flex flex-col items-center justify-center h-64 text-center border-b border-gray-200 dark:border-primary-900/30 p-8">
-        <p class="text-gray-500 dark:text-gray-400 font-black italic uppercase tracking-widest">Henüz paylaşım yok</p>
-      </div>
+      <div v-if="postsStore.loading && !postsStore.posts.length" class="flex justify-center items-center h-64"><div class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div></div>
       <div v-else class="divide-y divide-gray-200 dark:divide-primary-900/20">
-        <PostCard v-for="post in postsStore.posts" :key="post.id" :post="post" @delete="handleDeletePost" @showComments="handleShowComments" />
+        <PostCard v-for="post in postsStore.posts" :key="post.id" :post="post" @delete="handleDeletePost" @report="handleReportPost" @showComments="handleShowComments" />
       </div>
     </div>
 
     <CommentsModal :is-open="commentsModalOpen" :post-id="selectedPostId" @close="commentsModalOpen = false" />
-    <DeleteConfirmModal :is-open="showDeleteModal" :is-deleting="isDeleting" @confirm="handleConfirmDelete" @cancel="handleCancelDelete" />
+    <DeleteConfirmModal :is-open="showDeleteModal" :is-deleting="isDeleting" @confirm="handleConfirmDelete" @cancel="showDeleteModal = false" />
   </div>
 </template>
 
@@ -167,110 +120,65 @@ const selectedImage = ref<File | null>(null);
 const selectedImagePreview = ref<string | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
 
-// MENTION STATE
 const mentionUsers = ref<any[]>([]);
 const showMentions = ref(false);
 
 const handleInput = async (e: any) => {
-  const text = e.target.value;
-  const cursorPosition = e.target.selectionStart;
-  const textBeforeCursor = text.substring(0, cursorPosition);
-  const words = textBeforeCursor.split(/\s/);
-  const lastWord = words[words.length - 1];
-
-  if (lastWord.startsWith('@')) {
-    const query = lastWord.substring(1);
-    if (query.length >= 1) {
-      try {
-        const res = await apiClient.get(`/users/search-mentions?q=${query}`);
-        mentionUsers.value = res.data;
-        showMentions.value = mentionUsers.value.length > 0;
-      } catch { showMentions.value = false; }
-    } else { showMentions.value = false; }
-  } else { showMentions.value = false; }
+  const words = e.target.value.substring(0, e.target.selectionStart).split(/\s/);
+  const last = words[words.length - 1];
+  if (last.startsWith('@')) {
+    try { const res = await apiClient.get(`/auth/search-mentions?q=${last.substring(1)}`); mentionUsers.value = res.data; showMentions.value = mentionUsers.value.length > 0; } catch { showMentions.value = false; }
+  } else showMentions.value = false;
 };
 
-const selectMention = (username: string) => {
-  const text = newPostContent.value;
-  const textarea = document.querySelector('textarea');
-  const cursorPosition = textarea?.selectionStart || 0;
-  const textBeforeCursor = text.substring(0, cursorPosition);
-  const textAfterCursor = text.substring(cursorPosition);
-  const lastAtPos = textBeforeCursor.lastIndexOf('@');
-  newPostContent.value = textBeforeCursor.substring(0, lastAtPos) + `@${username} ` + textAfterCursor;
+const selectMention = (u: string) => {
+  const lastAt = newPostContent.value.lastIndexOf('@');
+  newPostContent.value = newPostContent.value.substring(0, lastAt) + `@${u} `;
   showMentions.value = false;
-  nextTick(() => textarea?.focus());
 };
 
 const categoryNavRef = ref<HTMLElement | null>(null);
 const composerCategoryRef = ref<HTMLElement | null>(null);
 
+// AKIŞ ORTADA OLACAK ŞEKİLDE AYARLA
 const allItems = computed(() => {
-  const cats = sortedCategories.value;
+  const cats = categoriesStore.categories;
   const akis = { id: null, name: 'Akış', color: '#4f46e5' };
   const mid = Math.ceil(cats.length / 2);
   return [...cats.slice(0, mid), akis, ...cats.slice(mid)];
 });
 
-const sortedCategories = computed(() => {
-  const order = ["Genel", "Duyuru", "Etkinlik", "Arıza-Kayıp", "Satılık", "Soru-Cevap"];
-  return [...categoriesStore.categories].sort((a, b) => {
-    const indexA = order.indexOf(a.name);
-    const indexB = order.indexOf(b.name);
-    return (indexA === -1 ? 99 : indexA) - (indexB === -1 ? 99 : indexB);
-  });
-});
-
-const handleComposerScroll = () => {
-  const el = composerCategoryRef.value;
-  if (!el) return;
-  const items = el.querySelectorAll('.composer-item');
-  const containerRect = el.getBoundingClientRect();
-  const containerCenterX = containerRect.left + containerRect.width / 2;
-  items.forEach((item: any) => {
-    const rect = item.getBoundingClientRect();
-    const itemCenterX = rect.left + rect.width / 2;
-    const diff = Math.abs(containerCenterX - itemCenterX);
-    const factor = Math.min(diff / (el.clientWidth / 1.8), 1);
-    item.style.transform = `translateY(${Math.pow(factor, 2) * 35}px) scale(${1.15 - (factor * 0.25)})`;
-    item.style.opacity = (1 - (factor * 0.4)).toString();
-  });
-};
-
-const centerComposerItem = (index: number) => {
-  const el = composerCategoryRef.value;
-  if (!el) return;
-  const items = el.querySelectorAll('.composer-item');
-  const target = items[index] as HTMLElement;
-  if (target) el.scrollTo({ left: target.offsetLeft - (el.clientWidth / 2) + (target.clientWidth / 2), behavior: 'smooth' });
-};
-
-const initComposerScroll = () => {
-  nextTick(() => {
-    const targetIndex = allItems.value.findIndex(i => i.id === selectedCategoryId.value);
-    if (targetIndex !== -1) centerComposerItem(targetIndex);
-    handleComposerScroll();
-  });
-};
-
 const handleCarouselScroll = () => {
-  const el = categoryNavRef.value;
-  if (!el) return;
+  const el = categoryNavRef.value; if (!el) return;
   const items = el.querySelectorAll('.carousel-item');
-  const containerCenterX = el.getBoundingClientRect().left + el.clientWidth / 2;
+  const centerX = el.getBoundingClientRect().left + el.clientWidth / 2;
   items.forEach((item: any) => {
-    const itemCenterX = item.getBoundingClientRect().left + item.clientWidth / 2;
-    const factor = Math.min(Math.abs(containerCenterX - itemCenterX) / (el.clientWidth / 2.5), 1);
+    const factor = Math.min(Math.abs(centerX - (item.getBoundingClientRect().left + item.clientWidth / 2)) / (el.clientWidth / 2.5), 1);
     const btn = item.querySelector('button');
     if (btn) { btn.style.transform = `scale(${1.15 - (factor * 0.3)})`; btn.style.opacity = (1 - (factor * 0.7)).toString(); }
   });
 };
 
-const centerCarouselItem = (index: number) => {
-  const el = categoryNavRef.value;
-  if (!el) return;
-  const items = el.querySelectorAll('.carousel-item');
-  const target = items[index] as HTMLElement;
+const handleComposerScroll = () => {
+  const el = composerCategoryRef.value; if (!el) return;
+  const items = el.querySelectorAll('.composer-item');
+  const centerX = el.getBoundingClientRect().left + el.clientWidth / 2;
+  items.forEach((item: any) => {
+    const factor = Math.min(Math.abs(centerX - (item.getBoundingClientRect().left + item.clientWidth / 2)) / (el.clientWidth / 2), 1);
+    item.style.transform = `translateY(${Math.pow(factor, 2) * 30}px) scale(${1.15 - (factor * 0.25)})`;
+    item.style.opacity = (1 - (factor * 0.4)).toString();
+  });
+};
+
+const centerCarouselItem = (idx: number) => {
+  const el = categoryNavRef.value; if (!el) return;
+  const target = el.querySelectorAll('.carousel-item')[idx] as HTMLElement;
+  if (target) el.scrollTo({ left: target.offsetLeft - (el.clientWidth / 2) + (target.clientWidth / 2), behavior: 'smooth' });
+};
+
+const centerComposerItem = (idx: number) => {
+  const el = composerCategoryRef.value; if (!el) return;
+  const target = el.querySelectorAll('.composer-item')[idx] as HTMLElement;
   if (target) el.scrollTo({ left: target.offsetLeft - (el.clientWidth / 2) + (target.clientWidth / 2), behavior: 'smooth' });
 };
 
@@ -279,19 +187,12 @@ const selectCategory = (id: number | null) => {
   else { postsStore.resetCategory(); postsStore.fetchPosts(authStore.user?.id); }
 };
 
-const handleImageSelect = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  if (input.files?.[0]) {
-    if (input.files[0].size > 5 * 1024 * 1024) { toast.error("Max 5MB!"); return; }
-    selectedImage.value = input.files[0];
-    selectedImagePreview.value = URL.createObjectURL(input.files[0]);
-  }
+const handleImageSelect = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (file) { selectedImage.value = file; selectedImagePreview.value = URL.createObjectURL(file); }
 };
 
-const removeSelectedImage = () => {
-  selectedImage.value = null; selectedImagePreview.value = null;
-  if (imageInputRef.value) imageInputRef.value.value = "";
-};
+const removeSelectedImage = () => { selectedImage.value = null; selectedImagePreview.value = null; if (imageInputRef.value) imageInputRef.value.value = ""; };
 
 const handleCreatePost = async () => {
   if (!newPostContent.value.trim() && !selectedImage.value) return;
@@ -308,6 +209,18 @@ const showDeleteModal = ref(false);
 const postIdToDelete = ref<number | null>(null);
 const isDeleting = ref(false);
 
+const showReportModal = ref(false);
+const reportStep = ref(1);
+const selectedCategory = ref("");
+const postToReport = ref<number | null>(null);
+const reportCategories: Record<string, string[]> = {
+  Nefret: ["Hakaretler", "Irkçı veya cinsiyetçi klişeler", "İnsanlıktan çıkarma", "Korku veya ayrımcılığa teşvik"],
+  "Taciz ve Rahatsızlık": ["Hakaret", "İstenmeyen Cinsel İçerik", "Hedefli Taciz"],
+  "Şiddet içeren konuşma": ["Şiddet Tehditleri", "Zarar Verme İsteği", "Şiddeti Yüceltme"],
+  Mahremiyet: ["Özel bilgileri paylaşmak", "Rızam olmadan özel görüntü paylaşımı"],
+  "Yasadışı Davranışlar": ["İnsan sömürüsü", "Cinsel şiddet", "Yasadışı ürün satışı"]
+};
+
 const handleDeletePost = (id: number) => { postIdToDelete.value = id; showDeleteModal.value = true; };
 const handleConfirmDelete = async () => {
   if (postIdToDelete.value === null) return;
@@ -315,6 +228,16 @@ const handleConfirmDelete = async () => {
   try { await postsStore.deletePost(postIdToDelete.value); toast.success("Silindi!"); showDeleteModal.value = false; }
   finally { isDeleting.value = false; }
 };
+
+const handleReportPost = (id: number) => { postToReport.value = id; showReportModal.value = true; reportStep.value = 1; };
+const selectReportCategory = (name: string) => { selectedCategory.value = name; reportStep.value = 2; };
+const submitReport = async (sub: string) => {
+  try { await apiClient.post('/users/report', { reportedPostId: postToReport.value, reason: selectedCategory.value, subReason: sub }); toast.warning("Bildirildi."); }
+  catch { toast.error("Hata!"); }
+  finally { closeReport(); }
+};
+const closeReport = () => { showReportModal.value = false; postToReport.value = null; };
+
 const handleShowComments = (id: number) => { selectedPostId.value = id; commentsModalOpen.value = true; };
 
 onMounted(() => {
@@ -322,22 +245,24 @@ onMounted(() => {
   postsStore.fetchPosts(authStore.user?.id);
   categoriesStore.fetchCategories().then(() => {
     setTimeout(() => {
-      const akisIndex = allItems.value.findIndex(i => i.id === null);
-      if (akisIndex !== -1) centerCarouselItem(akisIndex);
+      const idx = allItems.value.findIndex(i => i.id === null);
+      if (idx !== -1) centerCarouselItem(idx);
     }, 300);
   });
 });
 
-watch([newPostContent, selectedImage], async ([content, img], [oldContent, oldImg]) => {
-  if (!!(content.trim() || img) && !!!(oldContent?.trim() || oldImg)) {
+watch([newPostContent, selectedImage], async ([content, img]) => {
+  if (content.trim() || img) {
     await nextTick();
-    if (composerCategoryRef.value) initComposerScroll();
+    const idx = allItems.value.findIndex(i => i.id === selectedCategoryId.value);
+    if (idx !== -1) centerComposerItem(idx);
   }
 });
 </script>
 
 <style scoped>
 .scrollbar-hide::-webkit-scrollbar { display: none; }
-.scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 .carousel-item, .composer-item { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

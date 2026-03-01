@@ -529,22 +529,15 @@ export class UsersService {
     });
   }
 
-  async reportUser(reporterUsername: string, reportedUsername: string, reason: string, subReason: string) {
-    const [reporter, reportedUser] = await Promise.all([
-      this.prisma.user.findUnique({ where: { username: reporterUsername } }),
-      this.prisma.user.findFirst({ where: { username: { equals: reportedUsername, mode: 'insensitive' } } }),
-    ]);
-
-    if (!reporter || !reportedUser) {
-      throw new NotFoundException('Kullanıcı bulunamadı.');
-    }
-
-    return (this.prisma as any).report.create({
+  async createReport(reporterId: number, data: { reportedUserId?: number; reportedPostId?: number; reportedCommentId?: number; reason: string; subReason?: string }) {
+    return this.prisma.report.create({
       data: {
-        reporterId: reporter.id,
-        reportedUserId: reportedUser.id,
-        reason,
-        subReason,
+        reporterId,
+        reportedUserId: data.reportedUserId,
+        reportedPostId: data.reportedPostId,
+        reportedCommentId: data.reportedCommentId,
+        reason: data.reason,
+        subReason: data.subReason,
         status: 'PENDING',
       },
     });
