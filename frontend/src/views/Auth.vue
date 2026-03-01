@@ -294,13 +294,29 @@ const passwordError = computed(() => {
 const hasErrors = computed(() => !!emailError.value || !!usernameError.value || !!passwordError.value || !registerForm.value.email || !registerForm.value.password || !registerForm.value.username);
 
 const handleLogin = async () => {
+  if (!loginForm.value.email || !loginForm.value.password) {
+    toast.info("Lütfen tüm alanları doldurun.");
+    return;
+  }
+  
   loginLoading.value = true;
   try {
-    await authStore.login({ email: loginForm.value.email, password: loginForm.value.password });
+    // E-posta tamamlama mantığı
+    const finalEmail = loginForm.value.email.includes('@') 
+      ? loginForm.value.email 
+      : `${loginForm.value.email}@ogr.mehmetakif.edu.tr`;
+
+    await authStore.login({ 
+      email: finalEmail, 
+      password: loginForm.value.password 
+    });
+    
     toast.success("Hoş geldin! 👋");
     router.push("/");
   } catch (error: any) {
-    toast.error(error.response?.data?.message || "E-posta veya şifre hatalı.");
+    // Backend'den gelen spesifik hata mesajını göster, yoksa varsayılanı kullan
+    const errorMessage = error.message || error.response?.data?.message || "E-posta veya şifre hatalı.";
+    toast.error(errorMessage);
   } finally {
     loginLoading.value = false;
   }
