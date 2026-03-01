@@ -13,7 +13,6 @@ import {
   Delete,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -21,32 +20,6 @@ import { CurrentUser } from '../common/decorators/current-user.decorator';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
-  @Post('register')
-  @HttpCode(HttpStatus.CREATED)
-  async register(@Body() createUserDto: CreateUserDto) {
-    const user = await this.usersService.create(createUserDto);
-    const { password, ...result } = user;
-    return result;
-  }
-
-  @Post('verify-email')
-  @HttpCode(HttpStatus.OK)
-  async verifyEmail(@Body() body: { email: string; code: string }) {
-    return this.usersService.verifyEmail(body.email, body.code);
-  }
-
-  @Post('forgot-password')
-  @HttpCode(HttpStatus.OK)
-  async forgotPassword(@Body() body: { email: string }) {
-    return this.usersService.forgotPassword(body.email);
-  }
-
-  @Post('reset-password')
-  @HttpCode(HttpStatus.OK)
-  async resetPassword(@Body() body: { email: string; code: string; newPassword: string }) {
-    return this.usersService.resetPassword(body.email, body.code, body.newPassword);
-  }
 
   // STATIK ROUTE'LAR (ÖNCELİKLİ)
   @Get('badges/all')
@@ -141,12 +114,6 @@ export class UsersController {
     @CurrentUser() admin,
   ) {
     return this.usersService.toggleUserBadge(userId, badgeId, admin.id);
-  }
-
-  @Get('check-username/:username')
-  async checkUsername(@Param('username') username: string) {
-    const user = await this.usersService.findByUsernameOnly(username);
-    return { available: !user };
   }
 
   @Post('feedback')

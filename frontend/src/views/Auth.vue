@@ -243,7 +243,7 @@ const checkUsername = async () => {
   
   usernameCheckTimeout = setTimeout(async () => {
     try {
-      const res = await apiClient.get(`/users/check-username/${registerForm.value.username}`);
+      const res = await apiClient.get(`/auth/check-username/${registerForm.value.username}`);
       isUsernameTaken.value = !res.data.available;
     } catch {
       isUsernameTaken.value = false;
@@ -301,7 +301,6 @@ const handleLogin = async () => {
   
   loginLoading.value = true;
   try {
-    // E-posta tamamlama mantığı
     const finalEmail = loginForm.value.email.includes('@') 
       ? loginForm.value.email 
       : `${loginForm.value.email}@ogr.mehmetakif.edu.tr`;
@@ -314,7 +313,6 @@ const handleLogin = async () => {
     toast.success("Hoş geldin! 👋");
     router.push("/");
   } catch (error: any) {
-    // Backend'den gelen spesifik hata mesajını göster, yoksa varsayılanı kullan
     const errorMessage = error.message || error.response?.data?.message || "E-posta veya şifre hatalı.";
     toast.error(errorMessage);
   } finally {
@@ -326,7 +324,7 @@ const handleRegister = async () => {
   if (hasErrors.value) return;
   registerLoading.value = true;
   try {
-    await apiClient.post("/users/register", registerForm.value);
+    await apiClient.post("/auth/register", registerForm.value);
     toast.success("Kayıt başarılı! Lütfen mailini kontrol et. 🎉");
     showVerification.value = true;
   } catch (error: any) {
@@ -344,7 +342,7 @@ const handleVerify = async () => {
   }
   verifyLoading.value = true;
   try {
-    await apiClient.post("/users/verify-email", { email: registerForm.value.email, code: verificationCode.value });
+    await apiClient.post("/auth/verify-email", { email: registerForm.value.email, code: verificationCode.value });
     toast.success("Hesabın doğrulandı! Şimdi giriş yapabilirsin.");
     showVerification.value = false;
     activeTab.value = "login";
@@ -362,7 +360,7 @@ const handleSendResetCode = async () => {
   }
   forgotLoading.value = true;
   try {
-    await apiClient.post("/users/forgot-password", { email: forgotForm.value.email });
+    await apiClient.post("/auth/forgot-password", { email: forgotForm.value.email });
     toast.success("Sıfırlama kodu gönderildi!");
     forgotStep.value = 2;
   } catch (error: any) {
@@ -383,7 +381,7 @@ const handleResetPassword = async () => {
   }
   forgotLoading.value = true;
   try {
-    await apiClient.post("/users/reset-password", { email: forgotForm.value.email, code: forgotForm.value.code, newPassword: forgotForm.value.newPassword });
+    await apiClient.post("/auth/reset-password", { email: forgotForm.value.email, code: forgotForm.value.code, newPassword: forgotForm.value.newPassword });
     toast.success("Şifren güncellendi! Giriş yapabilirsin.");
     showForgotModal.value = false;
     activeTab.value = "login";

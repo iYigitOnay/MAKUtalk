@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
 
 @Injectable()
@@ -10,6 +11,21 @@ export class AuthService {
     private usersService: UsersService,
     private jwtService: JwtService,
   ) {}
+
+  async register(createUserDto: CreateUserDto) {
+    const user = await this.usersService.create(createUserDto);
+    const { password, ...result } = user;
+    return result;
+  }
+
+  async verifyEmail(email: string, code: string) {
+    return this.usersService.verifyEmail(email, code);
+  }
+
+  async checkUsername(username: string) {
+    const user = await this.usersService.findByUsernameOnly(username);
+    return { available: !user };
+  }
 
   async login(loginDto: LoginDto) {
     let { email, password } = loginDto;
@@ -47,12 +63,12 @@ export class AuthService {
       user.role = 'ADMIN' as any;
     }
 
-    // JWT payload - şifreyi ekleme!
+    // JWT payload
     const payload = {
       sub: user.id,
       email: user.email,
       username: user.username,
-      role: user.role, // Rolü payload'a ekle
+      role: user.role,
     };
 
     return {
@@ -66,12 +82,11 @@ export class AuthService {
         avatarUrl: user.avatarUrl,
         coverUrl: user.coverUrl,
         isPrivate: user.isPrivate,
-        role: user.role, // Rolü geri dön
+        role: user.role,
       },
     };
   }
 
-  // Şifreyi doğrula
   async verifyPassword(userId: number, password: string): Promise<boolean> {
     const userSummary = await this.usersService.findById(userId);
     if (!userSummary || !userSummary.email) return false;
@@ -98,7 +113,6 @@ export class AuthService {
     return { success: true, message: 'Artık ADMINsin! Çık-gir yapmayı unutma.' };
   }
 
-  // Token'dan user bilgisini çöz (JWT Strategy kullanacak)
   async validateUser(userId: number) {
     return this.usersService.findById(userId);
   }
