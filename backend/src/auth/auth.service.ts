@@ -43,11 +43,15 @@ export class AuthService {
     }
 
     if (!user.isVerified) {
-      throw new UnauthorizedException('Lütfen önce e-posta adresinizi doğrulayın.');
+      throw new UnauthorizedException(
+        'Lütfen önce e-posta adresinizi doğrulayın.',
+      );
     }
 
     if (user.isBanned) {
-      throw new UnauthorizedException('Hesabınız kuralları ihlal ettiği için askıya alınmıştır.');
+      throw new UnauthorizedException(
+        'Hesabınız kuralları ihlal ettiği için askıya alınmıştır.',
+      );
     }
 
     // Şifreyi kontrol et
@@ -58,8 +62,13 @@ export class AuthService {
     }
 
     // ÖZEL: Admin E-posta Kontrolü (Süper Yönetici)
-    if (user.email === '2312101063@ogr.mehmetakif.edu.tr' && user.role !== 'ADMIN') {
-      await this.usersService.updateProfile(user.id, user.id, { role: 'ADMIN' } as any);
+    if (
+      user.email === '2312101063@ogr.mehmetakif.edu.tr' &&
+      user.role !== 'ADMIN'
+    ) {
+      await this.usersService.updateProfile(user.id, user.id, {
+        role: 'ADMIN',
+      } as any);
       user.role = 'ADMIN' as any;
     }
 
@@ -107,10 +116,16 @@ export class AuthService {
 
   async emergencyAdmin(email: string) {
     const user = await this.usersService.findByEmail(email);
-    if (!user) return { success: false, message: 'Bu maille kullanıcı bulunamadı!' };
-    
-    await this.usersService.updateProfile(user.id, user.id, { role: 'ADMIN' } as any);
-    return { success: true, message: 'Artık ADMINsin! Çık-gir yapmayı unutma.' };
+    if (!user)
+      return { success: false, message: 'Bu maille kullanıcı bulunamadı!' };
+
+    await this.usersService.updateProfile(user.id, user.id, {
+      role: 'ADMIN',
+    } as any);
+    return {
+      success: true,
+      message: 'Artık ADMINsin! Çık-gir yapmayı unutma.',
+    };
   }
 
   async validateUser(userId: number) {

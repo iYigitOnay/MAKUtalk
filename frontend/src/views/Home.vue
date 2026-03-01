@@ -3,10 +3,10 @@
   <div
     class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen font-sans"
   >
-    <!-- Post Composer Section -->
+    <!-- Post Composer Section (Web'de Sticky, Mobilde Akışta) -->
     <div
       v-if="authStore.isAuthenticated"
-      class="sticky top-0 z-40 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-4"
+      class="sm:sticky top-0 z-40 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-4"
     >
       <div class="flex gap-4">
         <!-- Avatar -->
@@ -38,7 +38,7 @@
             :disabled="postsStore.loading"
           />
 
-          <!-- MENTION ÖNERİ LİSTESİ (YENİ: INPUT ÜSTÜ SABİT BAR) -->
+          <!-- MENTION ÖNERİ LİSTESİ -->
           <Transition
             enter-active-class="transition duration-300 ease-out"
             enter-from-class="opacity-0 -translate-y-2 scale-95"
@@ -47,10 +47,7 @@
             leave-from-class="opacity-100 translate-y-0 scale-100"
             leave-to-class="opacity-0 -translate-y-2 scale-95"
           >
-            <div 
-              v-if="showMentions"
-              class="flex items-center gap-2 overflow-x-auto py-2 mb-2 scrollbar-hide no-scrollbar"
-            >
+            <div v-if="showMentions" class="flex items-center gap-2 overflow-x-auto py-2 mb-2 scrollbar-hide no-scrollbar">
               <button
                 v-for="u in mentionUsers"
                 :key="u.id"
@@ -59,25 +56,20 @@
               >
                 <img v-if="u.avatarUrl" :src="u.avatarUrl" class="w-6 h-6 rounded-full object-cover border border-slate-100 dark:border-gray-700" />
                 <div v-else class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-[10px]">{{ u.username.charAt(0).toUpperCase() }}</div>
-                <div class="flex flex-col items-start leading-none">
-                  <span class="text-xs font-black text-slate-900 dark:text-white">@{{ u.username }}</span>
-                </div>
+                <span class="text-xs font-black text-slate-900 dark:text-white">@{{ u.username }}</span>
               </button>
             </div>
           </Transition>
 
-          <!-- Resim Önizleme Alanı -->
+          <!-- Resim Önizleme -->
           <div v-if="selectedImagePreview" class="relative mt-4 group">
             <img :src="selectedImagePreview" class="w-full max-h-80 object-cover rounded-2xl border border-gray-100 dark:border-primary-900/20 shadow-sm" />
-            <button 
-              @click="removeSelectedImage"
-              class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90"
-            >
+            <button @click="removeSelectedImage" class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
           </div>
 
-          <!-- POST ALANI KATEGORİ ÇARKI (COMPOSER) -->
+          <!-- POST ALANI KATEGORİ ÇARKI -->
           <transition
             enter-active-class="transition duration-500 ease-out"
             enter-from-class="opacity-0 translate-y-4 scale-95"
@@ -85,37 +77,14 @@
             @after-enter="initComposerScroll"
           >
             <div v-if="newPostContent.trim() || selectedImage" class="relative mt-2 h-24 flex items-center justify-center overflow-hidden -ml-16">
-              <div 
-                ref="composerCategoryRef"
-                class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth"
-                @scroll="handleComposerScroll"
-              >
-                <div
-                  v-for="(item, index) in allItems"
-                  :key="`comp-${item.id}-${index}`"
-                  class="flex-shrink-0 snap-center composer-item"
-                >
-                  <button
-                    @click="selectedCategoryId = item.id; centerComposerItem(index)"
-                    class="flex flex-col items-center gap-1.5 group outline-none"
-                  >
-                    <div 
-                      :class="[
-                        'w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border-2',
-                        ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id)
-                          ? 'text-white scale-110'
-                          : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-primary-900/10 text-gray-400 scale-90'
-                      ]"
-                      :style="((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id)
-                        ? { backgroundColor: item.color, borderColor: 'rgba(255,255,255,0.2)', boxShadow: `0 8px 25px -5px ${item.color}60` } 
-                        : {}"
-                    >
+              <div ref="composerCategoryRef" class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth" @scroll="handleComposerScroll">
+                <div v-for="(item, index) in allItems" :key="`comp-${item.id}-${index}`" class="flex-shrink-0 snap-center composer-item">
+                  <button @click="selectedCategoryId = item.id; centerComposerItem(index)" class="flex flex-col items-center gap-1.5 group outline-none">
+                    <div :class="['w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border-2', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'text-white scale-110' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-primary-900/10 text-gray-400 scale-90']" :style="((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? { backgroundColor: item.color, borderColor: 'rgba(255,255,255,0.2)', boxShadow: `0 8px 25px -5px ${item.color}60` } : {}">
                       <svg v-if="item.id === null" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                       <span v-else class="w-2 h-2 rounded-full" :style="{ backgroundColor: selectedCategoryId === item.id ? 'white' : item.color }"></span>
                     </div>
-                    <span :class="['text-[9px] font-black tracking-tighter uppercase transition-all duration-300', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'opacity-100' : 'text-gray-400 opacity-70']" :style="selectedCategoryId === item.id ? { color: item.color } : {}">
-                      {{ item.name }}
-                    </span>
+                    <span :class="['text-[9px] font-black tracking-tighter uppercase transition-all duration-300', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'opacity-100' : 'text-gray-400 opacity-70']" :style="selectedCategoryId === item.id ? { color: item.color } : {}">{{ item.name }}</span>
                   </button>
                 </div>
               </div>
@@ -131,12 +100,7 @@
               </button>
               <EmojiPicker :modelValue="newPostContent" @update:modelValue="(e) => (newPostContent += e)" />
             </div>
-            
-            <button
-              @click="handleCreatePost"
-              :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading"
-              class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full transition-all duration-300 shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50"
-            >
+            <button @click="handleCreatePost" :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading" class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full transition-all duration-300 shadow-lg hover:scale-105 active:scale-95 disabled:opacity-50">
               {{ postsStore.loading ? "..." : "PAYLAŞ" }}
             </button>
           </div>
@@ -144,30 +108,11 @@
       </div>
     </div>
 
-    <!-- KATEGORİ ÇARKI (SABİT & MERKEZ ODAKLI) -->
-    <div class="sticky top-[116px] z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden">
-      <div 
-        ref="categoryNavRef"
-        @scroll="handleCarouselScroll"
-        class="flex items-center gap-4 overflow-x-auto px-[35%] scrollbar-hide snap-x snap-mandatory scroll-smooth h-20"
-      >
-        <div
-          v-for="(item, index) in allItems"
-          :key="`nav-${item.id}-${index}`"
-          class="flex-shrink-0 snap-center carousel-item"
-        >
-          <button
-            @click="selectCategory(item.id); centerCarouselItem(index)"
-            :class="[
-              'w-28 h-12 rounded-xl flex items-center justify-center gap-2 transition-all duration-500 border-2 px-3',
-              (item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id
-                ? 'scale-110 text-white shadow-lg'
-                : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-white/5 text-gray-400 scale-90 opacity-60'
-            ]"
-            :style="((item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id)
-              ? { backgroundColor: item.color || '#3b82f6', borderColor: 'rgba(255,255,255,0.3)', boxShadow: `0 10px 20px -5px ${item.color || '#3b82f6'}80` } 
-              : {}"
-          >
+    <!-- KATEGORİ ÇARKI (Web'de Sticky, Mobilde Akışta) -->
+    <div class="sm:sticky top-[116px] z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden">
+      <div ref="categoryNavRef" @scroll="handleCarouselScroll" class="flex items-center gap-4 overflow-x-auto px-[35%] scrollbar-hide snap-x snap-mandatory scroll-smooth h-20">
+        <div v-for="(item, index) in allItems" :key="`nav-${item.id}-${index}`" class="flex-shrink-0 snap-center carousel-item">
+          <button @click="selectCategory(item.id); centerCarouselItem(index)" :class="['w-28 h-12 rounded-xl flex items-center justify-center gap-2 transition-all duration-500 border-2 px-3', (item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id ? 'scale-110 text-white shadow-lg' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-white/5 text-gray-400 scale-90 opacity-60']" :style="((item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id) ? { backgroundColor: item.color || '#3b82f6', borderColor: 'rgba(255,255,255,0.3)', boxShadow: `0 10px 20px -5px ${item.color || '#3b82f6'}80` } : {}">
             <div v-if="item.id === null" class="flex items-center gap-2">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
               <span class="text-[10px] font-black uppercase tracking-tight">Akış</span>
@@ -209,12 +154,12 @@ import PostCard from "@/components/PostCard.vue";
 import CommentsModal from "@/components/CommentsModal.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
+import apiClient from "@/api/client";
 
 const authStore = useAuthStore();
 const postsStore = usePostsStore();
 const categoriesStore = useCategoriesStore();
 const toast = useToast();
-import apiClient from "@/api/client";
 
 const newPostContent = ref("");
 const selectedCategoryId = ref<number | null>(null);
@@ -225,13 +170,10 @@ const imageInputRef = ref<HTMLInputElement | null>(null);
 // MENTION STATE
 const mentionUsers = ref<any[]>([]);
 const showMentions = ref(false);
-const mentionQuery = ref("");
 
 const handleInput = async (e: any) => {
   const text = e.target.value;
   const cursorPosition = e.target.selectionStart;
-  
-  // İmlecin önündeki son kelimeyi bul
   const textBeforeCursor = text.substring(0, cursorPosition);
   const words = textBeforeCursor.split(/\s/);
   const lastWord = words[words.length - 1];
@@ -243,37 +185,26 @@ const handleInput = async (e: any) => {
         const res = await apiClient.get(`/users/search-mentions?q=${query}`);
         mentionUsers.value = res.data;
         showMentions.value = mentionUsers.value.length > 0;
-      } catch (err) {
-        showMentions.value = false;
-      }
-    } else {
-      showMentions.value = false;
-    }
-  } else {
-    showMentions.value = false;
-  }
+      } catch { showMentions.value = false; }
+    } else { showMentions.value = false; }
+  } else { showMentions.value = false; }
 };
 
 const selectMention = (username: string) => {
   const text = newPostContent.value;
-  const cursorPosition = document.querySelector('textarea')?.selectionStart || 0;
+  const textarea = document.querySelector('textarea');
+  const cursorPosition = textarea?.selectionStart || 0;
   const textBeforeCursor = text.substring(0, cursorPosition);
   const textAfterCursor = text.substring(cursorPosition);
-  
   const lastAtPos = textBeforeCursor.lastIndexOf('@');
-  const newText = textBeforeCursor.substring(0, lastAtPos) + `@${username} ` + textAfterCursor;
-  
-  newPostContent.value = newText;
+  newPostContent.value = textBeforeCursor.substring(0, lastAtPos) + `@${username} ` + textAfterCursor;
   showMentions.value = false;
-  nextTick(() => {
-    document.querySelector('textarea')?.focus();
-  });
+  nextTick(() => textarea?.focus());
 };
 
 const categoryNavRef = ref<HTMLElement | null>(null);
 const composerCategoryRef = ref<HTMLElement | null>(null);
 
-// MERKEZİ SIRALAMA (Sol 3, Akış, Sağ 3)
 const allItems = computed(() => {
   const cats = sortedCategories.value;
   const akis = { id: null, name: 'Akış', color: '#4f46e5' };
@@ -290,26 +221,19 @@ const sortedCategories = computed(() => {
   });
 });
 
-// COMPOSER SCROLL & ANIMATION
 const handleComposerScroll = () => {
   const el = composerCategoryRef.value;
   if (!el) return;
   const items = el.querySelectorAll('.composer-item');
   const containerRect = el.getBoundingClientRect();
   const containerCenterX = containerRect.left + containerRect.width / 2;
-
   items.forEach((item: any) => {
     const rect = item.getBoundingClientRect();
     const itemCenterX = rect.left + rect.width / 2;
     const diff = Math.abs(containerCenterX - itemCenterX);
     const factor = Math.min(diff / (el.clientWidth / 1.8), 1);
-    
-    const translateY = Math.pow(factor, 2) * 35;
-    const scale = 1.15 - (factor * 0.25);
-    const opacity = 1 - (factor * 0.4);
-
-    item.style.transform = `translateY(${translateY}px) scale(${scale})`;
-    item.style.opacity = opacity.toString();
+    item.style.transform = `translateY(${Math.pow(factor, 2) * 35}px) scale(${1.15 - (factor * 0.25)})`;
+    item.style.opacity = (1 - (factor * 0.4)).toString();
   });
 };
 
@@ -318,35 +242,27 @@ const centerComposerItem = (index: number) => {
   if (!el) return;
   const items = el.querySelectorAll('.composer-item');
   const target = items[index] as HTMLElement;
-  if (target) {
-    const scrollPos = target.offsetLeft - (el.clientWidth / 2) + (target.clientWidth / 2);
-    el.scrollTo({ left: scrollPos, behavior: 'smooth' });
-  }
+  if (target) el.scrollTo({ left: target.offsetLeft - (el.clientWidth / 2) + (target.clientWidth / 2), behavior: 'smooth' });
 };
 
 const initComposerScroll = () => {
   nextTick(() => {
-    const targetId = selectedCategoryId.value;
-    const targetIndex = allItems.value.findIndex(i => i.id === targetId);
+    const targetIndex = allItems.value.findIndex(i => i.id === selectedCategoryId.value);
     if (targetIndex !== -1) centerComposerItem(targetIndex);
     handleComposerScroll();
   });
 };
 
-// NAV SCROLL & ANIMATION
 const handleCarouselScroll = () => {
   const el = categoryNavRef.value;
   if (!el) return;
   const items = el.querySelectorAll('.carousel-item');
   const containerCenterX = el.getBoundingClientRect().left + el.clientWidth / 2;
-
   items.forEach((item: any) => {
     const itemCenterX = item.getBoundingClientRect().left + item.clientWidth / 2;
     const factor = Math.min(Math.abs(containerCenterX - itemCenterX) / (el.clientWidth / 2.5), 1);
-    const scale = 1.15 - (factor * 0.3);
-    const opacity = 1 - (factor * 0.7);
     const btn = item.querySelector('button');
-    if (btn) { btn.style.transform = `scale(${scale})`; btn.style.opacity = opacity.toString(); }
+    if (btn) { btn.style.transform = `scale(${1.15 - (factor * 0.3)})`; btn.style.opacity = (1 - (factor * 0.7)).toString(); }
   });
 };
 
@@ -355,20 +271,12 @@ const centerCarouselItem = (index: number) => {
   if (!el) return;
   const items = el.querySelectorAll('.carousel-item');
   const target = items[index] as HTMLElement;
-  if (target) {
-    const scrollPos = target.offsetLeft - (el.clientWidth / 2) + (target.clientWidth / 2);
-    el.scrollTo({ left: scrollPos, behavior: 'smooth' });
-  }
+  if (target) el.scrollTo({ left: target.offsetLeft - (el.clientWidth / 2) + (target.clientWidth / 2), behavior: 'smooth' });
 };
 
 const selectCategory = (id: number | null) => {
   if (id) postsStore.fetchPostsByCategory(id, authStore.user?.id);
   else { postsStore.resetCategory(); postsStore.fetchPosts(authStore.user?.id); }
-};
-
-const handleWheelScroll = (e: WheelEvent) => {
-  if (!categoryNavRef.value) return;
-  if (e.deltaY !== 0) { e.preventDefault(); categoryNavRef.value.scrollLeft += e.deltaY * 1.2; }
 };
 
 const handleImageSelect = (event: Event) => {
@@ -421,10 +329,7 @@ onMounted(() => {
 });
 
 watch([newPostContent, selectedImage], async ([content, img], [oldContent, oldImg]) => {
-  const isNowVisible = !!(content.trim() || img);
-  const wasVisible = !!(oldContent?.trim() || oldImg);
-  
-  if (isNowVisible && !wasVisible) {
+  if (!!(content.trim() || img) && !!!(oldContent?.trim() || oldImg)) {
     await nextTick();
     if (composerCategoryRef.value) initComposerScroll();
   }
