@@ -143,6 +143,12 @@ export class UsersController {
     return this.usersService.toggleUserBadge(userId, badgeId, admin.id);
   }
 
+  @Get('check-username/:username')
+  async checkUsername(@Param('username') username: string) {
+    const user = await this.usersService.findByUsernameOnly(username);
+    return { available: !user };
+  }
+
   @Post('feedback')
   async submitFeedback(
     @CurrentUser() user,

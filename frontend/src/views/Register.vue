@@ -13,7 +13,7 @@
           />
         </div>
         <h1
-          class="text-4xl font-bold bg-gradient-to-r from-primary-600 to-primary-700 bg-clip-text text-transparent mb-2"
+          class="text-4xl font-black italic tracking-tighter bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2"
         >
           MAKUtalk
         </h1>
@@ -24,68 +24,49 @@
 
       <!-- Card -->
       <div
-        class="card dark:border-primary-900/30 bg-white dark:bg-gray-900/80 backdrop-blur"
+        class="bg-white dark:bg-gray-900/80 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] p-8 shadow-2xl backdrop-blur"
       >
         <div class="text-center mb-8">
-          <h2 class="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">
             Topluluğa Katıl
           </h2>
-          <p class="text-gray-500 dark:text-gray-400 mt-1">
-            Hesap oluştur ve başlayalım
+          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+            MAKÜ'ye özel sosyal ağa hoş geldin
           </p>
         </div>
 
-        <form @submit.prevent="handleRegister" class="space-y-4">
+        <form @submit.prevent="handleRegister" class="space-y-5">
           <!-- Email -->
           <div>
             <label
               for="email"
-              class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              class="flex items-center gap-2 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2"
             >
-              <svg
-                class="w-5 h-5 text-primary-600 dark:text-primary-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-              E-posta Adresin <span class="text-red-500">*</span>
+              Kurumsal E-posta <span class="text-red-500">*</span>
             </label>
             <input
               id="email"
               v-model="form.email"
               type="email"
               required
-              class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-600 focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 dark:focus:ring-primary-400/20 outline-none transition-all placeholder-gray-500 dark:placeholder-gray-400"
-              placeholder="ornek@makutalk.com"
+              class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-2 transition-all outline-none"
+              :class="emailError ? 'border-red-500/50 focus:border-red-500' : 'border-transparent focus:border-blue-500'"
+              placeholder="isim@ogr.mehmetakif.edu.tr"
             />
+            <p v-if="emailError" class="text-[10px] font-bold text-red-500 mt-1.5 px-1 uppercase tracking-wide">
+              {{ emailError }}
+            </p>
+            <p v-else class="text-[10px] font-bold text-gray-400 mt-1.5 px-1 uppercase tracking-wide">
+              Sadece @mehmetakif.edu.tr uzantıları kabul edilir.
+            </p>
           </div>
 
           <!-- Username -->
           <div>
             <label
               for="username"
-              class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              class="flex items-center gap-2 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2"
             >
-              <svg
-                class="w-5 h-5 text-primary-600 dark:text-primary-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
               Kullanıcı Adı <span class="text-red-500">*</span>
             </label>
             <input
@@ -93,122 +74,77 @@
               v-model="form.username"
               type="text"
               required
-              minlength="3"
-              class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-600 focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 dark:focus:ring-primary-400/20 outline-none transition-all placeholder-gray-500 dark:placeholder-gray-400"
-              placeholder="johndoe"
+              class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-2 transition-all outline-none"
+              :class="usernameError ? 'border-red-500/50 focus:border-red-500' : 'border-transparent focus:border-blue-500'"
+              placeholder="kullanici_adi"
             />
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              En az 3 karakter
+            <p v-if="usernameError" class="text-[10px] font-bold text-red-500 mt-1.5 px-1 uppercase tracking-wide">
+              {{ usernameError }}
             </p>
-          </div>
-
-          <!-- Full Name -->
-          <div>
-            <label
-              for="fullName"
-              class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
-            >
-              <svg
-                class="w-5 h-5 text-primary-600 dark:text-primary-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207"
-                />
-              </svg>
-              Ad Soyad
-            </label>
-            <input
-              id="fullName"
-              v-model="form.fullName"
-              type="text"
-              class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-600 focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 dark:focus:ring-primary-400/20 outline-none transition-all placeholder-gray-500 dark:placeholder-gray-400"
-              placeholder="John Doe"
-            />
           </div>
 
           <!-- Password -->
           <div>
             <label
               for="password"
-              class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2"
+              class="flex items-center gap-2 text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-widest mb-2"
             >
-              <svg
-                class="w-5 h-5 text-primary-600 dark:text-primary-400"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                />
-              </svg>
-              Parolan <span class="text-red-500">*</span>
+              Güçlü Parola <span class="text-red-500">*</span>
             </label>
             <input
               id="password"
               v-model="form.password"
               type="password"
               required
-              minlength="6"
-              class="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-xl border border-gray-300 dark:border-gray-600 focus:border-primary-500 dark:focus:border-primary-400 focus:ring-2 focus:ring-primary-500/20 dark:focus:ring-primary-400/20 outline-none transition-all placeholder-gray-500 dark:placeholder-gray-400"
+              class="w-full px-5 py-4 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl border-2 transition-all outline-none"
+              :class="passwordError ? 'border-red-500/50 focus:border-red-500' : 'border-transparent focus:border-blue-500'"
               placeholder="••••••••"
             />
-            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              En az 6 karakter
-            </p>
+            
+            <!-- Şifre Gereksinimleri -->
+            <div class="mt-3 grid grid-cols-2 gap-2 px-1">
+              <div class="flex items-center gap-1.5">
+                <div class="w-1.5 h-1.5 rounded-full" :class="passChecks.length ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                <span class="text-[9px] font-bold uppercase tracking-tight" :class="passChecks.length ? 'text-emerald-500' : 'text-gray-400'">8+ Karakter</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <div class="w-1.5 h-1.5 rounded-full" :class="passChecks.upper ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                <span class="text-[9px] font-bold uppercase tracking-tight" :class="passChecks.upper ? 'text-emerald-500' : 'text-gray-400'">Büyük Harf</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <div class="w-1.5 h-1.5 rounded-full" :class="passChecks.special ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                <span class="text-[9px] font-bold uppercase tracking-tight" :class="passChecks.special ? 'text-emerald-500' : 'text-gray-400'">Özel Karakter</span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <div class="w-1.5 h-1.5 rounded-full" :class="passChecks.number ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                <span class="text-[9px] font-bold uppercase tracking-tight" :class="passChecks.number ? 'text-emerald-500' : 'text-gray-400'">Rakam</span>
+              </div>
+            </div>
           </div>
 
           <!-- Submit Button -->
           <button
             type="submit"
-            :disabled="loading"
-            class="w-full mt-6 px-4 py-3 bg-gradient-to-r from-primary-600 to-primary-700 hover:from-primary-500 hover:to-primary-600 active:scale-95 disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:shadow-none transform hover:scale-105"
+            :disabled="loading || hasErrors"
+            class="w-full mt-6 px-4 py-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 active:scale-95 disabled:grayscale disabled:opacity-50 disabled:cursor-not-allowed text-white font-black uppercase tracking-widest rounded-2xl transition-all duration-200 shadow-xl shadow-blue-500/20"
           >
             <span v-if="!loading">Kayıt Ol</span>
-            <span v-else class="flex items-center justify-center">
-              <svg
-                class="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  class="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  stroke-width="4"
-                ></circle>
-                <path
-                  class="opacity-75"
-                  fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Kayıt yapılıyor...
+            <span v-else class="flex items-center justify-center gap-2">
+              <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              İşleniyor...
             </span>
           </button>
         </form>
 
         <!-- Link to Login -->
         <div
-          class="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700 text-center"
+          class="mt-8 pt-6 border-t border-gray-100 dark:border-gray-800 text-center"
         >
-          <p class="text-gray-600 dark:text-gray-400 text-sm">
+          <p class="text-gray-500 dark:text-gray-400 text-[10px] font-bold uppercase tracking-widest">
             Zaten hesabın var mı?
             <router-link
               to="/login"
-              class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 font-bold underline transition-colors"
+              class="text-blue-600 dark:text-blue-400 hover:underline ml-1"
             >
               Giriş Yap
             </router-link>
@@ -220,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref } from "vue";
+import { reactive, ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "vue-toastification";
@@ -232,20 +168,53 @@ const toast = useToast();
 const form = reactive({
   email: "",
   username: "",
-  fullName: "",
   password: "",
 });
 
 const loading = ref(false);
 
+// Validasyonlar
+const emailError = computed(() => {
+  if (!form.email) return null;
+  const regex = /^[a-zA-Z0-9._%+-]+@(ogr\.)?mehmetakif\.edu\.tr$/;
+  return regex.test(form.email) ? null : "Sadece kurumsal MAKÜ e-postası!";
+});
+
+const usernameError = computed(() => {
+  if (!form.username) return null;
+  if (form.username.length < 3) return "En az 3 karakter olmalı.";
+  const regex = /^[a-zA-Z0-9_]+$/;
+  return regex.test(form.username) ? null : "Sadece harf, rakam ve alt çizgi.";
+});
+
+const passChecks = computed(() => ({
+  length: form.password.length >= 8,
+  upper: /[A-Z]/.test(form.password),
+  special: /[^A-Za-z0-9]/.test(form.password),
+  number: /[0-9]/.test(form.password),
+}));
+
+const passwordError = computed(() => {
+  if (!form.password) return null;
+  const c = passChecks.value;
+  if (!c.length || !c.upper || !c.special || !c.number) return "Parola şartları karşılamıyor.";
+  return null;
+});
+
+const hasErrors = computed(() => !!emailError.value || !!usernameError.value || !!passwordError.value);
+
 const handleRegister = async () => {
+  if (hasErrors.value) return;
+  
   loading.value = true;
   try {
     await authStore.register(form);
-    toast.success("Kayıt başarılı! Giriş yapabilirsin.");
+    toast.success("Kayıt başarılı! Lütfen mailini doğrula.");
     router.push("/login");
   } catch (error: any) {
-    const message = error.message?.[0] || "Kayıt yapılamadı.";
+    const message = Array.isArray(error.response?.data?.message) 
+      ? error.response.data.message[0] 
+      : error.response?.data?.message || "Kayıt yapılamadı.";
     toast.error(message);
   } finally {
     loading.value = false;

@@ -9,6 +9,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class UsersService {
@@ -17,11 +18,46 @@ export class UsersService {
     private mailService: MailService,
   ) {}
 
+  // OTOMATİK TEMİZLİK: 24 saat boyunca doğrulanmamış hesapları her gece 03:00'te siler.
+  @Cron(CronExpression.EVERY_DAY_AT_3AM)
+  async cleanUnverifiedUsers() {
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const deleted = await this.prisma.user.deleteMany({
+      where: {
+        isVerified: false,
+        createdAt: { lt: twentyFourHoursAgo },
+      },
+    });
+
+    if (deleted.count > 0) {
+      console.log(`🧹 TEMİZLİK: ${deleted.count} adet doğrulanmamış hayalet hesap silindi.`);
+    }
+  }
+
   async create(createUserDto: CreateUserDto) {
     const { email, username, password, fullName } = createUserDto;
 
+    // 1. ŞİFRE GÜVENLİK KONTROLLERİ
+    const lowerPassword = password.toLowerCase();
+    const blacklistedPasswords = ['123456', '12345678', 'password', 'parola', 'sifre123', 'makutalk', 'mehmetakif', 'maku123'];
+    
+    if (blacklistedPasswords.some(p => lowerPassword.includes(p))) {
+      throw new ConflictException('Çok yaygın veya tahmin edilebilir bir şifre girdiniz.');
+    }
+
+    if (lowerPassword.includes(username.toLowerCase())) {
+      throw new ConflictException('Şifreniz kullanıcı adınızı içeremez.');
+    }
+
     const existingUser = await this.prisma.user.findFirst({
-      where: { OR: [{ email }, { username }] },
+      where: { 
+        OR: [
+          { email: { equals: email, mode: 'insensitive' } }, 
+          { username: { equals: username, mode: 'insensitive' } }
+        ] 
+      },
     });
 
     if (existingUser) {
@@ -333,6 +369,13 @@ export class UsersService {
     }
 
     return posts;
+  }
+
+  async findByUsernameOnly(username: string) {
+    return this.prisma.user.findFirst({
+      where: { username: { equals: username, mode: 'insensitive' } },
+      select: { id: true }
+    });
   }
 
   async findByUsername(username: string, currentUserId?: number) {
