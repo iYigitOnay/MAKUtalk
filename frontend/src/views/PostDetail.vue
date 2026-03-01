@@ -1,550 +1,219 @@
 <!-- src/views/PostDetail.vue -->
 <template>
-  <div>
-    <!-- Üst Bar -->
-    <div
-      class="sticky top-0 z-30 bg-white/80 dark:bg-[#0f1117]/80 backdrop-blur-md px-4 py-3 border-b border-gray-100 dark:border-gray-800 flex items-center gap-4"
-    >
-      <button
-        @click="$router.back()"
-        class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition text-gray-600 dark:text-gray-400"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
+  <div class="max-w-2xl mx-auto min-h-screen bg-white dark:bg-gray-950 pb-20 sm:pb-8 transition-colors duration-500">
+    <!-- Back Header -->
+    <header class="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10 px-4 py-3 flex items-center gap-6">
+      <button @click="$router.back()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all active:scale-90 text-gray-600 dark:text-gray-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
       </button>
-      <h1 class="font-bold text-[17px] text-gray-900 dark:text-white">
-        Paylaşım
-      </h1>
-    </div>
+      <h1 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">Paylaşım</h1>
+    </header>
 
-    <!-- Yükleniyor -->
-    <div v-if="loading" class="flex justify-center py-20">
-      <div
-        class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"
-      />
-    </div>
+    <div v-if="loading" class="py-20 text-center"><div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
+    <div v-else-if="!post" class="py-20 text-center text-gray-500">Gönderi bulunamadı.</div>
+    
+    <div v-else class="animate-fade-in">
+      <!-- Post Body -->
+      <article class="p-4 sm:p-6 border-b border-gray-100 dark:border-primary-900/10">
+        <!-- Author Info -->
+        <div class="flex items-center gap-3 mb-4">
+          <router-link :to="`/profile/${post.author.username}`" class="block flex-shrink-0">
+            <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner overflow-hidden border border-gray-100 dark:border-white/5">
+              <img v-if="post.author.avatarUrl" :src="getImageUrl(post.author.avatarUrl)" class="w-full h-full object-cover" />
+              <span v-else>{{ post.author.username.charAt(0) }}</span>
+            </div>
+          </router-link>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-1.5">
+              <router-link :to="`/profile/${post.author.username}`" class="font-black text-gray-900 dark:text-white hover:underline truncate">
+                {{ post.author.fullName || post.author.username }}
+              </router-link>
+              <div v-if="post.author.role === 'ADMIN'" class="p-0.5 rounded-full bg-blue-600 text-white shadow-sm"><svg class="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div>
+            </div>
+            <p class="text-gray-500 dark:text-gray-400 text-sm truncate">@{{ post.author.username }}</p>
+          </div>
+        </div>
 
-    <!-- Bulunamadı -->
-    <div v-else-if="!post" class="text-center py-20 px-8">
-      <div class="text-4xl mb-3">🔍</div>
-      <h3 class="font-bold text-gray-900 dark:text-white mb-1">
-        Paylaşım bulunamadı
-      </h3>
-      <p class="text-sm text-gray-400">Silinmiş veya gizlenmiş olabilir.</p>
-    </div>
+        <!-- Post Content -->
+        <div class="space-y-4">
+          <p class="text-gray-900 dark:text-white text-lg leading-relaxed whitespace-pre-wrap">
+            <HashtagText :text="post.content || ''" />
+          </p>
+          
+          <div v-if="post.imageUrl" class="rounded-[2rem] overflow-hidden border border-gray-100 dark:border-white/5 shadow-xl bg-slate-50 dark:bg-gray-900">
+            <img :src="getImageUrl(post.imageUrl)" class="w-full h-auto max-h-[600px] object-contain" alt="Post content" />
+          </div>
 
-    <template v-else>
-      <!-- POST DETAYI -->
-      <div class="px-4 py-5 border-b border-gray-100 dark:border-gray-800">
-        <!-- Yazar Profil Kartı -->
-        <div class="flex items-start justify-between mb-4">
-          <div class="flex items-center gap-3">
-            <router-link :to="`/profile/${post.author?.username}`">
-              <div
-                class="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0"
-              >
-                <img
-                  v-if="post.author?.avatarUrl"
-                  :src="post.author.avatarUrl"
-                  :alt="post.author.username"
-                  class="w-full h-full object-cover"
-                />
-                <span v-else class="text-white font-bold">
-                  {{ post.author?.username?.charAt(0).toUpperCase() }}
-                </span>
+          <div class="flex items-center justify-between text-gray-400 text-sm pt-4">
+            <span>{{ new Date(post.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }} · {{ new Date(post.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+            <div v-if="post.category" class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg" :style="{ backgroundColor: post.category.color }">
+              {{ post.category.name }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactions Stats -->
+        <div class="flex gap-6 py-4 mt-4 border-y border-gray-100 dark:border-primary-900/10">
+          <div class="text-sm"><span class="font-black text-gray-900 dark:text-white">{{ post._count?.likes || 0 }}</span> <span class="text-gray-500">Beğeni</span></div>
+          <div class="text-sm"><span class="font-black text-gray-900 dark:text-white">{{ post._count?.comments || 0 }}</span> <span class="text-gray-500">Yorum</span></div>
+          <div class="text-sm"><span class="font-black text-gray-900 dark:text-white">{{ post._count?.reposts || 0 }}</span> <span class="text-gray-500">Remakü</span></div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex justify-around py-2">
+          <button @click="handleLike" :class="post.isLiked ? 'text-red-600 bg-red-50 dark:bg-red-900/20' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'" class="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95 group">
+            <svg class="w-6 h-6 transition-transform group-active:scale-125" :class="post.isLiked ? 'fill-red-600' : 'fill-none'" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+          </button>
+          <button @click="focusComment" class="flex-1 flex items-center justify-center text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900 py-3 rounded-2xl transition-all active:scale-95 group">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>
+          </button>
+          <button @click="handleRepost" :class="post.isReposted ? 'text-green-600 bg-green-50 dark:bg-green-900/20' : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'" class="flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl transition-all active:scale-95 group">
+            <svg class="w-6 h-6 transition-transform group-active:scale-125" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m0 0H15" /></svg>
+          </button>
+        </div>
+      </article>
+
+      <!-- Comments Section -->
+      <div class="px-4 py-6">
+        <h2 class="text-lg font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter italic">Yorumlar ({{ comments.length }})</h2>
+        
+        <!-- Add Comment -->
+        <div v-if="authStore.isAuthenticated" class="flex gap-3 mb-8">
+          <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex-shrink-0 overflow-hidden border border-gray-100 dark:border-white/5 shadow-inner">
+            <img v-if="authStore.user?.avatarUrl" :src="getImageUrl(authStore.user.avatarUrl)" class="w-full h-full object-cover" />
+            <div v-else class="w-full h-full flex items-center justify-center font-black text-blue-600 uppercase">{{ authStore.user?.username.charAt(0) }}</div>
+          </div>
+          <div class="flex-1 space-y-3">
+            <textarea 
+              ref="commentInput"
+              v-model="commentContent" 
+              rows="2" 
+              placeholder="Fikrini paylaş..." 
+              class="w-full p-4 bg-slate-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[1.5rem] text-sm focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all dark:text-white"
+            ></textarea>
+            <div class="flex justify-end">
+              <button @click="submitComment" :disabled="!commentContent.trim() || commentLoading" class="px-6 py-2.5 bg-blue-600 text-white text-xs font-black rounded-xl uppercase hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20 active:scale-95">Yorum Yap</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Comments List -->
+        <div class="space-y-6">
+          <div v-for="comment in comments" :key="comment.id" class="flex gap-3 animate-fade-in">
+            <router-link :to="`/profile/${comment.user.username}`" class="flex-shrink-0">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner overflow-hidden">
+                <img v-if="comment.user.avatarUrl" :src="getImageUrl(comment.user.avatarUrl)" class="w-full h-full object-cover" />
+                <span v-else>{{ comment.user.username.charAt(0) }}</span>
               </div>
             </router-link>
-            <div>
-              <router-link
-                :to="`/profile/${post.author?.username}`"
-                class="hover:underline"
-              >
-                <p class="font-bold text-gray-900 dark:text-white text-[15px]">
-                  {{ post.author?.fullName || post.author?.username }}
-                </p>
-              </router-link>
-              <p class="text-gray-400 text-sm">@{{ post.author?.username }}</p>
-            </div>
-          </div>
-
-          <!-- Takip Et butonu (kendi profilin değilse) -->
-          <button
-            v-if="
-              authStore.isAuthenticated &&
-              authStore.user?.id !== post.author?.id
-            "
-            @click="handleFollow"
-            class="px-4 py-1.5 rounded-full text-sm font-semibold transition-all"
-            :class="
-              isFollowing
-                ? 'border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:border-red-400 hover:text-red-500'
-                : 'bg-gray-900 dark:bg-white text-white dark:text-gray-900 hover:opacity-80'
-            "
-          >
-            {{ isFollowing ? "Takip Ediliyor" : "Takip Et" }}
-          </button>
-        </div>
-
-        <!-- Kategori -->
-        <div v-if="post.category" class="mb-3">
-          <span
-            class="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium text-white"
-            :style="{ backgroundColor: post.category.color || '#3b82f6' }"
-          >
-            {{ post.category.name }}
-          </span>
-        </div>
-
-        <!-- İçerik -->
-        <p
-          class="text-[17px] text-gray-900 dark:text-white leading-relaxed whitespace-pre-wrap break-words mb-4"
-        >
-          <HashtagText :text="post.content || ''" />
-        </p>
-
-        <!-- Post Image -->
-        <div v-if="post.imageUrl" class="mb-6 rounded-2xl overflow-hidden border border-gray-100 dark:border-gray-800 shadow-sm bg-slate-50 dark:bg-gray-900/40">
-          <img 
-            :src="getImageUrl(post.imageUrl)" 
-            class="w-full h-auto max-h-[600px] object-contain mx-auto" 
-            alt="Post content" 
-          />
-        </div>
-
-        <!-- Duygu Analizi -->
-        <div v-if="post.sentiment" class="mb-4">
-          <span
-            class="text-xs px-2.5 py-1 rounded-full font-medium"
-            :class="sentimentClass(post.sentiment)"
-          >
-            {{ sentimentLabel(post.sentiment) }}
-          </span>
-        </div>
-
-        <!-- Tarih -->
-        <p class="text-sm text-gray-400 mb-4">
-          {{ formatFullDate(post.createdAt) }}
-        </p>
-
-        <!-- İstatistikler -->
-        <div
-          class="flex items-center gap-5 py-3 border-t border-gray-100 dark:border-gray-800 text-sm"
-        >
-          <span class="text-gray-900 dark:text-white">
-            <strong>{{ post._count?.likes || 0 }}</strong>
-            <span class="text-gray-400 ml-1">Beğeni</span>
-          </span>
-          <span class="text-gray-900 dark:text-white">
-            <strong>{{ post._count?.comments || 0 }}</strong>
-            <span class="text-gray-400 ml-1">Yorum</span>
-          </span>
-        </div>
-
-        <!-- Aksiyon Bar -->
-        <div
-          class="flex items-center gap-2 py-2 border-t border-gray-100 dark:border-gray-800"
-          @click.stop
-        >
-          <!-- Beğen -->
-          <button
-            v-if="authStore.isAuthenticated"
-            @click="handleLike"
-            :disabled="likeLoading"
-            class="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl transition-all group"
-            :class="
-              post.isLiked
-                ? 'text-red-500 bg-red-50 dark:bg-red-500/10'
-                : 'text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10'
-            "
-          >
-            <svg
-              class="w-5 h-5"
-              :fill="post.isLiked ? 'currentColor' : 'none'"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-            <span class="text-sm font-medium">{{
-              post.isLiked ? "Beğenildi" : "Beğen"
-            }}</span>
-          </button>
-
-          <!-- Yorum yap (sayfada aşağı scroll) -->
-          <button
-            @click="focusCommentInput"
-            class="flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-500/10 transition-all"
-          >
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
-            <span class="text-sm font-medium">Yorum Yap</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- YORUM YAZMA ALANI -->
-      <div
-        v-if="authStore.isAuthenticated"
-        class="px-4 py-4 border-b border-gray-100 dark:border-gray-800"
-      >
-        <div class="flex gap-3">
-          <div
-            class="w-9 h-9 rounded-full flex-shrink-0 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center overflow-hidden"
-          >
-            <img
-              v-if="authStore.user?.avatarUrl"
-              :src="authStore.user.avatarUrl"
-              class="w-full h-full object-cover"
-            />
-            <span v-else class="text-white font-bold text-xs">
-              {{ authStore.user?.username?.charAt(0).toUpperCase() }}
-            </span>
-          </div>
-          <div class="flex-1">
-            <textarea
-              ref="commentInput"
-              v-model="newComment"
-              rows="2"
-              placeholder="Yorumunu yaz..."
-              class="w-full bg-transparent text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-600 text-[15px] resize-none outline-none border-none leading-relaxed"
-            />
-            <div class="flex justify-end mt-2">
-              <button
-                @click="handleAddComment"
-                :disabled="!newComment.trim() || commentLoading"
-                class="px-5 py-1.5 bg-blue-500 hover:bg-blue-600 disabled:opacity-40 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-full transition-all"
-              >
-                {{ commentLoading ? "Gönderiliyor..." : "Yorum Yap" }}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- YORUMLAR LİSTESİ -->
-      <div>
-        <div v-if="commentsLoading" class="py-8 text-center">
-          <div
-            class="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"
-          />
-        </div>
-
-        <div v-else-if="comments.length === 0" class="py-12 text-center">
-          <p class="text-gray-400 text-sm">
-            Henüz yorum yok. İlk yorumu sen yap!
-          </p>
-        </div>
-
-        <div v-else>
-          <div
-            v-for="comment in comments"
-            :key="comment.id"
-            class="px-4 py-4 border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50/50 dark:hover:bg-white/[0.02] transition-colors"
-          >
-            <div class="flex gap-3">
-              <!-- Avatar -->
-              <router-link
-                :to="`/profile/${comment.author?.username}`"
-                class="w-9 h-9 rounded-full flex-shrink-0 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center overflow-hidden"
-              >
-                <img
-                  v-if="comment.author?.avatarUrl"
-                  :src="comment.author.avatarUrl"
-                  class="w-full h-full object-cover rounded-full"
-                />
-                <span v-else class="text-white font-bold text-xs">
-                  {{ comment.author?.username?.charAt(0).toUpperCase() }}
-                </span>
-              </router-link>
-
-              <div class="flex-1 min-w-0">
-                <!-- Üst satır -->
-                <div class="flex items-center gap-2 flex-wrap mb-1">
-                  <router-link
-                    :to="`/profile/${comment.author?.username}`"
-                    class="font-bold text-sm text-gray-900 dark:text-white hover:underline"
-                  >
-                    {{ comment.author?.fullName || comment.author?.username }}
-                  </router-link>
-                  <router-link
-                    :to="`/profile/${comment.author?.username}`"
-                    class="text-gray-400 text-xs"
-                  >
-                    @{{ comment.author?.username }}
-                  </router-link>
-                  <span class="text-gray-300 dark:text-gray-600 text-xs"
-                    >·</span
-                  >
-                  <span class="text-gray-400 text-xs">{{
-                    formatDate(comment.createdAt)
-                  }}</span>
-
-                  <!-- Sil (sahip) -->
-                  <button
-                    v-if="authStore.user?.id === comment.author?.id"
-                    @click="handleDeleteComment(comment.id)"
-                    class="ml-auto p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition"
-                  >
-                    <svg
-                      class="w-3.5 h-3.5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                      />
-                    </svg>
-                  </button>
+            <div class="flex-1">
+              <div class="bg-slate-50 dark:bg-gray-900/50 p-4 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5">
+                <div class="flex items-center justify-between mb-1">
+                  <router-link :to="`/profile/${comment.user.username}`" class="font-black text-xs text-gray-900 dark:text-white hover:underline">@{{ comment.user.username }}</router-link>
+                  <span class="text-[10px] text-gray-400">{{ formatDate(comment.createdAt) }}</span>
                 </div>
-
-                <!-- Yorum içeriği -->
-                <p
-                  class="text-[14px] text-gray-800 dark:text-gray-200 leading-relaxed"
-                >
-                  {{ comment.content }}
-                </p>
+                <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{{ comment.content }}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import { useAuthStore } from "@/stores/auth";
-import { useLikesStore } from "@/stores/likes";
-import { usePostsStore } from "@/stores/posts";
-import { useToast } from "vue-toastification";
-import HashtagText from "@/components/HashtagText.vue";
-import api from "@/api/client";
+import { ref, onMounted, computed } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { useAuthStore } from '@/stores/auth';
+import apiClient from '@/api/client';
+import { useToast } from 'vue-toastification';
+import HashtagText from '@/components/HashtagText.vue';
 
 const route = useRoute();
+const router = useRouter();
 const authStore = useAuthStore();
-const likesStore = useLikesStore();
 const toast = useToast();
 
 const post = ref<any>(null);
 const comments = ref<any[]>([]);
 const loading = ref(true);
-const commentsLoading = ref(true);
-const likeLoading = ref(false);
+const commentContent = ref('');
 const commentLoading = ref(false);
-const isFollowing = ref(false);
-const newComment = ref("");
 const commentInput = ref<HTMLTextAreaElement | null>(null);
 
-const postId = computed(() => Number(route.params.id));
-
-onMounted(async () => {
-  await Promise.all([fetchPost(), fetchComments()]);
-});
-
-async function fetchPost() {
+const fetchPost = async () => {
   try {
-    const res = await api.get(
-      `/posts/${postId.value}?currentUserId=${authStore.user?.id || ""}`,
-    );
+    const res = await apiClient.get(`/posts/${route.params.id}?currentUserId=${authStore.user?.id || ''}`);
     post.value = res.data;
-    // Takip durumu kontrol (ileride follow store'dan gelebilir)
-    if (
-      authStore.isAuthenticated &&
-      authStore.user?.id !== post.value?.author?.id
-    ) {
-      try {
-        const followRes = await api.get(
-          `/follow/check/${post.value.author.id}?currentUserId=${authStore.user?.id}`,
-        );
-        isFollowing.value = followRes.data.isFollowing;
-      } catch {}
-    }
-  } catch {
-    post.value = null;
+    const commentsRes = await apiClient.get(`/comments/post/${route.params.id}`);
+    comments.value = commentsRes.data;
+  } catch (error) {
+    toast.error("Gönderi yüklenemedi.");
   } finally {
     loading.value = false;
   }
-}
-
-async function fetchComments() {
-  try {
-    const res = await api.get(
-      `/comments/post/${route.params.id}?currentUserId=${authStore.user?.id || ""}`,
-    );
-    comments.value = res.data;
-  } catch {
-    comments.value = [];
-  } finally {
-    commentsLoading.value = false;
-  }
-}
-
-async function handleLike() {
-  if (!post.value) return;
-  likeLoading.value = true;
-  try {
-    const result = await likesStore.toggleLike(post.value.id);
-    const current = post.value._count?.likes || 0;
-    post.value = {
-      ...post.value,
-      isLiked: result.liked,
-      _count: {
-        ...post.value._count,
-        likes: result.liked ? current + 1 : current - 1,
-      },
-    };
-  } catch {
-    toast.error("Beğeni işlemi başarısız.");
-  } finally {
-    likeLoading.value = false;
-  }
-}
-
-async function handleAddComment() {
-  if (!newComment.value.trim()) return;
-  commentLoading.value = true;
-  try {
-    const res = await api.post(`/comments/post/${postId.value}`, {
-      content: newComment.value.trim(),
-    });
-    comments.value.unshift(res.data);
-    if (post.value?._count) post.value._count.comments++;
-    newComment.value = "";
-    toast.success("Yorum eklendi!");
-  } catch {
-    toast.error("Yorum eklenemedi.");
-  } finally {
-    commentLoading.value = false;
-  }
-}
-
-async function handleDeleteComment(commentId: number) {
-  if (!confirm("Yorumu silmek istiyor musun?")) return;
-  try {
-    await api.delete(`/comments/${commentId}`);
-    comments.value = comments.value.filter((c) => c.id !== commentId);
-    if (post.value?._count) post.value._count.comments--;
-    toast.success("Yorum silindi.");
-  } catch {
-    toast.error("Yorum silinemedi.");
-  }
-}
-
-async function handleFollow() {
-  try {
-    await api.post(`/follow/${post.value.author.id}`);
-    isFollowing.value = !isFollowing.value;
-    toast.success(isFollowing.value ? "Takip edildi!" : "Takipten çıkıldı.");
-  } catch {
-    toast.error("İşlem başarısız.");
-  }
-}
-
-function focusCommentInput() {
-  commentInput.value?.focus();
-  commentInput.value?.scrollIntoView({ behavior: "smooth", block: "center" });
-}
-
-const getImageUrl = (path: string) => {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
-  // Backend URL'ini çevre değişkeninden veya varsayılan değerden al
-  const baseUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
-  return `${baseUrl}${path}`;
 };
 
-const sentimentClass = (s: string) =>
-  ({
-    POSITIVE:
-      "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400",
-    NEGATIVE: "bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400",
-    NEUTRAL: "bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400",
-  })[s] || "bg-gray-100 dark:bg-gray-800 text-gray-500";
+const handleLike = async () => {
+  if (!authStore.isAuthenticated) return toast.info("Önce giriş yapmalısın.");
+  try {
+    const res = await apiClient.post(`/likes/toggle/${post.value.id}`);
+    post.value.isLiked = res.data.liked;
+    post.value._count.likes += res.data.liked ? 1 : -1;
+  } catch { toast.error("İşlem başarısız."); }
+};
 
-const sentimentLabel = (s: string) =>
-  ({
-    POSITIVE: "Pozitif",
-    NEGATIVE: "Negatif",
-    NEUTRAL: "Nötr",
-  })[s] || s;
+const handleRepost = async () => {
+  if (!authStore.isAuthenticated) return toast.info("Önce giriş yapmalısın.");
+  try {
+    const res = await apiClient.post(`/posts/${post.value.id}/repost`);
+    post.value.isReposted = res.data.reposted;
+    post.value._count.reposts += res.data.reposted ? 1 : -1;
+    toast.success(res.data.reposted ? "Remakülendi! ✨" : "Geri alındı.");
+  } catch { toast.error("İşlem başarısız."); }
+};
+
+const submitComment = async () => {
+  if (!commentContent.value.trim()) return;
+  commentLoading.value = true;
+  try {
+    const res = await apiClient.post('/comments', { content: commentContent.value, postId: post.value.id });
+    comments.value.unshift(res.data);
+    commentContent.value = '';
+    post.value._count.comments++;
+    toast.success("Yorumun eklendi! 💬");
+  } catch { toast.error("Yorum yapılamadı."); }
+  finally { commentLoading.value = false; }
+};
+
+const focusComment = () => commentInput.value?.focus();
 
 const formatDate = (date: string) => {
   const d = new Date(date);
   const now = new Date();
-  const diff = now.getTime() - d.getTime();
-  const mins = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-  if (mins < 1) return "az önce";
-  if (mins < 60) return `${mins}d`;
-  if (hours < 24) return `${hours}s`;
-  if (days < 7) return `${days}g`;
-  return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+  const diff = Math.floor((now.getTime() - d.getTime()) / 60000);
+  if (diff < 1) return "Az önce";
+  if (diff < 60) return `${diff}d`;
+  if (diff < 1440) return `${Math.floor(diff/60)}s`;
+  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
 };
 
-const formatFullDate = (date: string) => {
-  return new Date(date).toLocaleDateString("tr-TR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-};
-
-import { computed, watch } from "vue";
-
-// CANLI PROFİL GÜNCELLEMESİ: Kendi bilgilerimiz değişirse sayfadaki verileri tazele
-watch(() => authStore.user, (newUser) => {
-  if (!newUser) return;
-  const userId = Number(newUser.id);
+const getImageUrl = (path: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
   
-  // 1. Eğer postun yazarı bizsek, post yazar bilgisini güncelle
-  if (post.value && Number(post.value.authorId || post.value.author?.id) === userId) {
-    post.value.author = { ...post.value.author, ...newUser };
-  }
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  
+  return `${baseUrl}${cleanPath}`;
+};
 
-  // 2. Yorumlardaki kendi bilgilerimizi güncelle
-  if (comments.value.length > 0) {
-    comments.value = comments.value.map(c => {
-      if (Number(c.userId || c.author?.id) === userId) {
-        return { ...c, author: { ...c.author, ...newUser } };
-      }
-      return c;
-    });
-  }
-}, { deep: true });
+onMounted(fetchPost);
 </script>
+
+<style scoped>
+.animate-fade-in { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>

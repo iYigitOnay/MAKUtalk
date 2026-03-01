@@ -1,37 +1,37 @@
+<!-- src/views/HashtagPage.vue -->
 <template>
-  <div class="max-w-4xl mx-auto space-y-6">
+  <div class="max-w-2xl mx-auto min-h-screen bg-white dark:bg-gray-950 pb-20 sm:pb-8 transition-colors duration-500">
     <!-- Header -->
-    <div class="card">
-      <div class="flex items-center space-x-3 mb-4">
-        <div
-          class="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center"
-        >
-          <span class="text-primary-600 text-2xl font-bold">#</span>
-        </div>
-        <div>
-          <h1 class="text-2xl font-bold text-gray-900">#{{ hashtag }}</h1>
-          <p class="text-gray-500">{{ posts.length }} paylaşım</p>
-        </div>
+    <header class="sticky top-0 z-40 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10 px-4 py-3 flex items-center gap-6">
+      <button @click="$router.back()" class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-all active:scale-90 text-gray-600 dark:text-gray-300">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
+      </button>
+      <div>
+        <h1 class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter italic leading-none">#{{ hashtag }}</h1>
+        <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">{{ posts.length }} Paylaşım</p>
       </div>
-    </div>
+    </header>
 
-    <!-- Posts -->
-    <div class="space-y-4">
-      <div v-if="loading" class="text-center py-8">
-        <p class="text-gray-500">Yükleniyor...</p>
+    <!-- Posts Section -->
+    <div class="p-4">
+      <div v-if="loading" class="py-20 text-center">
+        <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
       </div>
 
-      <div v-else-if="!posts.length" class="card text-center py-12">
-        <p class="text-gray-500">Bu hashtag ile ilgili paylaşım bulunamadı.</p>
+      <div v-else-if="!posts.length" class="py-20 text-center bg-slate-50 dark:bg-gray-900/50 rounded-[2.5rem] border border-dashed border-gray-200 dark:border-white/5">
+        <div class="mb-4 text-4xl opacity-20">#️⃣</div>
+        <p class="text-gray-500 dark:text-gray-400 font-bold uppercase text-xs tracking-widest">Bu hashtag ile ilgili henüz paylaşım yapılmamış.</p>
       </div>
 
-      <PostCard
-        v-for="post in posts"
-        :key="post.id"
-        :post="post"
-        @delete="handleDeletePost"
-        @showComments="handleShowComments"
-      />
+      <div v-else class="space-y-4 animate-fade-in">
+        <PostCard
+          v-for="post in posts"
+          :key="post.id"
+          :post="post"
+          @delete="handleDeletePost"
+          @showComments="handleShowComments"
+        />
+      </div>
     </div>
 
     <!-- Comments Modal -->
@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
@@ -66,17 +66,17 @@ const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
 
 const fetchHashtagPosts = async () => {
+  if (!hashtag.value) return;
   loading.value = true;
   try {
-    const params: any = {};
-    if (authStore.user) {
-      params.userId = authStore.user.id;
-    }
-
-    const response = await apiClient.get(`/hashtags/${hashtag.value}/posts`, {
-      params,
+    // SearchService içindeki searchByHashtag metodunu kullanan /search/hashtag endpoint'ini kullanıyoruz
+    const res = await apiClient.get('/search/hashtag', {
+      params: { 
+        tag: hashtag.value,
+        userId: authStore.user?.id
+      }
     });
-    posts.value = response.data;
+    posts.value = res.data;
   } catch (error) {
     console.error("Failed to fetch hashtag posts:", error);
     toast.error("Paylaşımlar yüklenemedi.");
@@ -86,15 +86,12 @@ const fetchHashtagPosts = async () => {
 };
 
 const handleDeletePost = async (postId: number) => {
-  if (!confirm("Bu paylaşımı silmek istediğinden emin misin?")) return;
-
   try {
     await postsStore.deletePost(postId);
     posts.value = posts.value.filter((p) => p.id !== postId);
     toast.success("Paylaşım silindi.");
   } catch (error: any) {
-    const message = error.message?.[0] || "Silme işlemi başarısız.";
-    toast.error(message);
+    toast.error("Silme işlemi başarısız.");
   }
 };
 
@@ -103,7 +100,15 @@ const handleShowComments = (postId: number) => {
   commentsModalOpen.value = true;
 };
 
-onMounted(() => {
+// Rota parametresi değiştiğinde (başka bir hashtag'e tıklandığında) veriyi yenile
+watch(() => route.params.tag, () => {
   fetchHashtagPosts();
 });
+
+onMounted(fetchHashtagPosts);
 </script>
+
+<style scoped>
+.animate-fade-in { animation: fadeIn 0.4s ease-out; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>

@@ -83,7 +83,7 @@ const router = createRouter({
       meta: { layout: "main" },
     },
     {
-      path: "/hashtag/:name",
+      path: "/hashtag/:tag",
       name: "Hashtag",
       component: () => import("@/views/HashtagPage.vue"),
       meta: { layout: "main" },
