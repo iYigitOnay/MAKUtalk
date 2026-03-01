@@ -8,6 +8,9 @@ COPY prisma ./prisma/
 COPY prisma.config.ts ./
 
 RUN npm install
+
+# Prisma generate için dummy URL yeterli, gerçek DB bağlantısı yapmıyor
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 RUN npx prisma generate
 
 COPY . .
@@ -24,6 +27,7 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./
 
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 RUN npx prisma generate
 
 EXPOSE 3000
