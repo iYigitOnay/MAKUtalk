@@ -10,17 +10,17 @@
     </header>
 
     <div v-if="loading" class="py-20 text-center"><div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
-    <div v-else-if="!post" class="py-20 text-center text-gray-500">Gönderi bulunamadı.</div>
+    <div v-else-if="!post" class="py-20 text-center text-gray-500 font-bold uppercase text-xs tracking-widest italic border-2 border-dashed border-gray-100 dark:border-white/5 rounded-[2.5rem] mx-4">Gönderi bulunamadı veya silinmiş olabilir.</div>
     
     <div v-else class="animate-fade-in">
       <!-- Post Body -->
       <article class="p-4 sm:p-6 border-b border-gray-100 dark:border-primary-900/10">
         <!-- Author Info -->
-        <div class="flex items-center gap-3 mb-4">
+        <div v-if="post.author" class="flex items-center gap-3 mb-4">
           <router-link :to="`/profile/${post.author.username}`" class="block flex-shrink-0">
             <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner overflow-hidden border border-gray-100 dark:border-white/5">
               <img v-if="post.author.avatarUrl" :src="getImageUrl(post.author.avatarUrl)" class="w-full h-full object-cover" />
-              <span v-else>{{ post.author.username.charAt(0) }}</span>
+              <span v-else>{{ post.author.username?.charAt(0) }}</span>
             </div>
           </router-link>
           <div class="flex-1 min-w-0">
@@ -36,7 +36,7 @@
 
         <!-- Post Content -->
         <div class="space-y-4">
-          <p class="text-gray-900 dark:text-white text-lg leading-relaxed whitespace-pre-wrap">
+          <p class="text-gray-900 dark:text-white text-[15px] leading-normal whitespace-pre-wrap">
             <HashtagText :text="post.content || ''" />
           </p>
           
@@ -44,8 +44,8 @@
             <img :src="getImageUrl(post.imageUrl)" class="w-full h-auto max-h-[600px] object-contain" alt="Post content" />
           </div>
 
-          <div class="flex items-center justify-between text-gray-400 text-sm pt-4">
-            <span>{{ new Date(post.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }} · {{ new Date(post.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
+          <div class="flex items-center justify-between text-gray-400 text-[10px] font-bold uppercase tracking-widest pt-4">
+            <span v-if="post.createdAt">{{ new Date(post.createdAt).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' }) }} · {{ new Date(post.createdAt).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) }}</span>
             <div v-if="post.category" class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg" :style="{ backgroundColor: post.category.color }">
               {{ post.category.name }}
             </div>
@@ -54,9 +54,9 @@
 
         <!-- Interactions Stats -->
         <div class="flex gap-6 py-4 mt-4 border-y border-gray-100 dark:border-primary-900/10">
-          <div class="text-sm"><span class="font-black text-gray-900 dark:text-white">{{ post._count?.likes || 0 }}</span> <span class="text-gray-500">Beğeni</span></div>
-          <div class="text-sm"><span class="font-black text-gray-900 dark:text-white">{{ post._count?.comments || 0 }}</span> <span class="text-gray-500">Yorum</span></div>
-          <div class="text-sm"><span class="font-black text-gray-900 dark:text-white">{{ post._count?.reposts || 0 }}</span> <span class="text-gray-500">Remakü</span></div>
+          <div class="text-sm font-bold"><span class="font-black text-gray-900 dark:text-white">{{ post._count?.likes || 0 }}</span> <span class="text-gray-400 uppercase text-[10px] tracking-widest ml-1">Beğeni</span></div>
+          <div class="text-sm font-bold"><span class="font-black text-gray-900 dark:text-white">{{ post._count?.comments || 0 }}</span> <span class="text-gray-400 uppercase text-[10px] tracking-widest ml-1">Yorum</span></div>
+          <div class="text-sm font-bold"><span class="font-black text-gray-900 dark:text-white">{{ post._count?.reposts || 0 }}</span> <span class="text-gray-400 uppercase text-[10px] tracking-widest ml-1">Remakü</span></div>
         </div>
 
         <!-- Action Buttons -->
@@ -75,13 +75,13 @@
 
       <!-- Comments Section -->
       <div class="px-4 py-6">
-        <h2 class="text-lg font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter italic">Yorumlar ({{ comments.length }})</h2>
+        <h2 class="text-lg font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter italic">Yorumlar ({{ comments?.length || 0 }})</h2>
         
         <!-- Add Comment -->
         <div v-if="authStore.isAuthenticated" class="flex gap-3 mb-8">
           <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex-shrink-0 overflow-hidden border border-gray-100 dark:border-white/5 shadow-inner">
             <img v-if="authStore.user?.avatarUrl" :src="getImageUrl(authStore.user.avatarUrl)" class="w-full h-full object-cover" />
-            <div v-else class="w-full h-full flex items-center justify-center font-black text-blue-600 uppercase">{{ authStore.user?.username.charAt(0) }}</div>
+            <div v-else class="w-full h-full flex items-center justify-center font-black text-blue-600 uppercase">{{ authStore.user?.username?.charAt(0) }}</div>
           </div>
           <div class="flex-1 space-y-3">
             <textarea 
@@ -89,7 +89,7 @@
               v-model="commentContent" 
               rows="2" 
               placeholder="Fikrini paylaş..." 
-              class="w-full p-4 bg-slate-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[1.5rem] text-sm focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all dark:text-white"
+              class="w-full p-4 bg-slate-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[1.5rem] text-[15px] focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all dark:text-white"
             ></textarea>
             <div class="flex justify-end">
               <button @click="submitComment" :disabled="!commentContent.trim() || commentLoading" class="px-6 py-2.5 bg-blue-600 text-white text-xs font-black rounded-xl uppercase hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20 active:scale-95">Yorum Yap</button>
@@ -98,24 +98,27 @@
         </div>
 
         <!-- Comments List -->
-        <div class="space-y-6">
+        <div v-if="comments && comments.length > 0" class="space-y-6">
           <div v-for="comment in comments" :key="comment.id" class="flex gap-3 animate-fade-in">
-            <router-link :to="`/profile/${comment.user.username}`" class="flex-shrink-0">
-              <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner overflow-hidden">
-                <img v-if="comment.user.avatarUrl" :src="getImageUrl(comment.user.avatarUrl)" class="w-full h-full object-cover" />
-                <span v-else>{{ comment.user.username.charAt(0) }}</span>
+            <router-link v-if="comment.author" :to="`/profile/${comment.author.username}`" class="flex-shrink-0">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner overflow-hidden border border-gray-100 dark:border-white/5">
+                <img v-if="comment.author.avatarUrl" :src="getImageUrl(comment.author.avatarUrl)" class="w-full h-full object-cover" />
+                <span v-else>{{ comment.author.username?.charAt(0) }}</span>
               </div>
             </router-link>
-            <div class="flex-1">
+            <div v-if="comment.author" class="flex-1">
               <div class="bg-slate-50 dark:bg-gray-900/50 p-4 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5">
                 <div class="flex items-center justify-between mb-1">
-                  <router-link :to="`/profile/${comment.user.username}`" class="font-black text-xs text-gray-900 dark:text-white hover:underline">@{{ comment.user.username }}</router-link>
-                  <span class="text-[10px] text-gray-400">{{ formatDate(comment.createdAt) }}</span>
+                  <router-link :to="`/profile/${comment.author.username}`" class="font-black text-xs text-gray-900 dark:text-white hover:underline">@{{ comment.author.username }}</router-link>
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ formatDate(comment.createdAt) }}</span>
                 </div>
-                <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{{ comment.content }}</p>
+                <p class="text-[14px] text-gray-700 dark:text-gray-300 leading-relaxed">{{ comment.content }}</p>
               </div>
             </div>
           </div>
+        </div>
+        <div v-else class="py-10 text-center opacity-40">
+          <p class="text-xs font-black uppercase tracking-[0.2em] italic">Henüz yorum yapılmamış.</p>
         </div>
       </div>
     </div>
@@ -143,12 +146,21 @@ const commentLoading = ref(false);
 const commentInput = ref<HTMLTextAreaElement | null>(null);
 
 const fetchPost = async () => {
+  loading.value = true;
   try {
     const res = await apiClient.get(`/posts/${route.params.id}?currentUserId=${authStore.user?.id || ''}`);
     post.value = res.data;
-    const commentsRes = await apiClient.get(`/comments/post/${route.params.id}`);
-    comments.value = commentsRes.data;
+    
+    // Yorumları ayrı bir try-catch ile çekelim ki yorum hatası postu bozmasın
+    try {
+      const commentsRes = await apiClient.get(`/comments/post/${route.params.id}`);
+      comments.value = Array.isArray(commentsRes.data) ? commentsRes.data : [];
+    } catch (cErr) {
+      console.error("Comments load error:", cErr);
+      comments.value = [];
+    }
   } catch (error) {
+    console.error("Post load error:", error);
     toast.error("Gönderi yüklenemedi.");
   } finally {
     loading.value = false;
@@ -178,18 +190,27 @@ const submitComment = async () => {
   if (!commentContent.value.trim()) return;
   commentLoading.value = true;
   try {
-    const res = await apiClient.post('/comments', { content: commentContent.value, postId: post.value.id });
+    // Backend endpoint: POST /comments/post/:postId
+    const res = await apiClient.post(`/comments/post/${post.value.id}`, { 
+      content: commentContent.value 
+    });
+    
+    if (!comments.value) comments.value = [];
     comments.value.unshift(res.data);
     commentContent.value = '';
-    post.value._count.comments++;
+    if (post.value._count) post.value._count.comments++;
     toast.success("Yorumun eklendi! 💬");
-  } catch { toast.error("Yorum yapılamadı."); }
+  } catch (error) { 
+    console.error("Comment submit error:", error);
+    toast.error("Yorum yapılamadı."); 
+  }
   finally { commentLoading.value = false; }
 };
 
 const focusComment = () => commentInput.value?.focus();
 
 const formatDate = (date: string) => {
+  if (!date) return "";
   const d = new Date(date);
   const now = new Date();
   const diff = Math.floor((now.getTime() - d.getTime()) / 60000);
