@@ -16,7 +16,8 @@ export class SearchService {
         createdAt: { gte: sevenDaysAgo },
         published: true,
         author: {
-          isPrivate: false, // KRİTİK: Sadece herkese açık hesapların hashtagleri trendlere girsin
+          isPrivate: false,
+          isBanned: false,
         },
       },
       select: { content: true },
@@ -26,10 +27,15 @@ export class SearchService {
     const hashtagCounts: Record<string, number> = {};
 
     posts.forEach(({ content }) => {
-      const matches = (content || '').match(/#[\wÇçĞğİıÖöŞşÜü]+/g) || [];
+      if (!content) return;
+      // Güvenli hashtag regex'i
+      const matches = content.match(/#[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+/g) || [];
       matches.forEach((tag) => {
-        const normalized = tag.toLowerCase();
-        hashtagCounts[normalized] = (hashtagCounts[normalized] || 0) + 1;
+        // Başındaki # işaretini at ve küçük harfe çevir
+        const normalized = tag.slice(1).toLowerCase();
+        if (normalized.length >= 2) {
+          hashtagCounts[normalized] = (hashtagCounts[normalized] || 0) + 1;
+        }
       });
     });
 

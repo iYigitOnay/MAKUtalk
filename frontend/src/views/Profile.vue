@@ -789,10 +789,10 @@ const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
 
 // Yorum sayısı senkronizasyonu
-watch(() => commentsStore.comments.length, (newLength, oldLength) => {
-  if (newLength > oldLength && selectedPostId.value) {
+watch(() => commentsStore.lastAddedCommentId, (newId) => {
+  if (newId && selectedPostId.value) {
     const postId = selectedPostId.value;
-    const updateCommentCount = (list: any[]) => {
+    const updateCount = (list: any[]) => {
       list.forEach(p => {
         const target = p.repostOf || p;
         if (target.id === postId) {
@@ -801,9 +801,30 @@ watch(() => commentsStore.comments.length, (newLength, oldLength) => {
         }
       });
     };
-    updateCommentCount(userPosts.value);
-    updateCommentCount(reposts.value);
-    updateCommentCount(likedPosts.value);
+    updateCount(userPosts.value);
+    updateCount(reposts.value);
+    updateCount(likedPosts.value);
+    commentsStore.lastAddedCommentId = null;
+  }
+});
+
+watch(() => commentsStore.lastDeletedCommentId, (deletedId) => {
+  if (deletedId && selectedPostId.value) {
+    const postId = selectedPostId.value;
+    const updateCount = (list: any[]) => {
+      list.forEach(p => {
+        const target = p.repostOf || p;
+        if (target.id === postId) {
+          if (target._count && target._count.comments > 0) {
+            target._count.comments--;
+          }
+        }
+      });
+    };
+    updateCount(userPosts.value);
+    updateCount(reposts.value);
+    updateCount(likedPosts.value);
+    commentsStore.lastDeletedCommentId = null;
   }
 });
 

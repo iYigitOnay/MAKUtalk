@@ -287,12 +287,21 @@ const centerTabItem = (index: number) => {
 const fetchAllData = async () => {
   try {
     const [s, u, f, r, p] = await Promise.all([
-      apiClient.get('/admin/stats'), apiClient.get('/admin/users'),
-      apiClient.get('/admin/feedbacks'), apiClient.get('/admin/reports'),
+      apiClient.get('/admin/stats'), 
+      apiClient.get('/admin/users'),
+      apiClient.get('/admin/feedbacks'), 
+      apiClient.get('/admin/reports'),
       apiClient.get('/clubs/pending')
     ]);
-    stats.value = s.data; users.value = u.data; feedbacks.value = f.data; reports.value = r.data; pendingClubs.value = p.data;
-  } catch { toast.error("Hata!"); }
+    stats.value = s.data; 
+    users.value = u.data; 
+    feedbacks.value = f.data; 
+    reports.value = r.data; 
+    pendingClubs.value = p.data;
+  } catch (err: any) { 
+    console.error("Admin data fetch error:", err.response?.data || err.message);
+    toast.error("Veriler yüklenemedi! (Hata: " + (err.response?.status || "Bilinmiyor") + ")"); 
+  }
   finally { setTimeout(() => { centerTabItem(2); handleTabsScroll(); }, 300); }
 };
 

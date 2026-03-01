@@ -6,6 +6,8 @@ import type { Comment } from "@/types";
 export const useCommentsStore = defineStore("comments", () => {
   const comments = ref<Comment[]>([]);
   const loading = ref(false);
+  const lastAddedCommentId = ref<number | null>(null);
+  const lastDeletedCommentId = ref<number | null>(null);
 
   const fetchComments = async (postId: number) => {
     loading.value = true;
@@ -32,6 +34,7 @@ export const useCommentsStore = defineStore("comments", () => {
         },
       );
       comments.value.unshift(response.data);
+      lastAddedCommentId.value = response.data.id;
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error;
@@ -45,6 +48,7 @@ export const useCommentsStore = defineStore("comments", () => {
     try {
       await apiClient.delete(`/comments/${commentId}`);
       comments.value = comments.value.filter((c) => c.id !== commentId);
+      lastDeletedCommentId.value = commentId;
     } catch (error: any) {
       throw error.response?.data || error;
     } finally {
@@ -55,6 +59,8 @@ export const useCommentsStore = defineStore("comments", () => {
   return {
     comments,
     loading,
+    lastAddedCommentId,
+    lastDeletedCommentId,
     fetchComments,
     createComment,
     deleteComment,

@@ -149,11 +149,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useFollowStore } from "@/stores/follow";
 import { usePostsStore } from "@/stores/posts";
+import { useCommentsStore } from "@/stores/comments";
 import { useToast } from "vue-toastification";
 import apiClient from "@/api/client";
 import PostCard from "@/components/PostCard.vue";
@@ -165,6 +166,7 @@ const route = useRoute();
 const authStore = useAuthStore();
 const followStore = useFollowStore();
 const postsStore = usePostsStore();
+const commentsStore = useCommentsStore();
 const toast = useToast();
 
 const userId = computed(() => parseInt(route.params.id as string));
@@ -183,6 +185,19 @@ const showFollowersModal = ref(false);
 const showFollowingModal = ref(false);
 const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
+
+// Yorum sayısı senkronizasyonu
+watch(() => commentsStore.lastAddedCommentId, (newId) => {
+  if (newId && selectedPostId.value) {
+    const postId = selectedPostId.value;
+    const post = userPosts.value.find(p => p.id === postId);
+    if (post) {
+      if (!post._count) post._count = { comments: 0, likes: 0, reposts: 0 };
+      post._count.comments++;
+    }
+    commentsStore.lastAddedCommentId = null;
+  }
+});
 
 const userInitials = computed(() => {
   if (!user.value) return "";

@@ -243,6 +243,6 @@ function handleSearch() {
 }
 
 function searchHashtag(tag: string) {
-  router.push(`/search?q=${encodeURIComponent(tag)}`);
+  router.push(`/hashtag/${tag}`);
 }
 </script>

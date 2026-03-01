@@ -74,6 +74,10 @@ export class HashtagService {
       where: {
         createdAt: { gte: sevenDaysAgo },
         published: true,
+        author: {
+          isPrivate: false,
+          isBanned: false,
+        },
       },
       select: { content: true },
     });
