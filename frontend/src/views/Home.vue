@@ -38,25 +38,33 @@
             :disabled="postsStore.loading"
           />
 
-          <!-- MENTION ÖNERİ LİSTESİ -->
-          <div 
-            v-if="showMentions"
-            class="absolute z-[100] left-0 top-full mt-1 w-64 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
+          <!-- MENTION ÖNERİ LİSTESİ (YENİ: INPUT ÜSTÜ SABİT BAR) -->
+          <Transition
+            enter-active-class="transition duration-300 ease-out"
+            enter-from-class="opacity-0 -translate-y-2 scale-95"
+            enter-to-class="opacity-100 translate-y-0 scale-100"
+            leave-active-class="transition duration-200 ease-in"
+            leave-from-class="opacity-100 translate-y-0 scale-100"
+            leave-to-class="opacity-0 -translate-y-2 scale-95"
           >
-            <button
-              v-for="u in mentionUsers"
-              :key="u.id"
-              @click="selectMention(u.username)"
-              class="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors border-b border-gray-50 dark:border-white/5 last:border-0"
+            <div 
+              v-if="showMentions"
+              class="flex items-center gap-2 overflow-x-auto py-2 mb-2 scrollbar-hide no-scrollbar"
             >
-              <img v-if="u.avatarUrl" :src="u.avatarUrl" class="w-8 h-8 rounded-full object-cover" />
-              <div v-else class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold text-xs">{{ u.username.charAt(0).toUpperCase() }}</div>
-              <div class="text-left">
-                <p class="text-sm font-black text-gray-900 dark:text-white leading-none">@{{ u.username }}</p>
-                <p v-if="u.fullName" class="text-[10px] text-gray-400 font-medium mt-1">{{ u.fullName }}</p>
-              </div>
-            </button>
-          </div>
+              <button
+                v-for="u in mentionUsers"
+                :key="u.id"
+                @click="selectMention(u.username)"
+                class="flex-shrink-0 flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-800 border border-slate-200 dark:border-white/10 rounded-full shadow-sm hover:border-blue-500 dark:hover:border-blue-400 transition-all active:scale-95"
+              >
+                <img v-if="u.avatarUrl" :src="u.avatarUrl" class="w-6 h-6 rounded-full object-cover border border-slate-100 dark:border-gray-700" />
+                <div v-else class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-black text-[10px]">{{ u.username.charAt(0).toUpperCase() }}</div>
+                <div class="flex flex-col items-start leading-none">
+                  <span class="text-xs font-black text-slate-900 dark:text-white">@{{ u.username }}</span>
+                </div>
+              </button>
+            </div>
+          </Transition>
 
           <!-- Resim Önizleme Alanı -->
           <div v-if="selectedImagePreview" class="relative mt-4 group">
