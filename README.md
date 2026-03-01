@@ -17,6 +17,7 @@ MAKUtalk, Burdur Mehmet Akif Ersoy Üniversitesi (MAKÜ) öğrencileri için öz
 ## 🛠️ Teknoloji Yığını
 
 ### Backend
+
 - **Framework:** [NestJS](https://nestjs.com/) (Node.js v20+)
 - **ORM:** [Prisma](https://www.prisma.io/)
 - **Veritabanı:** [PostgreSQL](https://www.postgresql.org/) (v15)
@@ -24,6 +25,7 @@ MAKUtalk, Burdur Mehmet Akif Ersoy Üniversitesi (MAKÜ) öğrencileri için öz
 - **Güvenlik:** JWT, Bcryptjs, Rate Limiting
 
 ### Frontend
+
 - **Framework:** [Vue 3](https://vuejs.org/) (Composition API)
 - **Build Tool:** [Vite](https://vitejs.dev/)
 - **State Management:** [Pinia](https://pinia.vuejs.org/)
@@ -31,6 +33,7 @@ MAKUtalk, Burdur Mehmet Akif Ersoy Üniversitesi (MAKÜ) öğrencileri için öz
 - **İkonlar:** [Lucide Vue Next](https://lucide.dev/)
 
 ### DevOps & Deployment
+
 - **Containerization:** Docker & Docker Compose
 - **Web Server:** Nginx
 
@@ -41,7 +44,9 @@ MAKUtalk, Burdur Mehmet Akif Ersoy Üniversitesi (MAKÜ) öğrencileri için öz
 Bu proje, bir VPS (Örn: DigitalOcean Droplet, AWS EC2, Hetzner) üzerinde **Docker Compose** ile profesyonel bir şekilde çalıştırılmak üzere optimize edilmiştir.
 
 ### 1. Sunucu Hazırlığı
+
 Sunucunuza (Droplet) SSH ile bağlanın ve gerekli araçların kurulu olduğundan emin olun:
+
 ```bash
 # Docker ve Git kurulumu (Ubuntu/Debian için)
 sudo apt update
@@ -49,12 +54,14 @@ sudo apt install -y git docker.io docker-compose
 ```
 
 ### 2. Projeyi Klonlama
+
 ```bash
 git clone https://github.com/iYigitOnay/MAKUtalk.git
 cd MAKUtalk
 ```
 
 ### 3. Çevre Değişkenleri (.env)
+
 Proje kök dizininde bir `.env` dosyası oluşturun ve üretim (production) değişkenlerinizi tanımlayın:
 
 ```bash
@@ -62,6 +69,7 @@ nano .env
 ```
 
 **.env İçeriği Örneği:**
+
 ```env
 # Veritabanı Ayarları
 DB_USERNAME=admin
@@ -82,6 +90,7 @@ FRONTEND_URL=http://167.X.X.X
 ```
 
 ### 4. Docker ile Sistemi Ayağa Kaldırma
+
 Sadece tek bir komutla Veritabanı, Backend ve Frontend'i üretim modunda ayağa kaldırın:
 
 ```bash
@@ -90,8 +99,9 @@ sudo docker-compose up -d
 ```
 
 ### 5. Deployment Notları
+
 - **Veritabanı Göçleri (Migrations):** Backend container'ı başlatıldığında `npx prisma migrate deploy` komutu otomatik olarak çalışır ve veritabanı şemasını günceller. Ekstra bir işlem yapmanıza gerek yoktur.
-- **Portlar:** 
+- **Portlar:**
   - Frontend, sunucunun **80** portunda (HTTP) doğrudan yayın yapar.
   - Backend API, sunucunun **3000** portunda yayın yapar.
 - **Güncellemeler:** Projede değişiklik yaptığınızda (yeni bir özellik eklediğinizde), sunucuda şu komutları çalıştırmanız yeterlidir:
@@ -131,4 +141,5 @@ Projeyi kendi bilgisayarınızda geliştirmek istiyorsanız:
 5. Pull Request açın.
 
 ## 📄 Lisans
-Bu proje MIT lisansı altında lisanslanmıştır.
+
+Bu proje Copyright lisansı altında lisanslanmıştır.
