@@ -166,11 +166,49 @@
           <div v-else-if="activeTab === 'reports'" class="space-y-6 max-w-4xl mx-auto">
             <div v-if="reports.length === 0" class="py-24 text-center opacity-30 font-black uppercase text-xs italic">Şikayet kaydı yok.</div>
             <div v-for="report in reports" :key="report.id" class="p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[2.5rem] shadow-xl flex flex-col gap-6">
-              <div class="flex justify-between items-center"><span class="px-4 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest bg-orange-50 text-orange-600 border border-orange-100">{{ report.reason }}</span><span class="text-[9px] font-black text-gray-400 uppercase">{{ formatDate(report.createdAt) }}</span></div>
-              <div class="p-5 bg-orange-50/30 dark:bg-orange-900/10 rounded-2xl border-l-4 border-orange-500 text-sm font-bold text-gray-700 dark:text-gray-300 italic">"{{ report.subReason || 'Gerekçe belirtilmemiş.' }}"</div>
+              <div class="flex justify-between items-center">
+                <div class="flex items-center gap-2">
+                  <span class="px-4 py-1 rounded-xl text-[10px] font-black uppercase tracking-widest bg-orange-50 text-orange-600 border border-orange-100">{{ report.reason }}</span>
+                  <span v-if="report.reportedPost" class="px-2 py-1 bg-blue-50 text-blue-600 text-[8px] font-black uppercase rounded-lg border border-blue-100">POST</span>
+                  <span v-else-if="report.reportedComment" class="px-2 py-1 bg-purple-50 text-purple-600 text-[8px] font-black uppercase rounded-lg border border-purple-100">YORUM</span>
+                  <span v-else-if="report.reportedUser" class="px-2 py-1 bg-gray-50 text-gray-600 text-[8px] font-black uppercase rounded-lg border border-gray-100">PROFİL</span>
+                </div>
+                <span class="text-[9px] font-black text-gray-400 uppercase">{{ formatDate(report.createdAt) }}</span>
+              </div>
+
+              <!-- Şikayet Edilen İçerik -->
+              <div v-if="report.reportedPost || report.reportedComment" class="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
+                <p class="text-[9px] font-black text-gray-400 uppercase mb-2">Şikayet Edilen İçerik:</p>
+                <p class="text-sm text-gray-800 dark:text-gray-200 font-medium">
+                  {{ report.reportedPost?.content || report.reportedComment?.content }}
+                </p>
+                <p class="text-[9px] font-bold text-blue-500 mt-2 uppercase">
+                  Yazar: @{{ report.reportedPost?.author?.username || report.reportedComment?.user?.username }}
+                </p>
+              </div>
+
+              <!-- Şikayet Edilen Kullanıcı (Profil Şikayeti ise) -->
+              <div v-else-if="report.reportedUser" class="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gray-200 dark:bg-gray-800 overflow-hidden">
+                  <img v-if="report.reportedUser.avatarUrl" :src="report.reportedUser.avatarUrl" class="w-full h-full object-cover" />
+                  <div v-else class="w-full h-full flex items-center justify-center font-black text-gray-400">{{ report.reportedUser.username.charAt(0) }}</div>
+                </div>
+                <div>
+                  <p class="text-[9px] font-black text-gray-400 uppercase">Şikayet Edilen Kullanıcı:</p>
+                  <p class="text-sm font-black text-gray-900 dark:text-white">@{{ report.reportedUser.username }}</p>
+                </div>
+              </div>
+
+              <div class="p-5 bg-orange-50/30 dark:bg-orange-900/10 rounded-2xl border-l-4 border-orange-500 text-sm font-bold text-gray-700 dark:text-gray-300 italic">
+                <p class="text-[9px] font-black text-orange-500 uppercase mb-1">Şikayet Gerekçesi:</p>
+                "{{ report.subReason || 'Gerekçe belirtilmemiş.' }}"
+              </div>
+
               <div class="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-white/5">
                 <p class="text-[10px] font-black text-gray-400 uppercase">Bildiren: <span class="text-gray-900 dark:text-white">@{{ report.reporter?.username }}</span></p>
-                <button @click="report.reportedPost ? $router.push(`/post/${report.reportedPost.id}`) : $router.push(`/profile/${report.reportedUser.username}`)" class="px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-black uppercase rounded-xl shadow-lg">İncele</button>
+                <div class="flex gap-2">
+                  <button @click="report.reportedPost ? $router.push(`/post/${report.reportedPost.id}`) : (report.reportedComment ? $router.push(`/post/${report.reportedComment.postId}`) : $router.push(`/profile/${report.reportedUser.username}`))" class="px-6 py-2.5 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-black uppercase rounded-xl shadow-lg hover:scale-105 transition-transform">İncele</button>
+                </div>
               </div>
             </div>
           </div>

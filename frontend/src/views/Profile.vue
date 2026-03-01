@@ -724,6 +724,13 @@
       @close="showEditModal = false"
       @save="handleSaveProfile"
     />
+
+    <!-- COMMENTS MODAL -->
+    <CommentsModal
+      :is-open="commentsModalOpen"
+      :post-id="selectedPostId"
+      @close="commentsModalOpen = false"
+    />
   </div>
 </template>
 
@@ -735,6 +742,7 @@ import { usePostsStore } from "@/stores/posts";
 import { useFollowStore } from "@/stores/follow";
 import { useChatStore } from "@/stores/chat";
 import { useNotificationsStore } from "@/stores/notifications";
+import { useCommentsStore } from "@/stores/comments";
 import { useToast } from "vue-toastification";
 import apiClient from "@/api/client";
 import PostCard from "@/components/PostCard.vue";
@@ -747,6 +755,7 @@ const postsStore = usePostsStore();
 const followStore = useFollowStore();
 const chatStore = useChatStore();
 const notificationsStore = useNotificationsStore();
+const commentsStore = useCommentsStore();
 const router = useRouter();
 const route = useRoute();
 const toast = useToast();
@@ -774,8 +783,29 @@ const showOptionsMenu = ref(false);
 const showEditModal = ref(false);
 const showBlockModal = ref(false);
 const showBadgeModal = ref(false);
+const showFollowersModal = ref(false);
+const showFollowingModal = ref(false);
 const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
+
+// Yorum sayısı senkronizasyonu
+watch(() => commentsStore.comments.length, (newLength, oldLength) => {
+  if (newLength > oldLength && selectedPostId.value) {
+    const postId = selectedPostId.value;
+    const updateCommentCount = (list: any[]) => {
+      list.forEach(p => {
+        const target = p.repostOf || p;
+        if (target.id === postId) {
+          if (!target._count) target._count = { comments: 0 };
+          target._count.comments++;
+        }
+      });
+    };
+    updateCommentCount(userPosts.value);
+    updateCommentCount(reposts.value);
+    updateCommentCount(likedPosts.value);
+  }
+});
 
 // Rozet State & Ikon Eşleştirme
 const allBadges = ref<any[]>([]);

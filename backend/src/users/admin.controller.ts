@@ -64,17 +64,15 @@ export class AdminController {
     if (user.role !== 'ADMIN' && user.email !== '2312101063@ogr.mehmetakif.edu.tr') {
       throw new ForbiddenException('Yetkisiz erişim.');
     }
-    // BUILD FIX: Prisma generate henüz yeni alanları görmediği için cast ederek build hatasını aşıyoruz
-    const include: any = {
-      reporter: { select: { username: true } },
-      reportedUser: { select: { username: true } },
-      reportedPost: { select: { id: true, content: true, author: { select: { username: true } } } },
-      reportedComment: { select: { id: true, content: true, user: { select: { username: true } } } }
-    };
-
-    return (this.prisma.report as any).findMany({
+    
+    return this.prisma.report.findMany({
       orderBy: { createdAt: 'desc' },
-      include,
+      include: {
+        reporter: { select: { username: true } },
+        reportedUser: { select: { username: true } },
+        reportedPost: { select: { id: true, content: true, author: { select: { username: true } } } },
+        reportedComment: { select: { id: true, content: true, user: { select: { username: true } } } }
+      },
     });
   }
 }
