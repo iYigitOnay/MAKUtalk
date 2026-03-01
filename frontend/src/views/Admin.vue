@@ -23,7 +23,7 @@
       </div>
     </header>
 
-    <!-- 6'LI STATS GRID (ZARIF IKONLAR) -->
+    <!-- 6'LI STATS GRID -->
     <div class="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 mb-16">
       <div v-for="s in statItems" :key="s.label" class="bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-xl flex flex-col sm:flex-row items-center gap-3 sm:gap-4 relative overflow-hidden group hover:-translate-y-1 transition-all duration-300">
         <div class="absolute -right-4 -bottom-4 w-24 h-24 rounded-full blur-2xl opacity-5 transition-opacity duration-500 group-hover:opacity-10" :style="{ backgroundColor: s.color }"></div>
@@ -37,18 +37,11 @@
       </div>
     </div>
 
-    <!-- ADMIN TABS ÇARKI (Kullanıcılar Ortada) -->
+    <!-- ADMIN TABS -->
     <div class="relative mb-16 py-4 border-y border-gray-100 dark:border-white/5 bg-slate-50/50 dark:bg-gray-900/30 rounded-3xl overflow-hidden">
-      <div 
-        ref="adminTabsRef"
-        @scroll="handleTabsScroll"
-        class="flex items-center gap-4 overflow-x-auto px-[35%] scrollbar-hide no-scrollbar scroll-smooth h-16"
-      >
+      <div ref="adminTabsRef" @scroll="handleTabsScroll" class="flex items-center gap-4 overflow-x-auto px-[35%] scrollbar-hide no-scrollbar scroll-smooth h-16">
         <div v-for="(tab, index) in adminTabs" :key="tab.id" class="flex-shrink-0 snap-center tab-item">
-          <button 
-            @click.prevent="activeTab = tab.id; centerTabItem(index)"
-            :class="['w-36 h-12 rounded-xl flex items-center justify-center transition-all duration-500 border-2 px-4', activeTab === tab.id ? 'bg-blue-600 border-blue-600 text-white shadow-xl scale-110' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-white/5 text-gray-400 opacity-60 scale-90']"
-          >
+          <button @click.prevent="activeTab = tab.id; centerTabItem(index)" :class="['w-36 h-12 rounded-xl flex items-center justify-center transition-all duration-500 border-2 px-4', activeTab === tab.id ? 'bg-blue-600 border-blue-600 text-white shadow-xl scale-110' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-white/5 text-gray-400 opacity-60 scale-90']">
             <span class="text-[10px] font-black uppercase tracking-widest">{{ tab.name }}</span>
           </button>
         </div>
@@ -67,27 +60,67 @@
                 <thead><tr class="bg-gray-50/50 dark:bg-gray-800/50 border-b border-gray-100 dark:border-white/5"><th class="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">Kullanıcı</th><th class="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">Durum</th><th class="p-8 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">Eylem</th></tr></thead>
                 <tbody class="divide-y divide-gray-50 dark:divide-white/5">
                   <tr v-for="user in users" :key="user.id" class="hover:bg-blue-50/30 dark:hover:bg-blue-900/5 transition-all duration-300 group">
-                    <td class="p-8"><div class="flex items-center gap-4"><div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner group-hover:rotate-3 transition-transform">{{ user.username.charAt(0) }}</div><div><p class="text-sm font-black text-gray-900 dark:text-white">@{{ user.username }}</p><p class="text-[10px] text-gray-400 font-bold uppercase">{{ user.email }}</p></div></div></td>
-                    <td class="p-8 text-center"><span class="px-3 py-1 rounded-lg text-[9px] font-black uppercase border" :class="user.isBanned ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'">{{ user.isBanned ? 'YASAKLI' : 'AKTİF' }}</span></td>
-                    <td class="p-8 text-right"><button @click="handleBanToggle(user)" class="p-2 text-red-500 hover:scale-110 transition-transform"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></button></td>
+                    <td class="p-8">
+                      <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner group-hover:rotate-3 transition-transform overflow-hidden">
+                          <img v-if="user.avatarUrl" :src="user.avatarUrl" class="w-full h-full object-cover" />
+                          <span v-else>{{ user.username.charAt(0) }}</span>
+                        </div>
+                        <div>
+                          <p class="text-sm font-black text-gray-900 dark:text-white">@{{ user.username }}</p>
+                          <p class="text-[10px] text-gray-400 font-bold uppercase">{{ user.email }}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td class="p-8 text-center"><span class="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider shadow-sm" :class="user.isBanned ? 'bg-red-500/10 text-red-600 border border-red-500/20' : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'">{{ user.isBanned ? 'YASAKLI' : 'AKTİF' }}</span></td>
+                    <td class="p-8 text-right"><div class="flex items-center justify-end gap-2"><button @click="$router.push(`/profile/${user.username}`)" class="p-2 text-blue-500 hover:scale-110 transition-transform" title="Profili Gör"><svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg></button><button @click="handleBanToggle(user)" class="p-2 text-red-500 hover:scale-110 transition-transform" title="Yasakla/Kaldır"><svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button></div></td>
                   </tr>
                 </tbody>
               </table>
             </div>
-            <!-- Mobil Kartlar -->
-            <div class="md:hidden space-y-4">
-              <div v-for="user in users" :key="user.id" class="bg-white dark:bg-gray-900 p-5 rounded-[2rem] border border-gray-100 dark:border-white/5 shadow-lg flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                  <div class="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner">{{ user.username.charAt(0) }}</div>
-                  <div>
-                    <p class="text-sm font-black text-gray-900 dark:text-white leading-tight">@{{ user.username }}</p>
-                    <p class="text-[9px] text-gray-400 font-bold uppercase truncate max-w-[150px] mb-1">{{ user.email }}</p>
-                    <span class="px-2 py-0.5 rounded-md text-[7px] font-black uppercase border" :class="user.isBanned ? 'bg-red-50 text-red-600 border-red-100' : 'bg-green-50 text-green-600 border-green-100'">{{ user.isBanned ? 'YASAKLI' : 'AKTİF' }}</span>
+            
+            <!-- Yeni Mobil Kullanıcı Kartları (HATA DÜZELTİLDİ) -->
+            <div class="md:hidden space-y-4 px-1">
+              <div v-for="user in users" :key="user.id" class="relative bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-xl overflow-hidden group">
+                <div class="absolute top-4 right-6 flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full animate-pulse" :class="user.isBanned ? 'bg-red-500' : 'bg-emerald-500'"></span>
+                  <span class="text-[8px] font-black uppercase tracking-widest" :class="user.isBanned ? 'text-red-500' : 'text-emerald-500'">{{ user.isBanned ? 'Yasaklı' : 'Aktif' }}</span>
+                </div>
+
+                <div class="flex items-center gap-5">
+                  <div class="relative flex-shrink-0">
+                    <div class="w-16 h-16 rounded-[1.8rem] bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 flex items-center justify-center border border-gray-100 dark:border-white/5 shadow-inner">
+                      <img v-if="user.avatarUrl" :src="user.avatarUrl" class="w-full h-full object-cover rounded-[1.8rem]" />
+                      <span v-else class="text-2xl font-black text-blue-600 uppercase">{{ user.username.charAt(0) }}</span>
+                    </div>
+                  </div>
+
+                  <div class="min-w-0 flex-1">
+                    <h4 class="text-lg font-black text-gray-900 dark:text-white truncate tracking-tighter">@{{ user.username }}</h4>
+                    <p class="text-[10px] text-gray-400 font-bold uppercase truncate tracking-wide mt-0.5">{{ user.email }}</p>
+                    <div class="mt-2 flex flex-wrap gap-2">
+                      <span v-if="user.role === 'ADMIN'" class="px-2 py-0.5 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[7px] font-black uppercase rounded-lg border border-blue-100 dark:border-blue-900/30">Admin</span>
+                      <span class="px-2 py-0.5 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[7px] font-black uppercase rounded-lg border border-gray-100 dark:border-white/5">Katılım: {{ formatDate(user.createdAt).split(',')[0] }}</span>
+                    </div>
                   </div>
                 </div>
-                <button @click="handleBanToggle(user)" class="w-10 h-10 flex items-center justify-center bg-red-50 dark:bg-red-900/10 text-red-500 rounded-xl active:scale-90 transition-transform">
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636" /></svg>
-                </button>
+
+                <div class="mt-6 pt-4 border-t border-gray-50 dark:border-white/5 flex gap-3">
+                  <button @click="$router.push(`/profile/${user.username}`)" class="flex-1 h-12 bg-slate-50 dark:bg-gray-800 text-gray-900 dark:text-white text-[10px] font-black uppercase rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm">
+                    <svg class="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                    Profile Git
+                  </button>
+                  <button 
+                    @click="handleBanToggle(user)" 
+                    class="flex-1 h-12 text-[10px] font-black uppercase rounded-2xl flex items-center justify-center gap-2 active:scale-95 transition-all border"
+                    :class="user.isBanned 
+                      ? 'bg-emerald-500 text-white border-transparent' 
+                      : 'bg-red-500/10 text-red-500 border-red-500/20'"
+                  >
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                    {{ user.isBanned ? 'Yasağı Kaldır' : 'Yasakla' }}
+                  </button>
+                </div>
               </div>
             </div>
           </div>

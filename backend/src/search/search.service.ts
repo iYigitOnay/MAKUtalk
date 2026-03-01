@@ -15,6 +15,9 @@ export class SearchService {
       where: {
         createdAt: { gte: sevenDaysAgo },
         published: true,
+        author: {
+          isPrivate: false, // KRİTİK: Sadece herkese açık hesapların hashtagleri trendlere girsin
+        },
       },
       select: { content: true },
     });
@@ -46,6 +49,12 @@ export class SearchService {
         where: {
           published: true,
           content: { contains: query, mode: 'insensitive' },
+          author: {
+            OR: [
+              { isPrivate: false }, // Herkese açık hesaplar
+              ...(currentUserId ? [{ id: currentUserId }] : []), // Kendi postlarım
+            ],
+          },
         },
         include: {
           author: {
@@ -68,12 +77,14 @@ export class SearchService {
             { username: { contains: query, mode: 'insensitive' } },
             { fullName: { contains: query, mode: 'insensitive' } },
           ],
+          isBanned: false,
         },
         select: {
           id: true,
           username: true,
           fullName: true,
           avatarUrl: true,
+          isPrivate: true,
           _count: { select: { followers: true, posts: true } },
         },
         take: 10,
@@ -91,10 +102,16 @@ export class SearchService {
       where: {
         published: true,
         content: { contains: tag, mode: 'insensitive' },
+        author: {
+          OR: [
+            { isPrivate: false }, // Herkese açık hesaplar
+            ...(currentUserId ? [{ id: currentUserId }] : []), // Kendi postlarım
+          ],
+        },
       },
       include: {
         author: {
-          select: { id: true, username: true, fullName: true, avatarUrl: true },
+          select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true },
         },
         category: true,
         _count: { select: { likes: true, comments: true } },

@@ -47,6 +47,7 @@ export class AdminController {
         role: true,
         isBanned: true,
         createdAt: true,
+        avatarUrl: true,
       },
     });
   }
