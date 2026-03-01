@@ -2,27 +2,27 @@ name: 🚀 MAKUtalk Auto Deploy
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: 🚚 Checkout Code
-        uses: actions/checkout@v3
 
-      - name: 🚀 Deploy to DigitalOcean
+    steps:
+      - name: Deploy to DigitalOcean
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: DB_PASSWORD,DATABASE_URL,JWT_SECRET,RESEND_API_KEY,GEMINI_API_KEY,SMTP_FROM,FRONTEND_URL,VITE_API_URL
           script: |
-            # Proje klasörüne gir veya oluştur
-            mkdir -p ~/MAKUtalk
-            cd ~/MAKUtalk
+            set -e
 
-            # Repoyu güncelle
+            mkdir -p ~/makutalk
+            cd ~/makutalk
+
+            # Repo yoksa clone, varsa pull
             if [ ! -d ".git" ]; then
               git clone https://github.com/${{ github.repository }}.git .
             else
@@ -30,11 +30,32 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # .env dosyasını oluştururken shell interpolation riskini 'cat' ile sıfırlıyoruz.
-            # Tek bir büyük blok halinde, YAML boşluk kurallarına uygun.
-            printf "DB_USERNAME=admin\nDB_PASSWORD=${{ secrets.DB_PASSWORD }}\nDB_NAME=makutalk_db\nDATABASE_URL=${{ secrets.DATABASE_URL }}\nJWT_SECRET=${{ secrets.JWT_SECRET }}\nRESEND_API_KEY=${{ secrets.RESEND_API_KEY }}\nGEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}\nSMTP_FROM=${{ secrets.SMTP_FROM }}\nVITE_API_URL=${{ secrets.VITE_API_URL }}\nFRONTEND_URL=${{ secrets.FRONTEND_URL }}" > .env
+            # .env dosyasını güvenli şekilde oluştur
+            cat > .env << EOF
+            DB_USERNAME=admin
+            DB_PASSWORD=${DB_PASSWORD}
+            DB_NAME=makutalk_db
+            DATABASE_URL=${DATABASE_URL}
+            JWT_SECRET=${JWT_SECRET}
+            RESEND_API_KEY=${RESEND_API_KEY}
+            GEMINI_API_KEY=${GEMINI_API_KEY}
+            SMTP_FROM=${SMTP_FROM}
+            FRONTEND_URL=${FRONTEND_URL}
+            VITE_API_URL=${VITE_API_URL}
+            EOF
 
-            # Docker'ı tamamen sıfırla ve her şeyi taze build et
-            sudo docker-compose down --remove-orphans
-            sudo docker-compose up -d --build
-            sudo docker image prune -f
+            # Build ve başlat
+            docker compose down --remove-orphans
+            docker compose up -d --build
+            docker image prune -f
+
+            echo "✅ Deploy tamamlandı!"
+        env:
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          SMTP_FROM: ${{ secrets.SMTP_FROM }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
