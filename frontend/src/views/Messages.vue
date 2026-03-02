@@ -8,12 +8,7 @@
       :class="{ 'hidden md:flex': chatStore.activeConversation }"
     >
       <div class="p-6 pb-4">
-        <h2 class="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 mb-6">
-          <div class="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
-            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </div>
+        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-3 mb-6">
           Sohbetler
         </h2>
         <div class="relative group mb-4">
@@ -82,7 +77,7 @@
       <div v-if="chatStore.activeConversation" class="flex flex-col h-full overflow-hidden">
         
         <!-- Header -->
-        <header class="h-20 px-8 flex items-center justify-between border-b border-slate-200/60 dark:border-white/5 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl z-20 flex-shrink-0 text-left">
+        <header class="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between border-b border-slate-200/60 dark:border-white/5 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl z-20 flex-shrink-0 text-left">
           <div class="flex items-center gap-4">
             <button @click="chatStore.activeConversation = null" class="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors">
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
@@ -94,10 +89,10 @@
                 <div v-if="chatStore.activeConversation.canChat" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-[#0b0f19] rounded-full shadow-sm"></div>
               </div>
               <div class="text-left">
-                <h3 class="text-base font-black text-slate-900 dark:text-white leading-tight">{{ otherUser?.fullName || otherUser?.username }}</h3>
+                <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">{{ otherUser?.fullName || otherUser?.username }}</h3>
                 <transition name="fade">
                   <p v-if="chatStore.typingUsers[chatStore.activeConversation.id]" class="text-[11px] font-bold text-indigo-500 dark:text-indigo-400 flex items-center gap-1.5 mt-0.5 animate-pulse">yazıyor...</p>
-                  <p v-else-if="chatStore.activeConversation.canChat" class="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-0.5">Sohbet Aktif</p>
+                  <p v-else-if="chatStore.activeConversation.canChat" class="text-[10px] text-emerald-500 font-bold mt-0.5">Sohbet Aktif</p>
                 </transition>
               </div>
             </div>

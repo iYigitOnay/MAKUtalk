@@ -7,7 +7,7 @@
     <div v-if="showMainLayout" class="flex flex-col sm:flex-row justify-center h-screen overflow-hidden bg-[#f8fafc] dark:bg-gray-950">
       
       <!-- Mobile Navbar (Top) -->
-      <Navbar class="sm:hidden flex-shrink-0" />
+      <Navbar v-if="!hideNavbar" class="sm:hidden flex-shrink-0" />
 
       <div class="flex w-full max-w-[1300px] bg-white dark:bg-gray-950 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden">
         <!-- Desktop Sidebar -->
@@ -16,7 +16,8 @@
         <!-- Main Content Area -->
         <main
           ref="mainContent"
-          class="flex-1 overflow-y-auto border-x border-slate-100 dark:border-primary-900/20 pb-20 sm:pb-0"
+          class="flex-1 border-x border-slate-100 dark:border-primary-900/20 sm:pb-0"
+          :class="[hideNavbar ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-20']"
         >
           <router-view />
         </main>
@@ -30,7 +31,7 @@
       </div>
 
       <!-- Mobile Bottom Navigation -->
-      <MobileBottomNav />
+      <MobileBottomNav v-if="!hideNavbar" />
     </div>
 
     <!-- Auth Pages (Login/Register - no sidebar) -->
@@ -48,11 +49,18 @@ import RightSidebar from "@/components/RightSidebar.vue";
 import Navbar from "@/components/Navbar.vue";
 import MobileBottomNav from "@/components/MobileBottomNav.vue";
 import { useDarkMode } from "@/composables/useDarkMode";
+import { useChatStore } from "@/stores/chat";
 
 useDarkMode();
 
 const route = useRoute();
+const chatStore = useChatStore();
 const mainContent = ref<HTMLElement | null>(null);
+
+// Sohbet sayfasında aktif konuşma varken Navbar'ı gizle
+const hideNavbar = computed(() => {
+  return route.name === 'Messages' && chatStore.activeConversation;
+});
 
 // Sayfa değiştiğinde en üste kaydır
 watch(

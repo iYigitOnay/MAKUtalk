@@ -37,8 +37,34 @@
           </div>
         </div>
         <div class="flex-1 min-w-0 relative">
-          <textarea v-model="newPostContent" @input="handleInput" placeholder="Ne Düşünüyorsun?" class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium" rows="3" :disabled="postsStore.loading" />
+          <textarea 
+            ref="textareaRef"
+            v-model="newPostContent" 
+            @input="handleInput" 
+            placeholder="Ne Düşünüyorsun?" 
+            class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium" 
+            rows="3" 
+            :disabled="postsStore.loading" 
+          />
           
+          <!-- DYNAMIC MENTION TOOLTIP (CURSOR TRACKING) -->
+          <div 
+            v-if="showMentions" 
+            :style="{ top: mentionPos.y + 'px', left: mentionPos.x + 'px' }"
+            class="absolute z-[60] w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-200"
+          >
+            <div class="max-h-48 overflow-y-auto no-scrollbar">
+              <button v-for="user in mentionUsers" :key="user.id" @click="selectMention(user.username)" class="w-full flex items-center gap-3 p-2.5 hover:bg-blue-600 hover:text-white transition-colors group text-left">
+                <img v-if="user.avatarUrl" :src="user.avatarUrl" class="w-7 h-7 rounded-full object-cover border border-white/20" />
+                <div v-else class="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-[10px] font-black group-hover:bg-white group-hover:text-blue-600 transition-colors">{{ user.username.charAt(0).toUpperCase() }}</div>
+                <div class="flex flex-col min-w-0">
+                  <span class="text-xs font-bold truncate">{{ user.fullName || user.username }}</span>
+                  <span class="text-[10px] opacity-70 truncate">@{{ user.username }}</span>
+                </div>
+              </button>
+            </div>
+          </div>
+
           <div v-if="selectedImagePreview" class="relative mt-4 group">
             <img :src="selectedImagePreview" class="w-full max-h-80 object-cover rounded-2xl border border-gray-100 dark:border-primary-900/20 shadow-sm" />
             <button @click="removeSelectedImage" class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
@@ -119,15 +145,40 @@ const selectedCategoryId = ref<number | null>(null);
 const selectedImage = ref<File | null>(null);
 const selectedImagePreview = ref<string | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
+const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
 const mentionUsers = ref<any[]>([]);
 const showMentions = ref(false);
+const mentionPos = ref({ x: 0, y: 0 });
+
+const getCursorXY = (el: HTMLTextAreaElement, cursorIndex: number) => {
+  const { offsetLeft: elLeft, offsetTop: elTop } = el;
+  const style = window.getComputedStyle(el);
+  const mirror = document.createElement('div');
+  const copyStyle = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'padding', 'border', 'width', 'boxSizing', 'whiteSpace', 'wordBreak'];
+  copyStyle.forEach((prop) => { (mirror.style as any)[prop] = (style as any)[prop]; });
+  mirror.style.position = 'absolute'; mirror.style.visibility = 'hidden'; mirror.style.top = '0'; mirror.style.left = '0';
+  mirror.textContent = el.value.substring(0, cursorIndex);
+  const span = document.createElement('span'); span.textContent = el.value.substring(cursorIndex) || '.'; mirror.appendChild(span);
+  document.body.appendChild(mirror);
+  const { offsetLeft: x, offsetTop: y } = span;
+  document.body.removeChild(mirror);
+  return { x: Math.min(x, el.clientWidth - 250), y: Math.min(y + 25, el.clientHeight) };
+};
 
 const handleInput = async (e: any) => {
-  const words = e.target.value.substring(0, e.target.selectionStart).split(/\s/);
+  const cursor = e.target.selectionStart;
+  const words = e.target.value.substring(0, cursor).split(/\s/);
   const last = words[words.length - 1];
+
   if (last.startsWith('@')) {
-    try { const res = await apiClient.get(`/auth/search-mentions?q=${last.substring(1)}`); mentionUsers.value = res.data; showMentions.value = mentionUsers.value.length > 0; } catch { showMentions.value = false; }
+    const q = last.substring(1);
+    mentionPos.value = getCursorXY(e.target, cursor - q.length - 1);
+    try { 
+      const res = await apiClient.get(`/users/search-mentions?q=${q}`); 
+      mentionUsers.value = res.data; 
+      showMentions.value = mentionUsers.value.length > 0; 
+    } catch { showMentions.value = false; }
   } else showMentions.value = false;
 };
 

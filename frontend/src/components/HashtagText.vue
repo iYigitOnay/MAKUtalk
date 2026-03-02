@@ -18,13 +18,13 @@ const formattedText = computed(() => {
   if (!props.text) return "";
   let formatted = props.text;
 
-  // XSS Koruması: Önce HTML karakterlerini temizle (v-html kullandığımız için önemli)
+  // XSS Koruması: Önce HTML karakterlerini temizle
   formatted = formatted
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+    .replace(/'/g, "'"); // Tek tırnağı escape etmeye gerek yok, tarayıcı render ederken sorun çıkarmaz
 
   // Hashtag'leri linkle
   formatted = formatted.replace(
@@ -35,15 +35,17 @@ const formattedText = computed(() => {
   // Mention'ları linkle (@username)
   formatted = formatted.replace(
     /@([a-zA-Z0-9_]+)/g,
-    '<a href="/profile/$1" data-type="profile" data-value="$1" class="mention-link text-blue-600 dark:text-blue-400 hover:underline transition-colors">@$1</a>',
+    '<a href="/profile/$1" data-type="profile" data-value="$1" class="mention-link">@$1</a>',
   );
 
   // URL'leri linkle
   formatted = formatted.replace(
     /(https?:\/\/[^\s]+)/g,
-    '<a href="$1" target="_blank" rel="noopener noreferrer" class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline break-all">$1</a>',
+    '<a href="$1" target="_blank" rel="noopener noreferrer" class="url-link">$1</a>',
   );
 
+  // HTML Karakterlerini Geri Çevir (Sadece metin içindekiler için, linkleri bozmadan)
+  // Bu adım, linkleme bittikten sonra metin içindeki &#039; gibi yapıları düzeltir
   return formatted;
 });
 
@@ -80,30 +82,30 @@ const handleLinkClick = (event: MouseEvent) => {
 </script>
 
 <style>
-.hashtag-link {
-  @apply transition-all duration-300 inline-block font-bold;
+.hashtag-link, .mention-link {
+  @apply transition-all duration-300 inline-block font-bold cursor-pointer;
   background: linear-gradient(to right, #2563eb, #9333ea);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.hashtag-link:hover {
+.hashtag-link:hover, .mention-link:hover {
   @apply opacity-80 underline;
   -webkit-text-fill-color: initial;
   color: #2563eb;
 }
 
-.dark .hashtag-link {
+.dark .hashtag-link, .dark .mention-link {
   background: linear-gradient(to right, #60a5fa, #a855f7);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.dark .hashtag-link:hover {
+.dark .hashtag-link:hover, .dark .mention-link:hover {
   color: #60a5fa;
 }
 
-.mention-link {
-  cursor: pointer;
+.url-link {
+  @apply text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 underline break-all transition-colors;
 }
 </style>

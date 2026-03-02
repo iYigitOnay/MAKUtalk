@@ -64,18 +64,18 @@
 
       <!-- Comments Section -->
       <div class="px-4 py-6 bg-white dark:bg-gray-950">
-        <h2 class="text-lg font-black text-gray-900 dark:text-white mb-6 uppercase tracking-tighter italic ml-2">Yorumlar ({{ comments?.length || 0 }})</h2>
+        <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6 ml-2">Yorumlar ({{ comments?.length || 0 }})</h2>
         
         <!-- Add Comment -->
         <div v-if="authStore.isAuthenticated" class="flex gap-3 mb-8">
           <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex-shrink-0 overflow-hidden border border-gray-100 dark:border-white/5 shadow-inner">
             <img v-if="authStore.user?.avatarUrl" :src="getImageUrl(authStore.user.avatarUrl)" class="w-full h-full object-cover" />
-            <div v-else class="w-full h-full flex items-center justify-center font-black text-blue-600 uppercase">{{ authStore.user?.username?.charAt(0) }}</div>
+            <div v-else class="w-full h-full flex items-center justify-center font-bold text-blue-600 uppercase">{{ authStore.user?.username?.charAt(0) }}</div>
           </div>
           <div class="flex-1 space-y-3">
             <textarea ref="commentInput" v-model="commentContent" rows="2" placeholder="Fikrini paylaş..." class="w-full p-4 bg-slate-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[1.5rem] text-[15px] focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all dark:text-white"></textarea>
             <div class="flex justify-end">
-              <button @click="submitComment" :disabled="!commentContent.trim() || commentLoading" class="px-6 py-2.5 bg-blue-600 text-white text-xs font-black rounded-xl uppercase hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20 active:scale-95">Yorum Yap</button>
+              <button @click="submitComment" :disabled="!commentContent.trim() || commentLoading" class="px-6 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl uppercase hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20 active:scale-95">Yorum Yap</button>
             </div>
           </div>
         </div>
@@ -84,7 +84,7 @@
         <div v-if="comments && comments.length > 0" class="space-y-6">
           <div v-for="comment in comments" :key="comment.id" class="flex gap-3 animate-fade-in group">
             <router-link v-if="comment.author" :to="`/profile/${comment.author.username}`" class="flex-shrink-0">
-              <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner overflow-hidden border border-gray-100 dark:border-white/5">
+              <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-gray-800 flex items-center justify-center font-bold text-blue-600 uppercase shadow-inner overflow-hidden border border-gray-100 dark:border-white/5">
                 <img v-if="comment.author.avatarUrl" :src="getImageUrl(comment.author.avatarUrl)" class="w-full h-full object-cover" />
                 <span v-else>{{ comment.author.username?.charAt(0) }}</span>
               </div>
@@ -92,19 +92,19 @@
             <div v-if="comment.author" class="flex-1 min-w-0">
               <div class="bg-slate-50 dark:bg-gray-900/50 p-4 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5 relative">
                 <div class="flex items-center justify-between mb-1">
-                  <router-link :to="`/profile/${comment.author.username}`" class="font-black text-xs text-gray-900 dark:text-white hover:underline">@{{ comment.author.username }}</router-link>
+                  <router-link :to="`/profile/${comment.author.username}`" class="font-bold text-xs text-gray-900 dark:text-white hover:underline">@{{ comment.author.username }}</router-link>
                   <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{{ formatDate(comment.createdAt) }}</span>
+                    <span class="text-[10px] font-bold text-gray-400 uppercase">{{ formatDate(comment.createdAt) }}</span>
                     <button v-if="authStore.user?.id === comment.userId || isAdmin" @click="openDeleteComment(comment.id)" class="text-gray-400 hover:text-red-500 transition-colors" :title="isAdmin ? 'Yönetici Olarak Sil' : 'Yorumu Sil'"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
                     <button v-if="authStore.user?.id !== comment.userId" @click="openReportComment(comment.id)" class="text-gray-400 hover:text-orange-500 transition-colors" title="Rapor Et"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg></button>
                   </div>
                 </div>
-                <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">{{ comment.content }}</p>
+                <HashtagText :text="comment.content" class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" />
               </div>
             </div>
           </div>
         </div>
-        <div v-else class="py-10 text-center opacity-40"><p class="text-xs font-black uppercase tracking-[0.2em] italic">Henüz yorum yapılmamış.</p></div>
+        <div v-else class="py-10 text-center opacity-40"><p class="text-xs font-bold uppercase italic">Henüz yorum yapılmamış.</p></div>
       </div>
     </div>
   </div>

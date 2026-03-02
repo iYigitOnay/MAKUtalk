@@ -1,0 +1,22 @@
+version: "3.8"
+
+# Local geliştirme ortamı
+# Kullanım: docker compose -f docker-compose.dev.yml up -d
+# Durdurma: docker compose -f docker-compose.dev.yml down
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: makutalk_local_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: makupassword123
+      POSTGRES_DB: makutalk_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_dev_data:

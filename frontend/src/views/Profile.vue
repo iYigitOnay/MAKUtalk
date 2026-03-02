@@ -112,6 +112,26 @@
           </div>
         </div>
 
+        <!-- Bio & Stats -->
+        <div class="mt-6 space-y-4">
+          <p v-if="displayedUser.bio" class="text-gray-700 dark:text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">{{ displayedUser.bio }}</p>
+          
+          <div class="flex gap-6 justify-start items-center">
+            <div class="flex items-center gap-1.5">
+              <span class="text-base font-bold text-gray-900 dark:text-white">{{ displayedUser._count?.posts || 0 }}</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Paylaşım</span>
+            </div>
+            <button @click="openFollowModal('followers')" class="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
+              <span class="text-base font-bold text-gray-900 dark:text-white">{{ displayedUser._count?.followers || 0 }}</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Takipçi</span>
+            </button>
+            <button @click="openFollowModal('following')" class="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
+              <span class="text-base font-bold text-gray-900 dark:text-white">{{ displayedUser._count?.following || 0 }}</span>
+              <span class="text-sm text-gray-500 dark:text-gray-400">Takip</span>
+            </button>
+          </div>
+        </div>
+
         <template v-if="canViewContent">
           <div class="flex border-b border-slate-100 dark:border-gray-800 mb-6">
             <button v-for="tab in ['posts', 'reposts', 'likes']" :key="tab" @click="activeTab = tab as any" :class="['px-6 py-3 text-xs font-black uppercase tracking-widest border-b-2 transition-all', activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600']">{{ tab === 'posts' ? 'Gönderiler' : tab === 'reposts' ? 'Remakü' : 'Beğeniler' }}</button>
@@ -158,6 +178,48 @@
     <!-- OTHER MODALS -->
     <EditProfileModal :is-open="showEditModal" :user="displayedUser" @close="showEditModal = false" @save="handleSaveProfile" />
     <CommentsModal :is-open="commentsModalOpen" :post-id="selectedPostId" @close="commentsModalOpen = false" />
+    
+    <!-- BADGE MANAGEMENT MODAL (ADMIN ONLY) -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="showBadgeModal" class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md" @click.self="showBadgeModal = false">
+          <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div class="p-6 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+              <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter">Rozet Yönetimi</h3>
+              <button @click="showBadgeModal = false" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            <div class="p-6 max-h-[60vh] overflow-y-auto no-scrollbar grid grid-cols-2 gap-3">
+              <button 
+                v-for="badge in allBadges" 
+                :key="badge.id" 
+                @click="handleToggleBadge(badge.id)"
+                :class="['p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 text-center group', hasBadge(badge.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-transparent bg-slate-50 dark:bg-white/5 hover:border-slate-200 dark:hover:border-white/10']"
+              >
+                <div class="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform" :style="{ backgroundColor: badge.color }">
+                  <div class="w-5 h-5" v-html="getBadgeIcon(badge.icon)"></div>
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">{{ badge.name }}</span>
+                <div v-if="hasBadge(badge.id)" class="absolute top-2 right-2 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center">
+                  <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" /></svg>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+
+    <!-- GENERIC CONFIRM MODAL -->
+    <DeleteConfirmModal 
+      :is-open="confirmModal.show"
+      :loading="confirmModal.loading"
+      :title="confirmModal.title"
+      :message="confirmModal.message"
+      :confirm-text="confirmModal.confirmText"
+      :variant="confirmModal.variant"
+      @confirm="handleConfirmAction"
+      @cancel="confirmModal.show = false"
+    />
   </div>
 </template>
 
@@ -175,6 +237,7 @@ import apiClient from "@/api/client";
 import PostCard from "@/components/PostCard.vue";
 import CommentsModal from "@/components/CommentsModal.vue";
 import EditProfileModal from "@/components/EditProfileModal.vue";
+import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 
 const authStore = useAuthStore();
 const postsStore = usePostsStore();
@@ -247,15 +310,137 @@ const submitReport = async (subReason: string) => {
 
 const closeReport = () => { showGlobalReport.value = false; reportStep.value = 1; };
 
-const reportCategories: Record<string, string[]> = {
-  Nefret: ["Hakaretler", "Irkçı veya cinsiyetçi klişeler", "İnsanlıktan çıkarma", "Korku veya ayrımcılığa teşvik"],
-  "Taciz ve Rahatsızlık": ["Hakaret", "İstenmeyen Cinsel İçerik", "Hedefli Taciz"],
-  "Şiddet içeren konuşma": ["Şiddet Tehditleri", "Zarar Verme İsteği", "Şiddeti Yüceltme"],
-  Mahremiyet: ["Özel bilgileri paylaşmak", "Rızam olmadan özel görüntü paylaşımı"],
-  "Yasadışı Davranışlar": ["İnsan sömürüsü", "Cinsel şiddet", "Yasadışı ürün satışı"]
+// UNIFIED CONFIRM MODAL SYSTEM
+const confirmModal = ref({
+  show: false,
+  loading: false,
+  title: "",
+  message: "",
+  confirmText: "",
+  variant: 'info' as 'danger' | 'info',
+  action: null as (() => Promise<void>) | null
+});
+
+const openConfirm = (title: string, message: string, confirmText: string, variant: 'danger' | 'info', action: () => Promise<void>) => {
+  confirmModal.value = { show: true, loading: false, title, message, confirmText, variant, action };
+  showOptionsMenu.value = false;
+};
+
+const handleConfirmAction = async () => {
+  if (!confirmModal.value.action) return;
+  confirmModal.value.loading = true;
+  try {
+    await confirmModal.value.action();
+    confirmModal.value.show = false;
+  } catch {
+    toast.error("İşlem gerçekleştirilemedi.");
+  } finally {
+    confirmModal.value.loading = false;
+  }
+};
+
+// OPTION MENU ACTIONS
+const openBlockConfirm = () => {
+  const isBlocking = !displayedUser.value.isBlocked;
+  openConfirm(
+    isBlocking ? "Kullanıcıyı Engelle?" : "Engeli Kaldır?",
+    isBlocking ? "Bu kullanıcıyla tüm takipleşme bağın kopacak ve birbirinizi göremeyeceksiniz." : "Bu kullanıcının engeli kaldırılacak.",
+    isBlocking ? "EVET, ENGELLE" : "ENGELİ KALDIR",
+    isBlocking ? 'danger' : 'info',
+    async () => {
+      await apiClient.post(`/users/${displayedUser.value.id}/block`);
+      displayedUser.value.isBlocked = !displayedUser.value.isBlocked;
+      
+      // Engellendiğinde takipleşmeyi sıfırla
+      if (displayedUser.value.isBlocked) {
+        if (displayedUser.value.isFollowing) {
+          displayedUser.value.isFollowing = false;
+          displayedUser.value._count.followers = Math.max(0, displayedUser.value._count.followers - 1);
+        }
+      }
+      toast.success(displayedUser.value.isBlocked ? "Kullanıcı engellendi." : "Engel kaldırıldı.");
+    }
+  );
+};
+
+const handleAdminBanToggle = () => {
+  const isBanning = !displayedUser.value.isBanned;
+  openConfirm(
+    isBanning ? "Kullanıcıyı Yasakla?" : "Yasağı Kaldır?",
+    isBanning ? "Bu kullanıcı artık sisteme giriş yapamayacak." : "Bu kullanıcının yasağı kaldırılacak.",
+    isBanning ? "EVET, YASAKLA" : "YASAĞI KALDIR",
+    'danger',
+    async () => {
+      await apiClient.post(`/users/${displayedUser.value.id}/toggle-ban`);
+      displayedUser.value.isBanned = !displayedUser.value.isBanned;
+      toast.success(`Kullanıcı ${displayedUser.value.isBanned ? 'yasaklandı' : 'yasağı kaldırıldı'}.`);
+    }
+  );
+};
+
+const handleAdminDeleteUser = () => {
+  openConfirm(
+    "KALICI OLARAK SİL?",
+    "Bu kullanıcı ve tüm verileri (postlar, yorumlar vb.) TAMAMEN silinecek. Bu işlem geri alınamaz!",
+    "SİL GİTSİN",
+    'danger',
+    async () => {
+      await apiClient.delete(`/users/${displayedUser.value.id}`);
+      toast.success("Kullanıcı tamamen silindi.");
+      router.push('/');
+    }
+  );
+};
+
+// BADGE MANAGEMENT
+const showBadgeModal = ref(false);
+const allBadges = ref<any[]>([]);
+const openBadgeModal = async () => {
+  try {
+    const res = await apiClient.get('/users/badges/all');
+    allBadges.value = res.data;
+    showBadgeModal.value = true;
+    showOptionsMenu.value = false;
+  } catch { toast.error("Rozetler yüklenemedi."); }
+};
+
+const hasBadge = (badgeId: number) => {
+  return displayedUser.value?.badges?.some((ub: any) => ub.badgeId === badgeId);
+};
+
+const handleToggleBadge = async (badgeId: number) => {
+  try {
+    const res = await apiClient.post(`/users/${displayedUser.value.id}/badges/${badgeId}`);
+    if (res.data.assigned) {
+      // Rozet ekle (backend UserBadge formatında)
+      const newBadge = allBadges.value.find(b => b.id === badgeId);
+      displayedUser.value.badges.push({ badgeId, badge: newBadge });
+      toast.success("Rozet atandı! 🎖️");
+    } else {
+      // Rozet kaldır
+      displayedUser.value.badges = displayedUser.value.badges.filter((ub: any) => ub.badgeId !== badgeId);
+      toast.success("Rozet geri alındı.");
+    }
+  } catch { toast.error("İşlem başarısız."); }
 };
 
 // HELPERS
+const getBadgeIcon = (iconName: string) => {
+  const icons: Record<string, string> = {
+    founder: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>',
+    academic: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 12.083 0 0012 20.055a11.952 12.083 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>',
+    herald: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.088 0 01-1.564-.317z"/></svg>',
+    social: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>',
+    merchant: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/></svg>',
+    observer: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>',
+    voice: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>',
+    athlete: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>',
+    inventor: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>',
+    musician: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"/></svg>'
+  };
+  return icons[iconName] || '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
+};
+
 const userInitials = computed(() => {
   if (!displayedUser.value) return "";
   const name = displayedUser.value.fullName || displayedUser.value.username;
@@ -342,14 +527,6 @@ const handleDeletePost = async (postId: number) => {
 };
 
 const handleShowComments = (id: number) => { selectedPostId.value = id; commentsModalOpen.value = true; };
-
-const getBadgeIcon = (iconName: string) => {
-  const icons: Record<string, string> = {
-    founder: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>',
-    academic: '<svg fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 12.083 0 0012 20.055a11.952 12.083 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/></svg>'
-  };
-  return icons[iconName] || '<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>';
-};
 
 onMounted(fetchProfile);
 watch(() => route.params.id, fetchProfile);
