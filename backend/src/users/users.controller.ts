@@ -43,8 +43,8 @@ export class UsersController {
   }
 
   @Get('search-mentions')
-  async searchMentions(@Query('q') query: string) {
-    return this.usersService.searchMentions(query || '');
+  async searchMentions(@Query('q') query: string, @Query('role') role?: string) {
+    return this.usersService.searchMentions(query || '', role);
   }
 
   // DINAMIK ROUTE'LAR (DAHA SONRA)

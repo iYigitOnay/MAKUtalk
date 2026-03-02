@@ -599,7 +599,7 @@ const handleAdvisorSearch = async (e: any) => {
   const q = e.target.value.replace("@", "").trim();
   if (q.length >= 2) {
     try {
-      const res = await apiClient.get(`/users/search-mentions?q=${q}`);
+      const res = await apiClient.get(`/users/search-mentions?q=${q}&role=ACADEMIC`);
       advisorSuggestions.value = res.data;
       showAdvisorSuggestions.value = advisorSuggestions.value.length > 0;
     } catch {

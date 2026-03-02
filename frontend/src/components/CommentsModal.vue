@@ -25,24 +25,27 @@
 
           <!-- 2. CATEGORIZED REPORT MODAL -->
           <transition name="fade">
-            <div v-if="showReportModal" class="absolute inset-0 z-[110] bg-white dark:bg-gray-950 flex flex-col">
-              <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/5">
-                <button v-if="reportStep === 2" @click="reportStep = 1" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
-                <div v-else class="w-9"></div>
-                <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Şikayet Bildirimi</h3>
-                <button @click="closeReport" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-400"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-              </div>
-              <div class="flex-1 overflow-y-auto p-6 space-y-2 no-scrollbar">
-                <div v-if="reportStep === 1">
-                  <button v-for="(cat, name) in reportCategories" :key="name" @click="selectReportCategory(name as string)" class="w-full text-left p-4 rounded-2xl hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent hover:border-gray-100 dark:hover:border-white/10 transition-all flex items-center justify-between group">
-                    <span class="font-bold text-gray-700 dark:text-gray-300">{{ name }}</span>
-                    <svg class="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
-                  </button>
+            <div v-if="showReportModal" class="absolute inset-0 z-[110] bg-white/80 dark:bg-gray-950/80 backdrop-blur-md flex items-center justify-center p-4">
+              <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] shadow-2xl border border-gray-100 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/5">
+                  <button v-if="reportStep === 2" @click="reportStep = 1" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+                  <div v-else class="w-9"></div>
+                  <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter">Şikayet Bildirimi</h3>
+                  <button @click="closeReport" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
                 </div>
-                <div v-else class="space-y-2">
-                  <button v-for="sub in reportCategories[selectedCategory]" :key="sub" @click="submitReport(sub)" class="w-full text-left p-4 rounded-2xl hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30 transition-all">
-                    <span class="font-bold text-gray-700 dark:text-gray-300 group-hover:text-blue-600">{{ sub }}</span>
-                  </button>
+                <div class="flex-1 overflow-y-auto p-4 space-y-1.5 no-scrollbar max-h-[60vh]">
+                  <div v-if="reportStep === 1">
+                    <button v-for="(cat, name) in reportCategories" :key="name" @click="selectReportCategory(name as string)" class="w-full text-left p-3.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent hover:border-gray-100 dark:hover:border-white/10 transition-all flex items-center justify-between group">
+                      <span class="text-sm font-bold text-gray-700 dark:text-gray-300">{{ name }}</span>
+                      <svg class="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                  </div>
+                  <div v-else class="space-y-1.5">
+                    <div class="px-4 py-2 text-[10px] font-black text-blue-500 uppercase tracking-widest">{{ selectedCategory }}</div>
+                    <button v-for="sub in reportCategories[selectedCategory]" :key="sub" @click="submitReport(sub)" class="w-full text-left p-3.5 rounded-xl hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30 transition-all">
+                      <span class="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-blue-600">{{ sub }}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

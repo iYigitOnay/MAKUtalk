@@ -182,5 +182,14 @@ export class UsersService {
 
   async createFeedback(userId: number | null, type: string, message: string) { return (this.prisma as any).feedback.create({ data: { type, message, userId } }); }
   async getAllBadges() { return this.prisma.badge.findMany({ orderBy: { name: 'asc' } }); }
-  async searchMentions(query: string) { return (this.prisma as any).user.findMany({ where: { username: { contains: query, mode: 'insensitive' }, isBanned: false }, take: 5 }); }
+  async searchMentions(query: string, role?: string) {
+    const where: any = {
+      username: { contains: query, mode: 'insensitive' },
+      isBanned: false,
+    };
+    if (role) {
+      where.role = role;
+    }
+    return (this.prisma as any).user.findMany({ where, take: 5 });
+  }
 }

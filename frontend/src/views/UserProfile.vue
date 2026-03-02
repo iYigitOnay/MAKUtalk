@@ -118,10 +118,42 @@
           :key="post.id"
           :post="post"
           @delete="handleDeletePost"
+          @report="openPostReport"
           @showComments="handleShowComments"
         />
       </div>
     </div>
+
+    <!-- REPORT MODAL (POST) -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="showPostReportModal" class="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md">
+          <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/5">
+              <button v-if="reportStep === 2" @click="reportStep = 1" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-500"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg></button>
+              <div v-else class="w-9"></div>
+              <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter">İçeriği Şikayet Et</h3>
+              <button @click="showPostReportModal = false" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-400"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-1.5 no-scrollbar max-h-[60vh]">
+              <div v-if="reportStep === 1">
+                <button v-for="(cat, name) in reportCategories" :key="name" @click="selectReportCategory(name as string)" class="w-full text-left p-3.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 border border-transparent hover:border-gray-100 dark:hover:border-white/10 transition-all flex items-center justify-between group">
+                  <span class="text-sm font-bold text-gray-700 dark:text-gray-300">{{ name }}</span>
+                  <svg class="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                </button>
+              </div>
+              <div v-else class="space-y-1.5">
+                <div class="px-4 py-2 text-[10px] font-black text-blue-500 uppercase tracking-widest">{{ selectedReportCategory }}</div>
+                <button v-for="sub in reportCategories[selectedReportCategory]" :key="sub" @click="submitPostReport(sub)" :disabled="reportLoading" class="w-full text-left p-3.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 border border-transparent hover:border-red-100 dark:hover:border-red-900/30 transition-all group">
+                  <span class="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-red-600">{{ sub }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
 
     <!-- Followers Modal -->
     <FollowModal
@@ -185,6 +217,50 @@ const showFollowersModal = ref(false);
 const showFollowingModal = ref(false);
 const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
+
+// Şikayet State & Fonksiyonları
+const showPostReportModal = ref(false);
+const reportStep = ref(1);
+const selectedReportCategory = ref("");
+const postToReport = ref<number | null>(null);
+const reportLoading = ref(false);
+
+const openPostReport = (postId: number) => {
+  postToReport.value = postId;
+  showPostReportModal.value = true;
+  reportStep.value = 1;
+};
+
+const selectReportCategory = (name: string) => {
+  selectedReportCategory.value = name;
+  reportStep.value = 2;
+};
+
+const submitPostReport = async (subReason: string) => {
+  if (!postToReport.value) return;
+  reportLoading.value = true;
+  try {
+    await apiClient.post("/users/report", {
+      reportedPostId: postToReport.value,
+      reason: selectedReportCategory.value,
+      subReason: subReason,
+    });
+    toast.success("Şikayet iletildi! 🛡️");
+    showPostReportModal.value = false;
+  } catch {
+    toast.error("Şikayet gönderilemedi.");
+  } finally {
+    reportLoading.value = false;
+  }
+};
+
+const reportCategories: Record<string, string[]> = {
+  Nefret: ["Hakaretler", "Irkçı veya cinsiyetçi klişeler", "İnsanlıktan çıkarma", "Korku veya ayrımcılığa teşvik"],
+  "Taciz ve Rahatsızlık": ["Hakaret", "İstenmeyen Cinsel İçerik", "Hedefli Taciz"],
+  "Şiddet içeren konuşma": ["Şiddet Tehditleri", "Zarar Verme İsteği", "Şiddeti Yüceltme"],
+  Mahremiyet: ["Özel bilgileri paylaşmak", "Rızam olmadan özel görüntü paylaşımı"],
+  "Yasadışı Davranışlar": ["İnsan sömürüsü", "Cinsel şiddet", "Yasadışı ürün satışı"]
+};
 
 // Yorum sayısı senkronizasyonu
 watch(() => commentsStore.lastAddedCommentId, (newId) => {

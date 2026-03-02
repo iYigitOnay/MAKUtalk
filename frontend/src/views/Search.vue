@@ -103,7 +103,7 @@
 
     <div
       v-else-if="!searchQuery"
-      class="p-4 space-y-8 animate-in fade-in duration-500"
+      class="p-4 space-y-8 animate-in fade-in duration-500 lg:hidden"
     >
       <!-- Haftanın Nabzı (Trend Kategoriler - Web Stili) -->
       <section v-if="trendingCategories.length > 0">
