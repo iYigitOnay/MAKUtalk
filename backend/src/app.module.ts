@@ -20,6 +20,7 @@ import { HashtagModule } from './hashtags/hashtag.module';
 import { ChatModule } from './chat/chat.module';
 import { ClubsModule } from './clubs/clubs.module';
 import { SpotModule } from './spot/spot.module';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { SpotModule } from './spot/spot.module';
     ChatModule,
     ClubsModule,
     SpotModule,
+    EventsModule,
   ],
   providers: [
     {

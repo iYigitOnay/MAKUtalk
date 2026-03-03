@@ -48,6 +48,41 @@ model User {
   conversations        ConversationParticipant[]
   messagesSent         Message[] @relation("SentMessages")
   spotListings         SpotListing[]
+  createdEvents        Event[] @relation("EventCreator")
+  attendedEvents       EventParticipant[]
+}
+
+model Event {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String   @db.Text
+  date        DateTime
+  location    String?
+  campus      String?  @default("İstiklal")
+  type        String   @default("DİĞER") // KONSER, SEMİNER, SPOR, vb.
+  imageUrl    String?
+  creatorId   Int
+  clubId      Int?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  creator      User               @relation("EventCreator", fields: [creatorId], references: [id])
+  club         Club?              @relation(fields: [clubId], references: [id])
+  participants EventParticipant[]
+
+  @@index([date])
+}
+
+model EventParticipant {
+  id        Int      @id @default(autoincrement())
+  eventId   Int
+  userId    Int
+  createdAt DateTime @default(now())
+
+  event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
 }
 
 model Conversation {
@@ -321,6 +356,7 @@ model Club {
   advisor          User?    @relation("ClubAdvisor", fields: [advisorEmail], references: [email])
   members          ClubMember[]
   badges           ClubBadge[]
+  events           Event[]
 }
 
 model ClubMember {
