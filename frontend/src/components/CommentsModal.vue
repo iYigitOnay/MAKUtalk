@@ -400,6 +400,7 @@
 import { ref, watch, computed } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { useCommentsStore } from "@/stores/comments";
+import { usePostsStore } from "@/stores/posts";
 import { useToast } from "vue-toastification";
 import apiClient from "@/api/client";
 
@@ -412,6 +413,7 @@ const emit = defineEmits<{ close: [] }>();
 
 const authStore = useAuthStore();
 const commentsStore = useCommentsStore();
+const postsStore = usePostsStore();
 const toast = useToast();
 const newComment = ref("");
 
@@ -536,7 +538,19 @@ watch(
 const handleSubmit = async () => {
   if (!props.postId || !newComment.value.trim()) return;
   try {
-    await commentsStore.createComment(props.postId, newComment.value);
+    const res = await commentsStore.createComment(props.postId, newComment.value);
+    
+    // Anlık sayaç güncelleme (Store üzerinden)
+    const currentPost = postsStore.posts.find(p => p.id === props.postId) || 
+                        postsStore.myPosts.find(p => p.id === props.postId);
+    
+    if (currentPost) {
+      const newCount = (currentPost._count?.comments || 0) + 1;
+      postsStore.updatePostLocally(props.postId, {
+        _count: { ...currentPost._count, comments: newCount }
+      });
+    }
+
     newComment.value = "";
     toast.success("Yorumun eklendi! 💬");
   } catch (error: any) {
@@ -550,9 +564,21 @@ const openDelete = (id: number) => {
   showDeleteConfirm.value = true;
 };
 const confirmDelete = async () => {
-  if (!commentToDelete.value) return;
+  if (!commentToDelete.value || !props.postId) return;
   try {
     await commentsStore.deleteComment(commentToDelete.value);
+    
+    // Anlık sayaç güncelleme (Store üzerinden)
+    const currentPost = postsStore.posts.find(p => p.id === props.postId) || 
+                        postsStore.myPosts.find(p => p.id === props.postId);
+    
+    if (currentPost) {
+      const newCount = Math.max(0, (currentPost._count?.comments || 0) - 1);
+      postsStore.updatePostLocally(props.postId, {
+        _count: { ...currentPost._count, comments: newCount }
+      });
+    }
+
     toast.success("Yorum silindi.");
   } catch {
     toast.error("Silme işlemi başarısız.");

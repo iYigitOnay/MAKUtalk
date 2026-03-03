@@ -57,9 +57,15 @@
     <div v-else-if="!post" class="py-20 text-center text-gray-500 font-bold uppercase text-xs tracking-widest italic border-2 border-dashed border-gray-100 dark:border-white/5 rounded-[2.5rem] mx-4">Gönderi bulunamadı veya silinmiş olabilir.</div>
     
     <div v-else class="animate-fade-in">
-      <!-- Post Body: Arka plan beyaz yapıldı, border kaldırıldı -->
+      <!-- Post Body -->
       <article class="bg-white dark:bg-gray-950">
-        <PostCard :post="post" @delete="openDeletePost" @report="handleReportPost" />
+        <PostCard 
+          :post="post" 
+          @delete="openDeletePost" 
+          @report="handleReportPost" 
+          @interaction="handlePostInteraction"
+          @showComments="focusCommentInput"
+        />
       </article>
 
       <!-- Comments Section -->
@@ -114,6 +120,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
+import { usePostsStore } from '@/stores/posts';
 import apiClient from '@/api/client';
 import { useToast } from 'vue-toastification';
 import HashtagText from '@/components/HashtagText.vue';
@@ -122,14 +129,27 @@ import PostCard from '@/components/PostCard.vue';
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const postsStore = usePostsStore();
 const toast = useToast();
 
-const post = ref<any>(null);
+const localPost = ref<any>(null);
 const comments = ref<any[]>([]);
 const loading = ref(true);
 const commentContent = ref('');
 const commentLoading = ref(false);
 const commentInput = ref<HTMLTextAreaElement | null>(null);
+
+// ✅ POST SENKRONİZASYON KİLİDİ
+// Store'daki postu takip eder, eğer store'da yoksa yerel veriyi kullanır.
+const post = computed(() => {
+  if (!localPost.value) return null;
+  const postId = localPost.value.id;
+  const fromStore = postsStore.posts.find(p => p.id === postId)
+    ?? postsStore.posts.find(p => p.repostId === postId)?.repostOf
+    ?? postsStore.myPosts.find(p => p.id === postId)
+    ?? postsStore.myPosts.find(p => p.repostId === postId)?.repostOf;
+  return fromStore || localPost.value;
+});
 
 const isAdmin = computed(() => authStore.user?.role === 'ADMIN' || authStore.user?.email === '2312101063@ogr.mehmetakif.edu.tr');
 const showDeleteConfirm = ref(false);
@@ -151,7 +171,13 @@ const fetchPost = async () => {
   loading.value = true;
   try {
     const res = await apiClient.get(`/posts/${route.params.id}?currentUserId=${authStore.user?.id || ''}`);
-    post.value = res.data;
+    localPost.value = res.data;
+    
+    // Store'u güncelle/besle
+    const exists = postsStore.posts.some(p => p.id === res.data.id);
+    if (!exists) postsStore.posts.unshift(res.data);
+    else postsStore.updatePostLocally(res.data.id, { isLiked: res.data.isLiked, isReposted: res.data.isReposted });
+
     try {
       const commentsRes = await apiClient.get(`/comments/post/${route.params.id}`);
       comments.value = Array.isArray(commentsRes.data) ? commentsRes.data : [];
@@ -160,14 +186,26 @@ const fetchPost = async () => {
   finally { loading.value = false; }
 };
 
+const handlePostInteraction = (data: { type: string; postId: number; status: boolean; post?: any }) => {
+  // PostCard zaten store'u güncelliyor. 
+  // 'post' computed olduğu için store değişince sayfa kendiliğinden tepki verecek.
+};
+
+const focusCommentInput = () => { commentInput.value?.focus(); };
+
 const submitComment = async () => {
-  if (!commentContent.value.trim()) return;
+  if (!commentContent.value.trim() || !post.value) return;
   commentLoading.value = true;
   try {
     const res = await apiClient.post(`/comments/post/${post.value.id}`, { content: commentContent.value });
     comments.value.unshift(res.data);
     commentContent.value = '';
-    if (post.value._count) post.value._count.comments++;
+    
+    // Sayaç güncelleme (Store üzerinden)
+    postsStore.updatePostLocally(post.value.id, {
+      _count: { ...post.value._count, comments: (post.value._count?.comments || 0) + 1 }
+    });
+    
     toast.success("Yorumun eklendi! 💬");
   } catch { toast.error("Yorum yapılamadı."); }
   finally { commentLoading.value = false; }
@@ -180,8 +218,22 @@ const closeDelete = () => { deleteTarget.value = null; showDeleteConfirm.value =
 const confirmDelete = async () => {
   if (!deleteTarget.value) return;
   try {
-    if (deleteTarget.value.type === 'post') { await apiClient.delete(`/posts/${deleteTarget.value.id}`); toast.success("Gönderi silindi."); router.back(); }
-    else { await apiClient.delete(`/comments/${deleteTarget.value.id}`); comments.value = comments.value.filter(c => c.id !== deleteTarget.value?.id); if (post.value._count) post.value._count.comments--; toast.success("Yorum silindi."); }
+    if (deleteTarget.value.type === 'post') { 
+      await apiClient.delete(`/posts/${deleteTarget.value.id}`); 
+      toast.success("Gönderi silindi."); 
+      router.back(); 
+    }
+    else { 
+      await apiClient.delete(`/comments/${deleteTarget.value.id}`); 
+      comments.value = comments.value.filter(c => c.id !== deleteTarget.value?.id); 
+      
+      if (post.value) {
+        postsStore.updatePostLocally(post.value.id, {
+          _count: { ...post.value._count, comments: Math.max(0, (post.value._count?.comments || 0) - 1) }
+        });
+      }
+      toast.success("Yorum silindi."); 
+    }
   } catch { toast.error("Hata!"); }
   finally { closeDelete(); }
 };
