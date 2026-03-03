@@ -123,6 +123,12 @@ const router = createRouter({
       meta: { requiresAuth: true, layout: "main" },
     },
     {
+      path: "/campus/cafeteria",
+      name: "Cafeteria",
+      component: () => import("../views/Cafeteria.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+    },
+    {
       path: "/campus/clubs",
       name: "Clubs",
       component: () => import("@/views/Clubs.vue"),

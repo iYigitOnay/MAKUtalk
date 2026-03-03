@@ -36,7 +36,7 @@
       </div>
 
       <!-- 3. Yemekhane (Turuncu - İhtiyaç) -->
-      <div @click="activeSubPage = 'cafeteria'" class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-orange-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left">
+      <div @click="$router.push('/campus/cafeteria')" class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-orange-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left">
         <div class="absolute top-0 right-0 w-32 h-32 bg-orange-500/5 rounded-full blur-3xl group-hover:bg-orange-500/10 transition-all"></div>
         <div class="relative z-10 text-orange-600">
           <div class="w-14 h-14 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-2xl flex items-center justify-center mb-6 mx-auto sm:mx-0 group-hover:scale-110 transition-transform duration-500">
@@ -92,69 +92,8 @@
         </button>
 
         <div class="p-8 flex-1 overflow-y-auto">
-          <!-- 1. Yemekhane Content -->
-          <div v-if="activeSubPage === 'cafeteria'" class="space-y-8 pb-10">
-            <div class="flex flex-col gap-6">
-              <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter flex items-center gap-3">
-                <svg class="w-8 h-8 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 2v7c0 1.1.9 2 2 2h4v10a1 1 0 002 0V11h4c1.1 0 2-.9 2-2V2M7 2v4M12 2v4M17 2v4" /></svg>
-                Yemek Listesi
-              </h2>
-              <div class="flex p-1 bg-gray-100 dark:bg-gray-800 rounded-2xl w-full sm:w-max font-black">
-                <button @click="activeWeek = 'this'" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="activeWeek === 'this' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'">Bu Hafta</button>
-                <button @click="activeWeek = 'next'" class="flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="activeWeek === 'next' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'">Gelecek Hafta</button>
-              </div>
-            </div>
-            <div v-if="loading" class="py-20 text-center text-orange-500">
-              <div class="w-10 h-10 border-4 border-current border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-              <p class="text-sm font-black uppercase tracking-widest opacity-70">Liste Çekiliyor...</p>
-            </div>
-            <template v-else-if="currentWeekMenu.length > 0">
-              <div v-if="activeWeek === 'this' && todayMenu" class="p-8 bg-gradient-to-br from-orange-500 to-red-600 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden mb-8 font-black">
-                <div class="relative z-10 text-center sm:text-left">
-                  <p class="text-[10px] font-black uppercase tracking-[0.3em] opacity-80 mb-2">Bugünün Menüsü • {{ todayMenu.day }}</p>
-                  <div class="space-y-2 mb-6"><p v-for="item in todayMenu.items" :key="item" class="text-xl font-black tracking-tight leading-tight">{{ item }}</p></div>
-                  <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-md rounded-xl border border-white/10"><span class="text-xs font-black uppercase tracking-widest">{{ todayMenu.calorie }}</span></div>
-                </div>
-              </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div v-for="day in currentWeekMenu" :key="day.day" class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700/50 hover:border-orange-200 transition-colors">
-                  <p class="text-[10px] font-black text-orange-600 dark:text-orange-400 uppercase mb-3">{{ day.day }}</p>
-                  <div class="space-y-1 font-black"><p v-for="item in day.items" :key="item" class="text-xs text-gray-700 dark:text-gray-300 leading-tight">{{ item }}</p></div>
-                  <p class="text-[9px] font-black text-gray-400 uppercase mt-4">{{ day.calorie }}</p>
-                </div>
-              </div>
-            </template>
-          </div>
-
-          <!-- MAKÜ-Spot Placeholder -->
-          <div v-else-if="activeSubPage === 'market'" class="py-20 text-center space-y-6">
-            <div class="w-24 h-24 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl shadow-amber-500/10">
-              <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-            </div>
-            <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">MAKÜ-Spot <span class="text-amber-600">Yükleniyor</span></h2>
-            <p class="text-gray-500 font-black max-w-sm mx-auto leading-relaxed">İkinci el pazar yeri yakında burada. Kitaplarını ve eşyalarını satmaya hazır ol!</p>
-          </div>
-
-          <!-- Etkinlikler Placeholder -->
-          <div v-else-if="activeSubPage === 'events'" class="py-20 text-center space-y-6">
-            <div class="w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl shadow-emerald-500/10">
-              <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-            </div>
-            <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">Etkinlikler <span class="text-emerald-600">Yakında</span></h2>
-            <p class="text-gray-500 font-black max-w-sm mx-auto leading-relaxed">Konserler, seminerler ve kulüp etkinlikleri çok yakında bu takvimde.</p>
-          </div>
-
-          <!-- Kulüpler Placeholder -->
-          <div v-else-if="activeSubPage === 'clubs'" class="py-20 text-center space-y-6">
-            <div class="w-24 h-24 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-[2.5rem] flex items-center justify-center mx-auto shadow-xl shadow-rose-500/10">
-              <svg class="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 005.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-            </div>
-            <h2 class="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">Topluluklar <span class="text-rose-600">Rehberi</span></h2>
-            <p class="text-gray-500 font-black max-w-sm mx-auto leading-relaxed">Kulüplere katılmak ve etkinliklerden haberdar olmak artık çok daha kolay olacak.</p>
-          </div>
-
           <!-- Analytics Content -->
-          <div v-else-if="activeSubPage === 'analytics'" class="space-y-10 pb-10">
+          <div v-if="activeSubPage === 'analytics'" class="space-y-10 pb-10">
             <div class="text-center space-y-4">
               <div class="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto animate-bounce shadow-xl shadow-blue-500/10">
                 <svg class="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" /></svg>
