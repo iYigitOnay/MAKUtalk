@@ -161,12 +161,12 @@
 
         <!-- Giriş Altlığı -->
         <footer class="p-4 md:p-6 bg-white dark:bg-[#0b0f19] border-t border-slate-200/60 dark:border-white/5 flex-shrink-0">
-          <div v-if="chatStore.activeConversation.isAccepted || chatStore.activeConversation.isFriend" class="max-w-4xl mx-auto flex items-end gap-3">
-            <div class="flex-1 bg-slate-100/80 dark:bg-white/5 rounded-3xl p-2 flex items-end shadow-inner border border-transparent focus-within:border-indigo-500/20 transition-all min-w-0">
-              <div class="flex-shrink-0"><EmojiPicker :modelValue="messageInput" @update:modelValue="(e) => (messageInput += e)" class="mb-1.5 ml-1" /></div>
-              <textarea v-model="messageInput" @input="handleTyping" @keydown.enter.prevent="handleSendMessage()" placeholder="Bir mesaj yazın..." rows="1" class="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-sm py-2.5 px-2 text-slate-900 dark:text-white resize-none max-h-40"></textarea>
+          <div v-if="chatStore.activeConversation.isAccepted || chatStore.activeConversation.isFriend" class="max-w-4xl mx-auto flex items-center gap-3">
+            <div class="flex-1 bg-slate-100/80 dark:bg-white/5 rounded-3xl p-2 flex items-center shadow-inner border border-transparent focus-within:border-indigo-500/20 transition-all min-w-0">
+              <div class="flex-shrink-0 flex items-center"><EmojiPicker :modelValue="messageInput" @update:modelValue="(e) => (messageInput += e)" class="ml-1" /></div>
+              <textarea v-model="messageInput" @input="handleTyping" @keydown.enter.prevent="handleSendMessage()" placeholder="Bir mesaj yazın..." rows="1" class="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-sm py-2.5 px-2 text-slate-900 dark:text-white resize-none max-h-40 overflow-y-auto"></textarea>
             </div>
-            <button @click="handleSendMessage()" :disabled="!messageInput.trim()" class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-all flex-shrink-0 mb-0.5" :style="{ backgroundColor: currentThemeColor }"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
+            <button @click="handleSendMessage()" :disabled="!messageInput.trim()" class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-all flex-shrink-0" :style="{ backgroundColor: currentThemeColor }"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
           </div>
           <div v-else class="text-center py-4 opacity-50"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Sohbet için onay bekleniyor.</p></div>
         </footer>

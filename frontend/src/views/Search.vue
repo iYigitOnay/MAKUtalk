@@ -286,13 +286,20 @@
             >
               <div class="flex items-center gap-3">
                 <img
+                  v-if="user.avatarUrl"
                   :src="user.avatarUrl"
                   :alt="user.username"
                   class="w-12 h-12 rounded-full object-cover"
                 />
+                <div
+                  v-else
+                  class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg"
+                >
+                  {{ user.username?.charAt(0).toUpperCase() }}
+                </div>
                 <div>
                   <p class="font-semibold text-gray-900 dark:text-white">
-                    {{ user.fullName }}
+                    {{ user.fullName || user.username }}
                   </p>
                   <p class="text-sm text-gray-500 dark:text-gray-400">
                     @{{ user.username }}
@@ -336,13 +343,20 @@
         >
           <div class="flex items-center gap-3">
             <img
+              v-if="user.avatarUrl"
               :src="user.avatarUrl"
               :alt="user.username"
               class="w-12 h-12 rounded-full object-cover"
             />
+            <div
+              v-else
+              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg"
+            >
+              {{ user.username?.charAt(0).toUpperCase() }}
+            </div>
             <div>
               <p class="font-semibold text-gray-900 dark:text-white">
-                {{ user.fullName }}
+                {{ user.fullName || user.username }}
               </p>
               <p class="text-sm text-gray-500 dark:text-gray-400">
                 @{{ user.username }}

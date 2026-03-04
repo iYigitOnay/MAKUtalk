@@ -85,7 +85,7 @@
                   ? 'bg-emerald-600 border-emerald-600 text-white' 
                   : 'bg-white dark:bg-gray-800 border-emerald-600/20 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20'"
               >
-                {{ event.isAttending ? 'OK' : 'BİLET AL' }}
+                {{ event.isAttending ? 'VAZGEÇ' : 'BİLET AL' }}
               </button>
             </div>
           </div>
