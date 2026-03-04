@@ -121,11 +121,19 @@
               <span class="text-base font-bold text-gray-900 dark:text-white">{{ displayedUser._count?.posts || 0 }}</span>
               <span class="text-sm text-gray-500 dark:text-gray-400">Paylaşım</span>
             </div>
-            <button @click="openFollowModal('followers')" class="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
+            <button 
+              @click="openFollowModal('followers')" 
+              class="flex items-center gap-1.5 transition-opacity"
+              :class="isMyProfile ? 'hover:opacity-70 cursor-pointer' : 'cursor-default'"
+            >
               <span class="text-base font-bold text-gray-900 dark:text-white">{{ displayedUser._count?.followers || 0 }}</span>
               <span class="text-sm text-gray-500 dark:text-gray-400">Takipçi</span>
             </button>
-            <button @click="openFollowModal('following')" class="flex items-center gap-1.5 hover:opacity-70 transition-opacity">
+            <button 
+              @click="openFollowModal('following')" 
+              class="flex items-center gap-1.5 transition-opacity"
+              :class="isMyProfile ? 'hover:opacity-70 cursor-pointer' : 'cursor-default'"
+            >
               <span class="text-base font-bold text-gray-900 dark:text-white">{{ displayedUser._count?.following || 0 }}</span>
               <span class="text-sm text-gray-500 dark:text-gray-400">Takip</span>
             </button>
@@ -176,6 +184,12 @@
     </Teleport>
 
     <!-- OTHER MODALS -->
+    <FollowModal 
+      :is-open="followModal.isOpen" 
+      :title="followModal.title" 
+      :users="followModal.users" 
+      @close="followModal.isOpen = false" 
+    />
     <EditProfileModal :is-open="showEditModal" :user="displayedUser" @close="showEditModal = false" @save="handleSaveProfile" />
     <CommentsModal :is-open="commentsModalOpen" :post-id="selectedPostId" @close="commentsModalOpen = false" />
     
@@ -238,6 +252,7 @@ import PostCard from "@/components/PostCard.vue";
 import CommentsModal from "@/components/CommentsModal.vue";
 import EditProfileModal from "@/components/EditProfileModal.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
+import FollowModal from "@/components/FollowModal.vue";
 
 const authStore = useAuthStore();
 const postsStore = usePostsStore();
@@ -263,6 +278,30 @@ const showOptionsMenu = ref(false);
 const showEditModal = ref(false);
 const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
+
+// FOLLOW MODAL STATES
+const followModal = ref({
+  isOpen: false,
+  title: "",
+  users: [] as any[]
+});
+
+const openFollowModal = async (type: 'followers' | 'following') => {
+  if (!isMyProfile.value) return; 
+  
+  followModal.value.title = type === 'followers' ? 'Takipçilerim' : 'Takip Ettiklerim';
+  followModal.value.users = []; // Eski listeyi temizle
+  followModal.value.isOpen = true;
+  
+  try {
+    const res = await apiClient.get(`/follow/${type}/${displayedUser.value.id}`);
+    // Backend'den gelen Follow objelerini User objelerine dönüştür
+    followModal.value.users = res.data.map((item: any) => type === 'followers' ? item.follower : item.following);
+  } catch {
+    toast.error("Liste yüklenemedi.");
+    followModal.value.isOpen = false;
+  }
+};
 
 // UNIFIED REPORT SYSTEM
 const showGlobalReport = ref(false);

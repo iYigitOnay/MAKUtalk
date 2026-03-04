@@ -46,7 +46,14 @@
           class="flex items-center justify-between py-3 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-lg px-3 transition"
         >
           <div class="flex items-center space-x-3">
+            <img
+              v-if="user.avatarUrl"
+              :src="user.avatarUrl"
+              :alt="user.username"
+              class="w-10 h-10 rounded-full object-cover border border-gray-100 dark:border-white/10"
+            />
             <div
+              v-else
               class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center"
             >
               <span
@@ -66,10 +73,13 @@
           </div>
 
           <router-link
-            :to="`/user/${user.id}`"
-            class="text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300 text-sm font-medium"
+            :to="`/profile/${user.username}`"
+            @click="$emit('close')"
+            class="p-2 hover:bg-primary-50 dark:hover:bg-primary-900/20 rounded-full text-primary-600 dark:text-primary-400 transition-all active:scale-90"
           >
-            Profil
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7" />
+            </svg>
           </router-link>
         </div>
       </div>
