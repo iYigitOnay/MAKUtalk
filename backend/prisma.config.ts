@@ -9,6 +9,6 @@ export default defineConfig({
   datasource: {
     url:
       process.env.DATABASE_URL ??
-      'postgresql://admin:makupassword123@localhost:5433/makutalk_db?schema=public',
+      'postgresql://admin:makupassword123@localhost:5432/makutalk_db?schema=public',
   },
 });
