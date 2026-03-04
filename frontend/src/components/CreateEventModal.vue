@@ -202,7 +202,19 @@ const handleSubmit = async () => {
   }
   loading.value = true;
   try {
-    await apiClient.post('/events', form.value);
+    const formData = new FormData();
+    Object.entries(form.value).forEach(([key, value]) => {
+      if (value !== null) formData.append(key, value.toString());
+    });
+    
+    if (selectedFile.value) {
+      formData.append('image', selectedFile.value);
+    }
+
+    await apiClient.post('/events', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    
     toast.success("Etkinlik Paylaşıldı! 🚀");
     emit('created');
     emit('close');
