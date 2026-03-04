@@ -31,10 +31,8 @@ export class EventsController {
   @Post('sync-manual')
   @UseGuards(JwtAuthGuard)
   syncManual(@Request() req) {
-    // Sadece admin veya root admin tetikleyebilsin
     const isAdmin = req.user.role === 'ADMIN' || req.user.email === '2312101063@ogr.mehmetakif.edu.tr';
     if (!isAdmin) throw new UnauthorizedException('Yetkiniz yok.');
-    
     return this.eventsService.scrapeUniversityEvents();
   }
 

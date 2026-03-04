@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException, UnauthorizedException, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, UnauthorizedException, Logger, OnModuleInit, InternalServerErrorException } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateEventDto } from './dto/create-event.dto';
@@ -19,15 +19,12 @@ export class EventsService implements OnModuleInit {
     await this.scrapeUniversityEvents();
   }
 
-  // JSON içindeki etkinlik listesini her nerede olursa olsun bulan akıllı fonksiyon
   private findEventsArray(obj: any): any[] | null {
     if (!obj) return null;
     if (Array.isArray(obj)) {
-      // Bu dizi etkinlik listesine benziyor mu?
       if (obj.length > 0) {
         const first = obj[0];
-        // MAKÜ API yapısında 'datas' veya 'title' araması
-        if ((first.datas && Array.isArray(first.datas)) || (first.title && first.event_date)) {
+        if ((first.datas && Array.isArray(first.datas)) || (first.title && (first.event_date || first.doing_at))) {
           return obj;
         }
       }
@@ -56,9 +53,8 @@ export class EventsService implements OnModuleInit {
         }
       });
 
-      this.logger.log(`API İsteği atılıyor: ${this.UNIVERSITY_API_URL}`);
       const { data: response } = await axios.get(this.UNIVERSITY_API_URL, {
-        timeout: 15000,
+        timeout: 20000,
         headers: { 
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
           'Accept': 'application/json, text/plain, */*',
@@ -66,37 +62,19 @@ export class EventsService implements OnModuleInit {
         }
       });
 
-      // AKILLI ARAMA: Veriyi JSON'un her yerinde ara
       const rawEvents = this.findEventsArray(response);
-      
-      if (!rawEvents) {
-        this.logger.error('API Yanıtında etkinlik listesi bulunamadı. Gelen yapı: ' + Object.keys(response).join(', '));
-        throw new Error('Veri yapısı çözülemedi.');
-      }
-
-      this.logger.log(`Robot toplam ${rawEvents.length} adet ham veri yakaladı.`);
+      if (!rawEvents) throw new Error('Veri yapısı çözülemedi.');
 
       let savedCount = 0;
       for (const item of rawEvents) {
-        // MAKÜ API'sinde asıl veri genelde 'datas[0]' içindedir
         const eventData = item.datas?.[0] || item;
         const title = eventData.title || item.title;
         const dateRaw = eventData.event_date || item.doing_at || item.publish_at;
         
         if (!title || !dateRaw) continue;
-
         const date = new Date(dateRaw);
-        if (isNaN(date.getTime())) continue; // Geçersiz tarihleri atla
+        if (isNaN(date.getTime())) continue;
 
-        const cleanLocation = eventData.event_address 
-          ? eventData.event_address.replace(/<\/?[^>]+(>|$)/g, "").trim() 
-          : 'MAKÜ Kampüsü';
-
-        const fullImageUrl = eventData.attachment?.file_url 
-          ? `https://depo.mehmetakif.edu.tr${eventData.attachment.file_url}`
-          : (item.attachment?.file_url ? `https://depo.mehmetakif.edu.tr${item.attachment.file_url}` : null);
-
-        // Mükerrer kontrolü
         const exists = await (this.prisma as any).event.findFirst({
           where: { title: title, date: date }
         });
@@ -107,29 +85,27 @@ export class EventsService implements OnModuleInit {
               title: title.substring(0, 150),
               description: 'Bu etkinlik MAKÜ resmi duyuru sisteminden otomatik olarak senkronize edilmiştir.',
               date: date,
-              location: cleanLocation.substring(0, 100),
+              location: (eventData.event_address || 'MAKÜ Kampüsü').replace(/<\/?[^>]+(>|$)/g, "").trim().substring(0, 100),
               campus: 'Merkez',
               type: (item.event_type?.name || 'ETKİNLİK').toUpperCase(),
-              imageUrl: fullImageUrl,
+              imageUrl: eventData.attachment?.file_url ? `https://depo.mehmetakif.edu.tr${eventData.attachment.file_url}` : null,
               creatorId: systemUser.id
             }
           });
           savedCount++;
         }
       }
-
-      this.logger.log(`${savedCount} yeni resmi etkinlik başarıyla biletlere dönüştürüldü.`);
       return { success: true, saved: savedCount };
     } catch (error) {
       this.logger.error('Senkronizasyon hatası:', error.message);
-      throw new ForbiddenException(`Robot başarısız oldu: ${error.message}`);
+      throw new InternalServerErrorException(`Robot hatası: ${error.message}`);
     }
   }
 
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async handleCleanup() {
-    this.logger.log('Geçmiş etkinlikler temizleniyor...');
     const now = new Date();
+    now.setHours(0, 0, 0, 0);
     await (this.prisma as any).event.deleteMany({ where: { date: { lt: now } } });
   }
 
@@ -143,8 +119,11 @@ export class EventsService implements OnModuleInit {
   }
 
   async findAll(currentUserId?: number) {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Bugün başlayan etkinlikleri de göster
+    
     const events = await (this.prisma as any).event.findMany({
-      where: { date: { gte: new Date() } },
+      where: { date: { gte: now } },
       orderBy: { date: 'asc' },
       include: {
         creator: { select: { username: true, fullName: true, avatarUrl: true } },
@@ -175,7 +154,9 @@ export class EventsService implements OnModuleInit {
   async remove(userId: number, eventId: number) {
     const event = await (this.prisma as any).event.findUnique({ where: { id: eventId } });
     if (!event) throw new NotFoundException();
-    await (this.prisma as any).event.delete({ where: { id: eventId } });
-    return { success: true };
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const isAdmin = user?.role === 'ADMIN' || user?.email === '2312101063@ogr.mehmetakif.edu.tr';
+    if (event.creatorId !== userId && !isAdmin) throw new ForbiddenException();
+    return (this.prisma as any).event.delete({ where: { id: eventId } });
   }
 }
