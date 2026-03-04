@@ -252,9 +252,27 @@ const toggleAttend = async (eventId: number) => {
   }
   try {
     const res = await apiClient.post(`/events/${eventId}/attend`);
-    await fetchEvents();
-    if (res.data.attending) toast.success("Biletin Hazır! 🎟️");
-  } catch {}
+    
+    // Tüm listeyi çekmek yerine sadece o etkinliği yerel olarak güncelle
+    const event = events.value.find(e => e.id === eventId);
+    if (event) {
+      event.isAttending = res.data.attending;
+      if (res.data.attending) {
+        event._count.participants++;
+        // Katılımcı avatarlarına kendini ekle (opsiyonel ama şık durur)
+        if (authStore.user) {
+          event.displayParticipants = [authStore.user, ...event.displayParticipants.slice(0, 2)];
+        }
+        toast.success("Biletin Hazır! 🎟️");
+      } else {
+        event._count.participants = Math.max(0, event._count.participants - 1);
+        // Kendini katılımcılardan çıkar
+        event.displayParticipants = event.displayParticipants.filter((p: any) => p.username !== authStore.user?.username);
+      }
+    }
+  } catch {
+    toast.error("İşlem başarısız.");
+  }
 };
 
 const filteredEvents = computed(() => {

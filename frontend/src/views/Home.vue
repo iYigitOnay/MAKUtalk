@@ -27,8 +27,8 @@
       </div>
     </transition>
 
-    <!-- Post Composer Section -->
-    <div v-if="authStore.isAuthenticated" class="sm:sticky top-0 z-40 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-4">
+    <!-- Post Composer Section (Sticky Özelliği Kaldırıldı) -->
+    <div v-if="authStore.isAuthenticated" class="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-primary-900/30 p-4">
       <div class="flex gap-4">
         <div class="relative group flex-shrink-0">
           <div class="p-[2px] rounded-full bg-gradient-to-tr from-blue-400 to-purple-400 shadow-sm transition-transform group-hover:scale-105">
@@ -42,17 +42,11 @@
             v-model="newPostContent" 
             @input="handleInput" 
             placeholder="Ne Düşünüyorsun?" 
-            class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium" 
-            rows="3" 
+            class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium min-h-[100px] overflow-hidden" 
             :disabled="postsStore.loading" 
           />
           
-          <!-- DYNAMIC MENTION TOOLTIP (CURSOR TRACKING) -->
-          <div 
-            v-if="showMentions" 
-            :style="{ top: mentionPos.y + 'px', left: mentionPos.x + 'px' }"
-            class="absolute z-[60] w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-200"
-          >
+          <div v-if="showMentions" :style="{ top: mentionPos.y + 'px', left: mentionPos.x + 'px' }" class="absolute z-[60] w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
             <div class="max-h-48 overflow-y-auto no-scrollbar">
               <button v-for="user in mentionUsers" :key="user.id" @click="selectMention(user.username)" class="w-full flex items-center gap-3 p-2.5 hover:bg-blue-600 hover:text-white transition-colors group text-left">
                 <img v-if="user.avatarUrl" :src="user.avatarUrl" class="w-7 h-7 rounded-full object-cover border border-white/20" />
@@ -70,7 +64,6 @@
             <button @click="removeSelectedImage" class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
           </div>
 
-          <!-- POST KATEGORİ ÇARKI (Sadece yazı veya resim varken çıkar) -->
           <transition name="fade">
             <div v-if="newPostContent.trim() || selectedImage" class="relative mt-2 h-24 flex items-center justify-center overflow-hidden -ml-16">
               <div ref="composerCategoryRef" class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth" @scroll="handleComposerScroll">
@@ -87,11 +80,10 @@
             </div>
           </transition>
 
-          <!-- Alt Bar: Fotoğraf, Emoji ve Paylaş Butonu (Her zaman görünür) -->
           <div class="mt-2 flex items-center justify-between border-t border-gray-50 dark:border-primary-900/5 pt-4">
             <div class="flex items-center gap-2">
               <input type="file" ref="imageInputRef" class="hidden" accept="image/*" @change="handleImageSelect" />
-              <button @click="imageInputRef?.click()" class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></button>
+              <button @click="imageInputRef?.click()" class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.414a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></button>
               <EmojiPicker :modelValue="newPostContent" @update:modelValue="(e) => (newPostContent += e)" />
             </div>
             <button @click="handleCreatePost" :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading" class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg active:scale-95 disabled:opacity-50 transition-all">PAYLAŞ</button>
@@ -100,8 +92,8 @@
       </div>
     </div>
 
-    <!-- ANA KATEGORİ ÇARKI (Akış Ortada) -->
-    <div class="sm:sticky top-[116px] z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden">
+    <!-- ANA KATEGORİ ÇARKI (Artık en üstte sticky: top-0) -->
+    <div class="sticky top-0 z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden">
       <div ref="categoryNavRef" @scroll="handleCarouselScroll" class="flex items-center gap-4 overflow-x-auto px-[35%] scrollbar-hide snap-x snap-mandatory scroll-smooth h-20">
         <div v-for="(item, index) in allItems" :key="index" class="flex-shrink-0 snap-center carousel-item">
           <button @click="selectCategory(item.id); centerCarouselItem(index)" :class="['w-28 h-12 rounded-xl flex items-center justify-center gap-2 transition-all duration-500 border-2 px-3', (item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id ? 'scale-110 text-white shadow-lg' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-white/5 text-gray-400 scale-90 opacity-60']" :style="((item.id === null && !postsStore.currentCategory) || postsStore.currentCategory === item.id) ? { backgroundColor: item.color || '#3b82f6', borderColor: 'rgba(255,255,255,0.3)' } : {}">
@@ -154,8 +146,14 @@ const mentionUsers = ref<any[]>([]);
 const showMentions = ref(false);
 const mentionPos = ref({ x: 0, y: 0 });
 
+const adjustTextareaHeight = () => {
+  const el = textareaRef.value;
+  if (!el) return;
+  el.style.height = 'auto';
+  el.style.height = el.scrollHeight + 'px';
+};
+
 const getCursorXY = (el: HTMLTextAreaElement, cursorIndex: number) => {
-  const { offsetLeft: elLeft, offsetTop: elTop } = el;
   const style = window.getComputedStyle(el);
   const mirror = document.createElement('div');
   const copyStyle = ['fontFamily', 'fontSize', 'fontWeight', 'lineHeight', 'padding', 'border', 'width', 'boxSizing', 'whiteSpace', 'wordBreak'];
@@ -170,6 +168,7 @@ const getCursorXY = (el: HTMLTextAreaElement, cursorIndex: number) => {
 };
 
 const handleInput = async (e: any) => {
+  adjustTextareaHeight();
   const cursor = e.target.selectionStart;
   const words = e.target.value.substring(0, cursor).split(/\s/);
   const last = words[words.length - 1];
@@ -189,12 +188,12 @@ const selectMention = (u: string) => {
   const lastAt = newPostContent.value.lastIndexOf('@');
   newPostContent.value = newPostContent.value.substring(0, lastAt) + `@${u} `;
   showMentions.value = false;
+  nextTick(adjustTextareaHeight);
 };
 
 const categoryNavRef = ref<HTMLElement | null>(null);
 const composerCategoryRef = ref<HTMLElement | null>(null);
 
-// AKIŞ ORTADA OLACAK ŞEKİLDE AYARLA
 const allItems = computed(() => {
   const cats = categoriesStore.categories;
   const akis = { id: null, name: 'Akış', color: '#4f46e5' };
@@ -253,6 +252,7 @@ const handleCreatePost = async () => {
   try {
     await postsStore.createPost(newPostContent.value, true, selectedCategoryId.value || undefined, selectedImage.value || undefined);
     newPostContent.value = ""; selectedCategoryId.value = null; removeSelectedImage();
+    nextTick(adjustTextareaHeight);
     toast.success("Paylaşıldı!");
   } catch { toast.error("Hata!"); }
 };
@@ -266,7 +266,6 @@ const isDeleting = ref(false);
 const showReportModal = ref(false);
 const reportStep = ref(1);
 const selectedCategory = ref("");
-const postToReport = ref<number | null>(null);
 const reportCategories: Record<string, string[]> = {
   Nefret: ["Hakaretler", "Irkçı veya cinsiyetçi klişeler", "İnsanlıktan çıkarma", "Korku veya ayrımcılığa teşvik"],
   "Taciz ve Rahatsızlık": ["Hakaret", "İstenmeyen Cinsel İçerik", "Hedefli Taciz"],
@@ -285,6 +284,7 @@ const handleConfirmDelete = async () => {
 
 const handleReportPost = (id: number) => { postToReport.value = id; showReportModal.value = true; reportStep.value = 1; };
 const selectReportCategory = (name: string) => { selectedCategory.value = name; reportStep.value = 2; };
+const postToReport = ref<number | null>(null);
 const submitReport = async (sub: string) => {
   try { await apiClient.post('/users/report', { reportedPostId: postToReport.value, reason: selectedCategory.value, subReason: sub }); toast.warning("Bildirildi."); }
   catch { toast.error("Hata!"); }
@@ -311,6 +311,7 @@ watch([newPostContent, selectedImage], async ([content, img]) => {
     const idx = allItems.value.findIndex(i => i.id === selectedCategoryId.value);
     if (idx !== -1) centerComposerItem(idx);
   }
+  adjustTextareaHeight();
 });
 </script>
 
