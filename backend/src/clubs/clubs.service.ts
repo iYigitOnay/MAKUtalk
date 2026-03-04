@@ -81,9 +81,11 @@ export class ClubsService {
   async assignBadge(userId: number, clubId: number, badgeId: number) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     const club = await (this.prisma as any).club.findUnique({ where: { id: clubId } });
+    const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
     
     if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
     if (!club) throw new NotFoundException('Topluluk bulunamadı.');
+    if (!badge || badge.type !== 'CLUB') throw new ForbiddenException('Bu rozet topluluklara atanamaz.');
 
     const isAdvisor = club.advisorEmail === user.email;
     if (user.role !== 'ADMIN' && !isAdvisor) {

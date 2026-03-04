@@ -100,7 +100,7 @@ export class UsersController {
     return this.usersService.toggleBan(id, user.id);
   }
 
-  @Delete(':id/admin')
+  @Delete(':id')
   @UseGuards(JwtAuthGuard)
   async deleteUserByAdmin(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
     return this.usersService.deleteUser(id, user.id);

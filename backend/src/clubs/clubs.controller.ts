@@ -6,9 +6,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class ClubsController {
   constructor(private readonly clubsService: ClubsService) {}
 
-  @Get('all')
-  findAll(@Request() req) {
-    return this.clubsService.findAll(req.user?.id);
+  // LİSTELEME
+  @Get()
+  findAll(@Request() req, @Query('currentUserId') currentUserId?: string) {
+    const userId = currentUserId ? parseInt(currentUserId) : req.user?.id;
+    return this.clubsService.findAll(userId);
   }
 
   @Get('my-founded')
@@ -29,48 +31,52 @@ export class ClubsController {
     return this.clubsService.getProposalsForAcademic(req.user.email);
   }
 
-  @Post('approve-academic/:id')
+  // ONAY & RED (Frontend Formatı: /api/clubs/:id/...)
+  @Post(':id/approve-academic')
   @UseGuards(JwtAuthGuard)
   approveAcademic(@Request() req, @Param('id') id: string) {
     return this.clubsService.approveByAcademic(req.user.id, parseInt(id));
   }
 
-  @Post('approve-admin/:id')
+  @Post(':id/approve-admin')
   @UseGuards(JwtAuthGuard)
   approveAdmin(@Request() req, @Param('id') id: string) {
     return this.clubsService.approveByAdmin(req.user.id, parseInt(id));
   }
 
-  @Post('reject/:id')
+  @Post(':id/reject')
   @UseGuards(JwtAuthGuard)
   reject(@Request() req, @Param('id') id: string) {
     return this.clubsService.rejectProposal(req.user.id, parseInt(id));
   }
 
-  @Post('propose')
+  // OLUŞTURMA
+  @Post()
   @UseGuards(JwtAuthGuard)
   propose(@Request() req, @Body() data: any) {
     return this.clubsService.createProposal(req.user.id, data);
   }
 
-  @Post('assign-badge')
-  @UseGuards(JwtAuthGuard)
-  assignBadge(@Request() req, @Body() data: { clubId: number, badgeId: number }) {
-    return this.clubsService.assignBadge(req.user.id, data.clubId, data.badgeId);
-  }
-
-  @Get('badges')
+  // ROZETLER
+  @Get('badges/all')
   getBadges() {
     return this.clubsService.getAllBadges();
   }
 
-  @Post('toggle-join/:id')
+  @Post(':id/badges')
+  @UseGuards(JwtAuthGuard)
+  assignBadge(@Request() req, @Param('id') id: string, @Body() data: { badgeId: number }) {
+    return this.clubsService.assignBadge(req.user.id, parseInt(id), data.badgeId);
+  }
+
+  // ÜYELİK & DETAY
+  @Post(':id/toggle-join')
   @UseGuards(JwtAuthGuard)
   toggleJoin(@Request() req, @Param('id') id: string) {
     return this.clubsService.toggleJoin(req.user.id, parseInt(id));
   }
 
-  @Get('detail/:slug')
+  @Get(':slug')
   findOne(@Param('slug') slug: string, @Request() req) {
     return this.clubsService.findOne(slug, req.user?.id);
   }

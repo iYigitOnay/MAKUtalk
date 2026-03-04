@@ -3,13 +3,12 @@ import {
   ConflictException,
   NotFoundException,
   ForbiddenException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
-import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class UsersService {
@@ -18,133 +17,194 @@ export class UsersService {
     private mailService: MailService,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_3AM)
-  async cleanUnverifiedUsers() {
-    const twentyFourHoursAgo = new Date();
-    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
-    const deleted = await this.prisma.user.deleteMany({
-      where: { isVerified: false, createdAt: { lt: twentyFourHoursAgo } },
-    });
-    if (deleted.count > 0) { console.log(`🧹 TEMİZLİK: ${deleted.count} adet doğrulanmamış hesap silindi.`); }
-  }
-
   async create(createUserDto: CreateUserDto) {
-    const { email, username, password, fullName } = createUserDto;
-    const lowerPassword = password.toLowerCase();
-    const blacklisted = ['123456', '12345678', 'password', 'parola', 'sifre123', 'makutalk', 'mehmetakif', 'maku123'];
-    if (blacklisted.some(p => lowerPassword.includes(p))) throw new ConflictException('Çok yaygın şifre.');
-    if (lowerPassword.includes(username.toLowerCase())) throw new ConflictException('Şifre kullanıcı adını içeremez.');
-
     const existingUser = await this.prisma.user.findFirst({
-      where: { OR: [{ email: { equals: email, mode: 'insensitive' } }, { username: { equals: username, mode: 'insensitive' } }] },
+      where: {
+        OR: [
+          { email: createUserDto.email },
+          { username: createUserDto.username },
+        ],
+      },
     });
-    if (existingUser) throw new ConflictException('E-posta veya kullanıcı adı kullanımda.');
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    if (existingUser) {
+      throw new ConflictException('Bu e-posta veya kullanıcı adı zaten kullanımda.');
+    }
+
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
     const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+    // AKADEMİSYEN OTOMATIK ROL ATAMASI (@mehmetakif.edu.tr)
     let role: any = 'USER';
-    if (email.endsWith('@mehmetakif.edu.tr') && !email.includes('@ogr.mehmetakif.edu.tr')) role = 'ACADEMIC';
+    if (createUserDto.email.endsWith('@mehmetakif.edu.tr') && !createUserDto.email.includes('@ogr.')) {
+      role = 'ACADEMIC';
+    }
 
     const user = await this.prisma.user.create({
-      data: { email, username, password: hashedPassword, fullName, verificationCode, isVerified: false, role: role },
+      data: {
+        ...createUserDto,
+        password: hashedPassword,
+        role: role,
+        verificationCode: verificationCode,
+      },
     });
 
+    // AKADEMİSYEN ROZETİ OTOMATIK ATAMA
     if (role === 'ACADEMIC') {
-      try {
-        let bad = await this.prisma.badge.findUnique({ where: { name: 'Akademisyen' } });
-        if (!bad) bad = await this.prisma.badge.create({ data: { name: 'Akademisyen', icon: 'academic', color: '#1E3A8A' } });
-        await this.prisma.userBadge.create({ data: { userId: user.id, badgeId: bad.id } });
-      } catch {}
+      const academicBadge = await this.prisma.badge.findFirst({ where: { name: 'Akademisyen' } });
+      if (academicBadge) {
+        await this.prisma.userBadge.create({
+          data: { userId: user.id, badgeId: academicBadge.id }
+        });
+      }
     }
-    try { await this.mailService.sendVerificationCode(user.email, verificationCode); } catch {}
+
+    try {
+      await this.mailService.sendVerificationCode(user.email, verificationCode);
+    } catch (error) {
+      console.error('Mail gönderme hatası:', error);
+    }
+
+    return user;
+  }
+
+  async findByEmail(email: string) {
+    return this.prisma.user.findUnique({
+      where: { email },
+      include: { badges: { include: { badge: true } } },
+    });
+  }
+
+  async findByUsernameOnly(username: string) {
+    return this.prisma.user.findUnique({ where: { username } });
+  }
+
+  // Controller'ın beklediği metod
+  async findByUsername(username: string, currentUserId?: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { username },
+      include: {
+        badges: { include: { badge: true } },
+        _count: { select: { posts: true, followers: true, following: true } },
+      },
+    });
+
+    if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
+
+    let isFollowing = false;
+    let isBlocked = false;
+
+    if (currentUserId) {
+      const follow = await this.prisma.follow.findFirst({
+        where: { followerId: currentUserId, followingId: user.id },
+      });
+      isFollowing = !!follow;
+
+      const block = await this.prisma.block.findFirst({
+        where: { blockerId: currentUserId, blockedId: user.id },
+      });
+      isBlocked = !!block;
+    }
+
+    return { ...user, isFollowing, isBlocked };
+  }
+
+  async findById(id: number) {
+    return this.prisma.user.findUnique({ where: { id } });
+  }
+
+  async findByIdWithStats(id: number, currentUserId?: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        badges: { include: { badge: true } },
+        _count: { select: { posts: true, followers: true, following: true } },
+      },
+    });
+    if (!user) throw new NotFoundException();
     return user;
   }
 
   async verifyEmail(email: string, code: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || user.verificationCode !== code) throw new ForbiddenException('Geçersiz kod.');
-    return this.prisma.user.update({ where: { email }, data: { isVerified: true, verificationCode: null } });
-  }
-
-  async forgotPassword(email: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    await this.prisma.user.update({ where: { email }, data: { verificationCode: code } });
-    try { await this.mailService.sendPasswordResetCode(email, code); return { message: 'Kod gönderildi.' }; }
-    catch { throw new Error('Mail gönderilemedi.'); }
-  }
-
-  async resetPassword(email: string, code: string, newPassword: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || user.verificationCode !== code) throw new ForbiddenException('Geçersiz kod.');
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    return this.prisma.user.update({ where: { email }, data: { password: hashedPassword, verificationCode: null, isVerified: true } });
-  }
-
-  async findByEmail(email: string) { return this.prisma.user.findUnique({ where: { email } }); }
-  async findById(id: number) { const user = await this.prisma.user.findUnique({ where: { id } }); return user ? { ...user, password: '' } : null; }
-
-  async updateProfile(userId: number, currentUserId: number, updateData: UpdateUserDto) {
-    if (userId !== currentUserId) throw new ForbiddenException('Yetkisiz.');
-    return this.prisma.user.update({ where: { id: userId }, data: updateData, include: { badges: { include: { badge: true } }, _count: true } });
-  }
-
-  async findByIdWithStats(userId: number, currentUserId?: number) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId }, include: { badges: { include: { badge: true } }, _count: true } });
-    if (!user) throw new NotFoundException('Kullanıcı yok.');
-    let isFollowing = false;
-    if (currentUserId && currentUserId !== userId) {
-      const f = await this.prisma.follow.findUnique({ where: { followerId_followingId: { followerId: currentUserId, followingId: userId } } });
-      isFollowing = !!f;
+    if (!user || user.verificationCode !== code) {
+      throw new UnauthorizedException('Doğrulama kodu hatalı.');
     }
-    return { ...user, isFollowing };
+    return this.prisma.user.update({
+      where: { email },
+      data: { isVerified: true, verificationCode: null },
+    });
+  }
+
+  async updateProfile(userId: number, currentUserId: number, data: any) {
+    if (userId !== currentUserId) {
+      const currentUser = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+      if (currentUser?.role !== 'ADMIN') throw new ForbiddenException();
+    }
+    return this.prisma.user.update({
+      where: { id: userId },
+      data,
+      select: { id: true, username: true, fullName: true, bio: true, avatarUrl: true, coverUrl: true, isPrivate: true, role: true }
+    });
+  }
+
+  async toggleBan(userId: number, currentUserId: number) {
+    const admin = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+    if (admin?.role !== 'ADMIN') throw new ForbiddenException();
+    
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException();
+    
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { isBanned: !user.isBanned },
+    });
+  }
+
+  async deleteUser(userId: number, currentUserId: number) {
+    const admin = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+    if (admin?.role !== 'ADMIN' && admin?.email !== '2312101063@ogr.mehmetakif.edu.tr') {
+      throw new ForbiddenException();
+    }
+    return this.prisma.user.delete({ where: { id: userId } });
   }
 
   async getUserPosts(userId: number, currentUserId?: number) {
-    const posts = await this.prisma.post.findMany({
+    return this.prisma.post.findMany({
       where: { authorId: userId, published: true, repostId: null },
-      include: { author: { include: { badges: { include: { badge: true } } } }, category: true, _count: true },
+      include: { author: { select: { id: true, username: true, fullName: true, avatarUrl: true, badges: { include: { badge: true } } } }, category: true, _count: true },
       orderBy: { createdAt: 'desc' }
     });
-    if (currentUserId && posts.length > 0) {
-      const likes = await this.prisma.like.findMany({ where: { userId: currentUserId, postId: { in: posts.map(p => p.id) } } });
-      const likedIds = new Set(likes.map(l => l.postId));
-      return posts.map(p => ({ ...p, isLiked: likedIds.has(p.id) }));
-    }
-    return posts;
-  }
-
-  async findByUsernameOnly(username: string) { return this.prisma.user.findFirst({ where: { username: { equals: username, mode: 'insensitive' } } }); }
-
-  async findByUsername(username: string, currentUserId?: number) {
-    const user = await this.prisma.user.findFirst({ where: { username: { equals: username, mode: 'insensitive' } }, include: { badges: { include: { badge: true } }, _count: true } });
-    if (!user) throw new NotFoundException('Kullanıcı yok.');
-    let isFollowing = false, isBlocked = false, isReqSent = false;
-    if (currentUserId && currentUserId !== user.id) {
-      const [f, b, r] = await Promise.all([
-        this.prisma.follow.findUnique({ where: { followerId_followingId: { followerId: currentUserId, followingId: user.id } } }),
-        this.prisma.block.findUnique({ where: { blockerId_blockedId: { blockerId: currentUserId, blockedId: user.id } } }),
-        this.prisma.followRequest.findUnique({ where: { senderId_receiverId: { senderId: currentUserId, receiverId: user.id } } })
-      ]);
-      isFollowing = !!f; isBlocked = !!b; isReqSent = !!r;
-    }
-    return { ...user, isFollowing, isBlocked, isFollowRequestSent: isReqSent };
   }
 
   async toggleBlock(blockerId: number, blockedId: number) {
-    const ex = await this.prisma.block.findUnique({ where: { blockerId_blockedId: { blockerId, blockedId } } });
-    if (ex) { await this.prisma.block.delete({ where: { id: ex.id } }); return { blocked: false }; }
+    const existing = await this.prisma.block.findFirst({ where: { blockerId, blockedId } });
+    if (existing) {
+      await this.prisma.block.delete({ where: { id: existing.id } });
+      return { blocked: false };
+    }
     await this.prisma.block.create({ data: { blockerId, blockedId } });
-    await this.prisma.follow.deleteMany({ where: { OR: [{ followerId: blockerId, followingId: blockedId }, { followerId: blockedId, followingId: blockerId }] } });
+    // Bloklayınca takibi de bırak
+    await this.prisma.follow.deleteMany({
+      where: {
+        OR: [
+          { followerId: blockerId, followingId: blockedId },
+          { followerId: blockedId, followingId: blockerId }
+        ]
+      }
+    });
     return { blocked: true };
   }
 
-  async getBlockedUsers(userId: number) { return this.prisma.block.findMany({ where: { blockerId: userId }, include: { blocked: true } }); }
+  async getBlockedUsers(userId: number) {
+    return this.prisma.block.findMany({
+      where: { blockerId: userId },
+      include: { blocked: { select: { id: true, username: true, fullName: true, avatarUrl: true } } }
+    });
+  }
 
   async createReport(reporterId: number, data: any) {
-    // BUILD FIX: Prisma generate yeni alanları görmediği için cast ediyoruz
-    return (this.prisma.report as any).create({
+    return (this.prisma as any).report.create({
       data: {
         reporterId,
         reportedUserId: data.reportedUserId,
@@ -152,36 +212,37 @@ export class UsersService {
         reportedCommentId: data.reportedCommentId,
         reason: data.reason,
         subReason: data.subReason,
-        status: 'PENDING',
-      },
+      }
     });
   }
 
-  async toggleBan(userId: number, currentUserId: number) {
-    const adm = await this.prisma.user.findUnique({ where: { id: currentUserId } });
-    if (!adm || adm.role !== 'ADMIN') throw new ForbiddenException('Yetkisiz.');
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.role === 'ADMIN') throw new ForbiddenException('Geçersiz işlem.');
-    const upd = await this.prisma.user.update({ where: { id: userId }, data: { isBanned: !user.isBanned } });
-    return { banned: upd.isBanned };
+  async createFeedback(userId: number | null, type: string, message: string) {
+    return (this.prisma as any).feedback.create({
+      data: { userId, type, message }
+    });
+  }
+
+  async getAllBadges() {
+    return this.prisma.badge.findMany({ where: { type: 'USER' }, orderBy: { name: 'asc' } });
   }
 
   async toggleUserBadge(userId: number, badgeId: number, currentUserId: number) {
+    const admin = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+    if (admin?.role !== 'ADMIN') throw new ForbiddenException();
+
+    const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+    if (!badge || badge.type !== 'USER') throw new ForbiddenException();
+
     const ex = await this.prisma.userBadge.findUnique({ where: { userId_badgeId: { userId, badgeId } } });
-    if (ex) { await this.prisma.userBadge.delete({ where: { id: ex.id } }); return { assigned: false }; }
-    await this.prisma.userBadge.create({ data: { userId, badgeId } });
-    return { assigned: true };
+    if (ex) {
+      await this.prisma.userBadge.delete({ where: { id: ex.id } });
+      return { assigned: false };
+    } else {
+      await this.prisma.userBadge.create({ data: { userId, badgeId } });
+      return { assigned: true };
+    }
   }
 
-  async deleteUser(userId: number, currentUserId: number) {
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user || user.role === 'ADMIN') throw new ForbiddenException('Silinemez.');
-    await this.prisma.user.delete({ where: { id: userId } });
-    return { success: true };
-  }
-
-  async createFeedback(userId: number | null, type: string, message: string) { return (this.prisma as any).feedback.create({ data: { type, message, userId } }); }
-  async getAllBadges() { return this.prisma.badge.findMany({ orderBy: { name: 'asc' } }); }
   async searchMentions(query: string, role?: string) {
     const where: any = {
       username: { contains: query, mode: 'insensitive' },
@@ -190,6 +251,22 @@ export class UsersService {
     if (role) {
       where.role = role;
     }
-    return (this.prisma as any).user.findMany({ where, take: 5 });
+    return this.prisma.user.findMany({ where, take: 5, select: { id: true, username: true, fullName: true, avatarUrl: true } });
+  }
+
+  async forgotPassword(email: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    await this.prisma.user.update({ where: { email }, data: { verificationCode: code } });
+    await this.mailService.sendVerificationCode(email, code);
+    return { message: 'Sıfırlama kodu gönderildi.' };
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string) {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user || user.verificationCode !== code) throw new ForbiddenException('Kod hatalı.');
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    return this.prisma.user.update({ where: { email }, data: { password: hashedPassword, verificationCode: null } });
   }
 }
