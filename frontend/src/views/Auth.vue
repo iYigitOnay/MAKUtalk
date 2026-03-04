@@ -90,9 +90,35 @@
               <button type="button" @click="showForgotModal = false" class="text-slate-400 text-sm hover:underline font-bold block w-full">Geri Dön</button>
             </form>
             <form v-else @submit.prevent="handleResetPassword" class="space-y-4">
-              <input v-model="forgotForm.code" type="text" maxlength="6" placeholder="Kod" class="w-full text-center text-2xl tracking-[8px] font-mono py-3 rounded-xl bg-slate-50 dark:bg-[#1a1f2e] border border-slate-200 dark:border-white/[0.07] text-slate-900 dark:text-white outline-none" />
+              <input v-model="forgotForm.code" type="text" maxlength="6" placeholder="Doğrulama Kodu" class="w-full text-center text-2xl tracking-[8px] font-mono py-3 rounded-xl bg-slate-50 dark:bg-[#1a1f2e] border border-slate-200 dark:border-white/[0.07] text-slate-900 dark:text-white outline-none" />
               <input v-model="forgotForm.newPassword" type="password" placeholder="Yeni Şifre" class="auth-input" />
-              <button type="submit" :disabled="forgotLoading" class="auth-btn">Şifreyi Güncelle</button>
+              <input v-model="forgotForm.confirmPassword" type="password" placeholder="Yeni Şifre (Tekrar)" class="auth-input" />
+              
+              <!-- Şifre Gereksinimleri (Sıfırlama İçin) -->
+              <div class="grid grid-cols-2 gap-x-2 gap-y-1.5 px-1 pt-2 border-t border-slate-50 dark:border-white/5">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-1.2 h-1.2 rounded-full transition-colors" :class="resetPassChecks.length ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="resetPassChecks.length ? 'text-emerald-500' : 'text-gray-400'">8+ Karakter</span>
+                </div>
+                <div class="flex items-center justify-end gap-1.5">
+                  <div class="w-1.2 h-1.2 rounded-full transition-colors" :class="resetPassChecks.upper ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="resetPassChecks.upper ? 'text-emerald-500' : 'text-gray-400'">Büyük Harf</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <div class="w-1.2 h-1.2 rounded-full transition-colors" :class="resetPassChecks.special ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="resetPassChecks.special ? 'text-emerald-500' : 'text-gray-400'">Özel/Rakam</span>
+                </div>
+                <div class="flex items-center justify-end gap-1.5">
+                  <div class="w-1.2 h-1.2 rounded-full transition-colors" :class="resetPassChecks.match ? 'bg-emerald-500' : 'bg-red-400/50'"></div>
+                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="resetPassChecks.match ? 'text-emerald-500' : 'text-red-400'">Şifreler Aynı</span>
+                </div>
+                <div class="flex items-center justify-center gap-1.5 col-span-2 mt-0.5 w-full">
+                  <div class="w-1.2 h-1.2 rounded-full transition-colors" :class="resetPassChecks.noUsername ? 'bg-emerald-500' : 'bg-red-400/50'"></div>
+                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="resetPassChecks.noUsername ? 'text-emerald-500' : 'text-red-400'">Kullanıcı Adı İçeremez</span>
+                </div>
+              </div>
+
+              <button type="submit" :disabled="forgotLoading || !isResetValid" class="auth-btn">Şifreyi Güncelle</button>
               <button type="button" @click="forgotStep = 1" class="text-slate-400 text-sm hover:underline font-bold block w-full">E-posta Değiştir</button>
             </form>
           </div>
@@ -104,8 +130,15 @@
           :class="[ activeTab === 'login' ? 'md:opacity-0 md:invisible md:translate-y-4 hidden md:flex' : 'opacity-100 visible translate-y-0 flex' ]"
         >
           <div class="w-full max-w-[340px] pb-24 md:pb-0">
-            <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 text-center">Aramıza Katıl</h2>
+            <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 text-center italic tracking-tighter uppercase">Aramıza Katıl</h2>
+            
             <form @submit.prevent="handleRegister" class="space-y-4">
+              <!-- Account Type Toggle -->
+              <div class="flex p-1 bg-slate-100 dark:bg-[#1a1f2e] rounded-2xl border border-slate-200/50 dark:border-white/[0.05] mb-2">
+                <button type="button" @click="registerType = 'student'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="registerType === 'student' ? 'bg-white dark:bg-[#252b3d] text-blue-600 shadow-sm' : 'text-slate-400'">Öğrenci</button>
+                <button type="button" @click="registerType = 'academic'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="registerType === 'academic' ? 'bg-white dark:bg-[#252b3d] text-emerald-600 shadow-sm' : 'text-slate-400'">Akademisyen</button>
+              </div>
+
               <input v-model="registerForm.fullName" type="text" placeholder="Ad Soyad" class="auth-input" />
               
               <div>
@@ -114,7 +147,12 @@
               </div>
 
               <div>
-                <input v-model="registerForm.email" type="email" placeholder="Kurumsal E-posta" class="auth-input" />
+                <div class="relative flex items-center group">
+                  <input v-model="emailPrefix" type="text" placeholder="MAKÜ E-Posta Adresi" class="auth-input pr-32 md:pr-32" />
+                  <span class="absolute right-4 text-[9px] font-black text-slate-400 uppercase tracking-tighter pointer-events-none select-none">
+                    {{ registerType === 'student' ? '@ogr.mehmetakif.edu.tr' : '@mehmetakif.edu.tr' }}
+                  </span>
+                </div>
                 <p v-if="emailError" class="text-[9px] font-black text-red-500 mt-1 uppercase px-1">{{ emailError }}</p>
               </div>
 
@@ -126,13 +164,13 @@
                 </button>
               </div>
 
-              <!-- Şifre Gereksinimleri -->
-              <div class="grid grid-cols-2 gap-2 px-1 pb-2">
+              <!-- Şifre Gereksinimleri (Kayıt İçin) -->
+              <div class="grid grid-cols-2 gap-x-2 gap-y-1.5 px-1 pb-2">
                 <div class="flex items-center gap-1.5">
                   <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.length ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
                   <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.length ? 'text-emerald-500' : 'text-gray-400'">8+ Karakter</span>
                 </div>
-                <div class="flex items-center gap-1.5">
+                <div class="flex items-center justify-end gap-1.5">
                   <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.upper ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
                   <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.upper ? 'text-emerald-500' : 'text-gray-400'">Büyük Harf</span>
                 </div>
@@ -140,9 +178,9 @@
                   <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.special ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
                   <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.special ? 'text-emerald-500' : 'text-gray-400'">Özel/Rakam</span>
                 </div>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.lower ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
-                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.lower ? 'text-emerald-500' : 'text-gray-400'">Küçük Harf</span>
+                <div class="flex items-center justify-end gap-1.5">
+                  <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.noUsername ? 'bg-emerald-500' : 'bg-red-400/50'"></div>
+                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.noUsername ? 'text-emerald-500' : 'text-red-400'">Kullanıcı Adı İçeremez</span>
                 </div>
               </div>
 
@@ -158,7 +196,7 @@
           :class="[ activeTab === 'register' ? 'md:opacity-0 md:invisible md:translate-y-4 hidden md:flex' : 'opacity-100 visible translate-y-0 flex' ]"
         >
           <div class="w-full max-w-[340px] pb-24 md:pb-0">
-            <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 text-center">Tekrar Hoş Geldin</h2>
+            <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 text-center italic tracking-tighter uppercase">Tekrar Hoş Geldin</h2>
             <form @submit.prevent="handleLogin" class="space-y-4">
               <div class="relative flex items-center">
                 <input v-model="loginForm.email" type="text" placeholder="Öğrenci No veya E-posta" class="auth-input pr-32 md:pr-32 shadow-inner" />
@@ -203,7 +241,7 @@
 </style>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "vue-toastification";
@@ -225,10 +263,38 @@ const verificationCode = ref("");
 const showForgotModal = ref(false);
 const forgotStep = ref(1);
 const forgotLoading = ref(false);
-const forgotForm = ref({ email: "", code: "", newPassword: "" });
+const forgotForm = ref({ email: "", code: "", newPassword: "", confirmPassword: "" });
+
+const resetPassChecks = computed(() => {
+  const p = forgotForm.value.newPassword;
+  const email = forgotForm.value.email;
+  const usernameGuess = email.split('@')[0]; // E-posta ön ekini kullanıcı adı varsay
+  
+  return {
+    length: p.length >= 8,
+    upper: /[A-Z]/.test(p),
+    special: /((?=.*\d)|(?=.*\W+))/.test(p),
+    match: p && p === forgotForm.value.confirmPassword,
+    noUsername: usernameGuess ? !p.toLowerCase().includes(usernameGuess.toLowerCase()) : true
+  };
+});
+
+const isResetValid = computed(() => {
+  const c = resetPassChecks.value;
+  return c.length && c.upper && c.special && c.match && c.noUsername && forgotForm.value.code.length === 6;
+});
 
 const loginForm = ref({ email: "", password: "" });
 const registerForm = ref({ fullName: "", username: "", email: "", password: "" });
+
+// KAYIT İÇİN AKILLI EMAİL
+const registerType = ref<'student' | 'academic'>('student');
+const emailPrefix = ref("");
+
+watch([emailPrefix, registerType], () => {
+  const suffix = registerType.value === 'student' ? '@ogr.mehmetakif.edu.tr' : '@mehmetakif.edu.tr';
+  registerForm.value.email = emailPrefix.value.trim() ? `${emailPrefix.value.trim()}${suffix}` : "";
+});
 
 const isUsernameTaken = ref(false);
 let usernameCheckTimeout: any = null;
@@ -253,9 +319,9 @@ const checkUsername = async () => {
 
 // VALIDASYONLAR
 const emailError = computed(() => {
-  if (!registerForm.value.email) return null;
-  const regex = /^[a-zA-Z0-9._%+-]+@(ogr\.)?mehmetakif\.edu\.tr$/;
-  return regex.test(registerForm.value.email) ? null : "Sadece kurumsal MAKÜ e-postası!";
+  if (!emailPrefix.value) return null;
+  if (emailPrefix.value.includes('@')) return "Sadece mailin kullanıcı kısmını yazın.";
+  return null;
 });
 
 const usernameError = computed(() => {
@@ -272,6 +338,7 @@ const passChecks = computed(() => ({
   upper: /[A-Z]/.test(registerForm.value.password),
   lower: /[a-z]/.test(registerForm.value.password),
   special: /((?=.*\d)|(?=.*\W+))/.test(registerForm.value.password),
+  noUsername: registerForm.value.username ? !registerForm.value.password.toLowerCase().includes(registerForm.value.username.toLowerCase()) : true,
 }));
 
 const passwordError = computed(() => {
@@ -279,14 +346,10 @@ const passwordError = computed(() => {
   if (!p) return null;
   
   const c = passChecks.value;
-  if (!c.length || !c.upper || !c.lower || !c.special) return "Zayıf şifre.";
+  if (!c.length || !c.upper || !c.lower || !c.special || !c.noUsername) return "Zayıf şifre.";
 
   const blacklisted = ['123456', '12345678', 'password', 'parola', 'sifre123', 'makutalk', 'mehmetakif', 'maku123'];
   if (blacklisted.some(b => p.toLowerCase().includes(b))) return "Bu şifre çok yaygın!";
-
-  if (registerForm.value.username && p.toLowerCase().includes(registerForm.value.username.toLowerCase())) {
-    return "Şifre kullanıcı adını içeremez!";
-  }
 
   return null;
 });
