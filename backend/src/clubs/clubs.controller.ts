@@ -1,83 +1,84 @@
-import { Controller, Get, Param, Post, Body, UseGuards, Query, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Request, UseGuards, Delete, Query } from '@nestjs/common';
 import { ClubsService } from './clubs.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('clubs')
 export class ClubsController {
   constructor(private readonly clubsService: ClubsService) {}
 
-  @Get()
-  findAll(@Query('currentUserId') currentUserId?: string) {
-    return this.clubsService.findAll(currentUserId ? +currentUserId : undefined);
+  @Get('all')
+  findAll(@Request() req) {
+    return this.clubsService.findAll(req.user?.id);
   }
 
-  // Bekleyen başvurular (Admin ve Akademisyen için)
+  @Get('my-founded')
+  @UseGuards(JwtAuthGuard)
+  findMyFounded(@Request() req) {
+    return this.clubsService.findMyFounded(req.user.id);
+  }
+
   @Get('pending')
   @UseGuards(JwtAuthGuard)
-  getPending(@CurrentUser() user: any) {
-    if (user.role === 'ADMIN') {
-      return this.clubsService.getPendingProposalsForAdmin();
-    } else if (user.role === 'ACADEMIC') {
-      return this.clubsService.getProposalsForAcademic(user.email);
-    }
-    return [];
+  getPending(@Request() req) {
+    return this.clubsService.getPendingProposalsForAdmin();
   }
 
-  @Get(':slug')
-  findOne(@Param('slug') slug: string, @Query('currentUserId') currentUserId?: string) {
-    return this.clubsService.findOne(slug, currentUserId ? +currentUserId : undefined);
-  }
-
-  @Post()
+  @Get('academic-proposals')
   @UseGuards(JwtAuthGuard)
-  create(@CurrentUser() user: any, @Body() data: any) {
-    return this.clubsService.createProposal(user.id, data);
+  getAcademicProposals(@Request() req) {
+    return this.clubsService.getProposalsForAcademic(req.user.email);
   }
 
-  // Akademisyen Onayı
-  @Post(':id/approve-academic')
+  @Post('approve-academic/:id')
   @UseGuards(JwtAuthGuard)
-  approveAcademic(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.clubsService.approveByAcademic(user.id, +id);
+  approveAcademic(@Request() req, @Param('id') id: string) {
+    return this.clubsService.approveByAcademic(req.user.id, parseInt(id));
   }
 
-  // Admin Onayı
-  @Post(':id/approve-admin')
+  @Post('approve-admin/:id')
   @UseGuards(JwtAuthGuard)
-  approveAdmin(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.clubsService.approveByAdmin(user.id, +id);
+  approveAdmin(@Request() req, @Param('id') id: string) {
+    return this.clubsService.approveByAdmin(req.user.id, parseInt(id));
   }
 
-  // Başvuru Reddet
-  @Post(':id/reject')
+  @Post('reject/:id')
   @UseGuards(JwtAuthGuard)
-  reject(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.clubsService.rejectProposal(user.id, +id);
+  reject(@Request() req, @Param('id') id: string) {
+    return this.clubsService.rejectProposal(req.user.id, parseInt(id));
   }
 
-  @Post(':id/toggle-join')
+  @Post('propose')
   @UseGuards(JwtAuthGuard)
-  toggleJoin(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.clubsService.toggleJoin(user.id, +id);
+  propose(@Request() req, @Body() data: any) {
+    return this.clubsService.createProposal(req.user.id, data);
   }
 
-  // ROZET İŞLEMLERİ
-  @Get('badges/all')
-  getAllBadges() {
+  @Post('assign-badge')
+  @UseGuards(JwtAuthGuard)
+  assignBadge(@Request() req, @Body() data: { clubId: number, badgeId: number }) {
+    return this.clubsService.assignBadge(req.user.id, data.clubId, data.badgeId);
+  }
+
+  @Get('badges')
+  getBadges() {
     return this.clubsService.getAllBadges();
   }
 
-  @Post(':id/badges')
+  @Post('toggle-join/:id')
   @UseGuards(JwtAuthGuard)
-  assignBadge(@CurrentUser() user: any, @Param('id') id: string, @Body('badgeId') badgeId: number) {
-    return this.clubsService.assignBadge(user.id, +id, badgeId);
+  toggleJoin(@Request() req, @Param('id') id: string) {
+    return this.clubsService.toggleJoin(req.user.id, parseInt(id));
+  }
+
+  @Get('detail/:slug')
+  findOne(@Param('slug') slug: string, @Request() req) {
+    return this.clubsService.findOne(slug, req.user?.id);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  remove(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.clubsService.remove(user.id, +id);
+  remove(@Request() req, @Param('id') id: string) {
+    return this.clubsService.remove(req.user.id, parseInt(id));
   }
 
   @Post('seed')

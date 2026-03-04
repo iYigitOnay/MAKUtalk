@@ -28,6 +28,12 @@ export class ClubsService {
     return clubs.map((club: any) => ({ ...club, memberCount: club._count.members, earnedBadges: club.badges.map((b: any) => b.badge) }));
   }
 
+  async findMyFounded(userId: number) {
+    return (this.prisma as any).club.findMany({
+      where: { founderId: userId, status: 'APPROVED' }
+    });
+  }
+
   async getPendingProposalsForAdmin() {
     return (this.prisma as any).club.findMany({
       where: { status: 'PENDING' },
