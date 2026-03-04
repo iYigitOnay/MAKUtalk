@@ -42,7 +42,7 @@
             v-model="newPostContent" 
             @input="handleInput" 
             placeholder="Ne Düşünüyorsun?" 
-            class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium min-h-[100px] overflow-hidden" 
+            class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium min-h-[100px] overflow-hidden pt-2.5" 
             :disabled="postsStore.loading" 
           />
           
