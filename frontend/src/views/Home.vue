@@ -71,27 +71,30 @@
           </div>
 
           <!-- POST KATEGORİ ÇARKI (Sadece yazı veya resim varken çıkar) -->
-          <div v-if="newPostContent.trim() || selectedImage" class="relative mt-2 h-24 flex items-center justify-center overflow-hidden -ml-16">
-            <div ref="composerCategoryRef" class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth" @scroll="handleComposerScroll">
-              <div v-for="(item, index) in allItems" :key="index" class="flex-shrink-0 snap-center composer-item">
-                <button @click="selectedCategoryId = item.id; centerComposerItem(index)" class="flex flex-col items-center gap-1.5 group outline-none">
-                  <div :class="['w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border-2', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'text-white scale-110' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-primary-900/10 text-gray-400 scale-90']" :style="((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? { backgroundColor: item.color || '#4f46e5', borderColor: 'rgba(255,255,255,0.2)' } : {}">
-                    <svg v-if="item.id === null" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
-                    <span v-else class="w-2 h-2 rounded-full" :style="{ backgroundColor: selectedCategoryId === item.id ? 'white' : item.color }"></span>
-                  </div>
-                  <span :class="['text-[9px] font-black tracking-tighter uppercase transition-all duration-300', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'opacity-100' : 'text-gray-400 opacity-70']" :style="selectedCategoryId === item.id ? { color: item.color } : {}">{{ item.name }}</span>
-                </button>
+          <transition name="fade">
+            <div v-if="newPostContent.trim() || selectedImage" class="relative mt-2 h-24 flex items-center justify-center overflow-hidden -ml-16">
+              <div ref="composerCategoryRef" class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth" @scroll="handleComposerScroll">
+                <div v-for="(item, index) in allItems" :key="index" class="flex-shrink-0 snap-center composer-item">
+                  <button @click="selectedCategoryId = item.id; centerComposerItem(index)" class="flex flex-col items-center gap-1.5 group outline-none">
+                    <div :class="['w-10 h-10 rounded-2xl flex items-center justify-center transition-all duration-300 shadow-xl border-2', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'text-white scale-110' : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-primary-900/10 text-gray-400 scale-90']" :style="((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? { backgroundColor: item.color || '#4f46e5', borderColor: 'rgba(255,255,255,0.2)' } : {}">
+                      <svg v-if="item.id === null" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+                      <span v-else class="w-2 h-2 rounded-full" :style="{ backgroundColor: selectedCategoryId === item.id ? 'white' : item.color }"></span>
+                    </div>
+                    <span :class="['text-[9px] font-black tracking-tighter uppercase transition-all duration-300', ((item.id === null && !selectedCategoryId) || selectedCategoryId === item.id) ? 'opacity-100' : 'text-gray-400 opacity-70']" :style="selectedCategoryId === item.id ? { color: item.color } : {}">{{ item.name }}</span>
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
+          </transition>
 
-          <div v-if="newPostContent.trim() || selectedImage" class="mt-2 flex items-center justify-between border-t border-gray-50 dark:border-primary-900/5 pt-4">
+          <!-- Alt Bar: Fotoğraf, Emoji ve Paylaş Butonu (Her zaman görünür) -->
+          <div class="mt-2 flex items-center justify-between border-t border-gray-50 dark:border-primary-900/5 pt-4">
             <div class="flex items-center gap-2">
               <input type="file" ref="imageInputRef" class="hidden" accept="image/*" @change="handleImageSelect" />
               <button @click="imageInputRef?.click()" class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></button>
               <EmojiPicker :modelValue="newPostContent" @update:modelValue="(e) => (newPostContent += e)" />
             </div>
-            <button @click="handleCreatePost" :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading" class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg active:scale-95 disabled:opacity-50">PAYLAŞ</button>
+            <button @click="handleCreatePost" :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading" class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg active:scale-95 disabled:opacity-50 transition-all">PAYLAŞ</button>
           </div>
         </div>
       </div>
