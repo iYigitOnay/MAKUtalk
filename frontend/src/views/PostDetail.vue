@@ -166,24 +166,35 @@ const getCursorXY = (el: HTMLTextAreaElement, cursorIndex: number) => {
     "fontFamily",
     "fontSize",
     "fontWeight",
-    "padding",
-    "boxSizing",
     "lineHeight",
+    "padding",
+    "border",
     "width",
-    "wordBreak",
-    "whiteSpace"
+    "boxSizing",
+    "whiteSpace",
+    "wordBreak"
   ];
   copyStyle.forEach((prop) => {
     (mirror.style as any)[prop] = (style as any)[prop];
   });
   mirror.style.position = "absolute";
   mirror.style.visibility = "hidden";
+  mirror.style.top = "0";
+  mirror.style.left = "0";
   mirror.textContent = el.value.substring(0, cursorIndex);
+  
+  const span = document.createElement("span");
+  span.textContent = el.value.substring(cursorIndex) || ".";
+  mirror.appendChild(span);
+  
   document.body.appendChild(mirror);
-  const x = mirror.clientWidth;
-  const y = mirror.clientHeight;
+  const { offsetLeft: x, offsetTop: y } = span;
   document.body.removeChild(mirror);
-  return { x: Math.min(x + 20, el.clientWidth - 240), y: Math.min(y + 20, 100) };
+  
+  return { 
+    x: Math.min(x, el.clientWidth - 250), 
+    y: Math.min(y + 25, el.clientHeight + 40) 
+  };
 };
 
 const handleInput = async (e: any) => {

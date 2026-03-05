@@ -57,8 +57,8 @@
           :class="chatStore.activeConversation?.id === conv.id ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-500/20 shadow-sm' : 'hover:bg-slate-50 dark:hover:bg-white/5'"
         >
           <div class="relative flex-shrink-0 w-12 h-12">
-            <img v-if="conv.otherParticipant?.avatarUrl" :src="conv.otherParticipant.avatarUrl" class="w-full h-full rounded-xl object-cover shadow-sm" />
-            <div v-else class="w-full h-full rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">{{ conv.otherParticipant?.username?.charAt(0).toUpperCase() }}</div>
+            <img v-if="conv.otherParticipant?.avatarUrl" :src="getImageUrl(conv.otherParticipant.avatarUrl)" class="w-full h-full rounded-full object-cover shadow-sm" />
+            <div v-else class="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">{{ conv.otherParticipant?.username?.charAt(0).toUpperCase() }}</div>
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate tracking-tight">{{ conv.otherParticipant?.fullName || conv.otherParticipant?.username }}</h3>
@@ -84,11 +84,10 @@
             </button>
             <div class="flex items-center gap-4">
               <div class="relative">
-                <img v-if="otherUser?.avatarUrl" :src="otherUser.avatarUrl" class="w-11 h-11 rounded-2xl object-cover shadow-sm border border-slate-100 dark:border-white/5" />
-                <div v-else class="w-11 h-11 rounded-2xl bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg">{{ otherUser?.username?.charAt(0).toUpperCase() }}</div>
+                <img v-if="otherUser?.avatarUrl" :src="getImageUrl(otherUser.avatarUrl)" class="w-11 h-11 rounded-full object-cover shadow-sm border border-slate-100 dark:border-white/5" />
+                <div v-else class="w-11 h-11 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg">{{ otherUser?.username?.charAt(0).toUpperCase() }}</div>
                 <div v-if="chatStore.activeConversation.canChat" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-[#0b0f19] rounded-full shadow-sm"></div>
-              </div>
-              <div class="text-left">
+              </div>              <div class="text-left">
                 <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">{{ otherUser?.fullName || otherUser?.username }}</h3>
                 <transition name="fade">
                   <p v-if="chatStore.typingUsers[chatStore.activeConversation.id]" class="text-[11px] font-bold text-indigo-500 dark:text-indigo-400 flex items-center gap-1.5 mt-0.5 animate-pulse">yazıyor...</p>
@@ -262,6 +261,14 @@ const selectedReportCategory = ref("");
 const reportLoading = ref(false);
 const messagesContainer = ref<HTMLElement | null>(null);
 const secretKey = "fcb49253e8a693454e8d2309c1cdbdff5ccc1405ffbb5c48e93820d03f9628dc08b8e68b15c35f2186b6202008aac2f4417f025788fbc36772c2a0cfa7570cac";
+
+const getImageUrl = (path: string | undefined) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
+  return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
 const themes = [{ name: 'Varsayılan', color: '#4f46e5' }, { name: 'Kırmızı', color: '#e11d48' }, { name: 'Mavi', color: '#2563eb' }, { name: 'Sarı', color: '#eab308' }, { name: 'Yeşil', color: '#16a34a' }, { name: 'Mor', color: '#9333ea' }];
 const currentThemeColor = ref('#4f46e5');

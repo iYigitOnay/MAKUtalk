@@ -231,7 +231,7 @@
           >
             <img
               v-if="authStore.user?.avatarUrl"
-              :src="authStore.user.avatarUrl"
+              :src="getImageUrl(authStore.user.avatarUrl)"
               class="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-950"
             />
             <div
@@ -362,6 +362,15 @@ const handleNavClick = async (item: any) => {
   } else {
     router.push(item.path);
   }
+};
+
+// HELPERS
+const getImageUrl = (path: string | undefined) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
+  return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
 const goToProfile = () => {

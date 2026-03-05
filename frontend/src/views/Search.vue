@@ -287,7 +287,7 @@
               <div class="flex items-center gap-3">
                 <img
                   v-if="user.avatarUrl"
-                  :src="user.avatarUrl"
+                  :src="getImageUrl(user.avatarUrl)"
                   :alt="user.username"
                   class="w-12 h-12 rounded-full object-cover"
                 />
@@ -395,6 +395,14 @@ import type { Post, User } from "@/types";
 const route = useRoute();
 const authStore = useAuthStore();
 const toast = useToast();
+
+const getImageUrl = (path: string | undefined) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
+  return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
 const searchQuery = ref("");
 const activeTab = ref<"all" | "users" | "posts">("all");

@@ -45,7 +45,7 @@
       >
         <img
           v-if="displayPost.author.avatarUrl"
-          :src="displayPost.author.avatarUrl"
+          :src="getImageUrl(displayPost.author.avatarUrl)"
           :alt="displayPost.author.username"
           class="w-12 h-12 rounded-full object-cover shadow-sm"
         />

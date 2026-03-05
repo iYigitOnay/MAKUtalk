@@ -11,11 +11,14 @@ import {
   Patch,
   UseGuards,
   Delete,
+  UseInterceptors,
+  UploadedFiles,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 
 @Controller('users')
 export class UsersController {
@@ -59,12 +62,23 @@ export class UsersController {
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'avatar', maxCount: 1 },
+      { name: 'cover', maxCount: 1 },
+    ]),
+  )
   async updateProfile(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() user,
     @Body() updateUserDto: UpdateUserDto,
+    @UploadedFiles()
+    files?: {
+      avatar?: Express.Multer.File[];
+      cover?: Express.Multer.File[];
+    },
   ) {
-    return this.usersService.updateProfile(id, user.id, updateUserDto);
+    return this.usersService.updateProfile(id, user.id, updateUserDto, files);
   }
 
   @Get(':id/posts')

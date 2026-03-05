@@ -351,6 +351,18 @@ export class PostsService {
       throw new ForbiddenException('Bu postu silme yetkiniz yok.');
     }
 
+    // GÖRSELİ SİL
+    if (post.imageUrl) {
+      const filePath = path.join(process.cwd(), post.imageUrl);
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.unlinkSync(filePath);
+        } catch (error) {
+          this.logger.error(`Görsel silme hatası: ${error.message}`);
+        }
+      }
+    }
+
     await this.prisma.post.delete({ where: { id } });
     return { message: 'Post başarıyla silindi.' };
   }

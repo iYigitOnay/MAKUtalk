@@ -10,7 +10,7 @@
       >
         <img
           v-if="authStore.user?.avatarUrl"
-          :src="authStore.user.avatarUrl"
+          :src="getImageUrl(authStore.user.avatarUrl)"
           class="w-full h-full object-cover"
         />
         <div v-else class="w-full h-full bg-blue-600 flex items-center justify-center text-white text-xs font-black">
@@ -63,7 +63,7 @@
           
           <div class="flex items-center gap-4">
             <div class="p-0.5 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500">
-              <img v-if="authStore.user?.avatarUrl" :src="authStore.user.avatarUrl" class="w-14 h-14 rounded-full object-cover border-2 border-white dark:border-gray-950" />
+              <img v-if="authStore.user?.avatarUrl" :src="getImageUrl(authStore.user.avatarUrl)" class="w-14 h-14 rounded-full object-cover border-2 border-white dark:border-gray-950" />
               <div v-else class="w-14 h-14 rounded-full bg-blue-600 border-2 border-white dark:border-gray-950 flex items-center justify-center text-white font-black text-2xl">
                 {{ authStore.user?.username?.charAt(0).toUpperCase() }}
               </div>
@@ -144,6 +144,15 @@ const router = useRouter();
 const toast = useToast();
 
 const showMobileMenu = ref(false);
+
+// HELPERS
+const getImageUrl = (path: string | undefined) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
+  return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
 const handleNav = (path: string) => {
   showMobileMenu.value = false;

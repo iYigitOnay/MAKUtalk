@@ -136,16 +136,98 @@ export class UsersService {
     });
   }
 
-  async updateProfile(userId: number, currentUserId: number, data: any) {
+  async updateProfile(
+    userId: number,
+    currentUserId: number,
+    data: any,
+    files?: {
+      avatar?: Express.Multer.File[];
+      cover?: Express.Multer.File[];
+    },
+  ) {
+    const fs = require('fs');
+    const path = require('path');
+    const sharp = require('sharp');
+
     if (userId !== currentUserId) {
-      const currentUser = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+      const currentUser = await this.prisma.user.findUnique({
+        where: { id: currentUserId },
+      });
       if (currentUser?.role !== 'ADMIN') throw new ForbiddenException();
     }
-    return this.prisma.user.update({
-      where: { id: userId },
-      data,
-      select: { id: true, username: true, fullName: true, bio: true, avatarUrl: true, coverUrl: true, isPrivate: true, role: true }
-    });
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
+
+    const updateData = { ...data };
+    const uploadedFiles: string[] = [];
+
+    try {
+      // AVATAR İŞLEME
+      if (files?.avatar?.[0]) {
+        const file = files.avatar[0];
+        const fileName = `avatar-${userId}-${Date.now()}.webp`;
+        const uploadPath = path.join(process.cwd(), 'uploads', 'avatars', fileName);
+        
+        await sharp(file.buffer)
+          .resize(400, 400, { fit: 'cover' })
+          .webp({ quality: 80 })
+          .toFile(uploadPath);
+        
+        updateData.avatarUrl = `/uploads/avatars/${fileName}`;
+        uploadedFiles.push(uploadPath);
+
+        // Eski dosyayı sil (Eğer bir URL değilse ve yerel bir yolsa)
+        if (user.avatarUrl && user.avatarUrl.startsWith('/uploads/avatars/')) {
+          const oldPath = path.join(process.cwd(), user.avatarUrl);
+          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+      }
+
+      // COVER İŞLEME
+      if (files?.cover?.[0]) {
+        const file = files.cover[0];
+        const fileName = `cover-${userId}-${Date.now()}.webp`;
+        const uploadPath = path.join(process.cwd(), 'uploads', 'covers', fileName);
+        
+        await sharp(file.buffer)
+          .resize(1200, 400, { fit: 'cover' })
+          .webp({ quality: 80 })
+          .toFile(uploadPath);
+        
+        updateData.coverUrl = `/uploads/covers/${fileName}`;
+        uploadedFiles.push(uploadPath);
+
+        // Eski dosyayı sil
+        if (user.coverUrl && user.coverUrl.startsWith('/uploads/covers/')) {
+          const oldPath = path.join(process.cwd(), user.coverUrl);
+          if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
+        }
+      }
+
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: {
+          id: true,
+          username: true,
+          fullName: true,
+          bio: true,
+          avatarUrl: true,
+          coverUrl: true,
+          isPrivate: true,
+          role: true,
+          department: true,
+          class: true,
+        },
+      });
+    } catch (error) {
+      // Hata durumunda yeni yüklenen dosyaları temizle
+      uploadedFiles.forEach((filePath) => {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      });
+      throw error;
+    }
   }
 
   async toggleBan(userId: number, currentUserId: number) {

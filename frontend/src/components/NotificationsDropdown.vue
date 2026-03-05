@@ -89,14 +89,22 @@
           ]"
         >
           <div class="flex items-start space-x-3">
-            <div
-              class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center flex-shrink-0"
-            >
-              <span
-                class="text-primary-700 dark:text-primary-400 font-semibold text-sm"
+            <div class="flex-shrink-0">
+              <img
+                v-if="notification.sender.avatarUrl"
+                :src="getImageUrl(notification.sender.avatarUrl)"
+                class="w-10 h-10 rounded-full object-cover shadow-sm"
+              />
+              <div
+                v-else
+                class="w-10 h-10 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center"
               >
-                {{ notification.sender.username.charAt(0).toUpperCase() }}
-              </span>
+                <span
+                  class="text-primary-700 dark:text-primary-400 font-semibold text-sm"
+                >
+                  {{ notification.sender.username.charAt(0).toUpperCase() }}
+                </span>
+              </div>
             </div>
             <div class="flex-1 min-w-0">
               <div class="flex items-center gap-2">
@@ -146,6 +154,15 @@ import type { Notification } from "@/stores/notifications";
 
 const notificationsStore = useNotificationsStore();
 const router = useRouter();
+
+const getImageUrl = (path: string | undefined) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
+  return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
 const isOpen = ref(false);
 
 let intervalId: NodeJS.Timeout;

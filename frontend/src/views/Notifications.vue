@@ -143,7 +143,7 @@
           >
             <img
               v-if="notification.sender?.avatarUrl"
-              :src="notification.sender.avatarUrl"
+              :src="getImageUrl(notification.sender.avatarUrl)"
               :alt="notification.sender.username"
               class="w-12 h-12 rounded-full object-cover flex-shrink-0"
             />
@@ -273,6 +273,14 @@ const notificationsStore = useNotificationsStore();
 const authStore = useAuthStore();
 const followStore = useFollowStore();
 const loading = ref(true);
+
+const getImageUrl = (path: string | undefined) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
+  return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+};
 
 const notifications = computed(() => notificationsStore.notifications);
 

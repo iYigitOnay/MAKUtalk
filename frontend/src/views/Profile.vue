@@ -17,12 +17,12 @@
       <!-- Profile Header -->
       <div class="relative">
         <div class="h-48 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-primary-700 dark:to-primary-800 rounded-t-xl overflow-hidden shadow-lg">
-          <img v-if="displayedUser.coverUrl" :src="displayedUser.coverUrl" alt="Cover" class="w-full h-full object-cover" />
+          <img v-if="displayedUser.coverUrl" :src="getImageUrl(displayedUser.coverUrl)" alt="Cover" class="w-full h-full object-cover" />
         </div>
         <button v-if="isMyProfile" @click="showEditModal = true" class="absolute top-4 right-4 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full text-sm font-bold backdrop-blur-sm transition-all hover:scale-105 active:scale-95">Profili Düzenle</button>
         <div class="absolute -bottom-16 left-6">
           <div class="p-1 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 shadow-xl">
-            <img v-if="displayedUser.avatarUrl" :src="displayedUser.avatarUrl" alt="Avatar" class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-950 object-cover" />
+            <img v-if="displayedUser.avatarUrl" :src="getImageUrl(displayedUser.avatarUrl)" alt="Avatar" class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-950 object-cover" />
             <div v-else class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-950 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
               <span class="text-white font-bold text-4xl">{{ userInitials }}</span>
             </div>
@@ -392,6 +392,14 @@ const handleToggleBadge = async (badgeId: number) => {
 };
 
 // HELPERS
+const getImageUrl = (path: string) => {
+  if (!path) return "";
+  if (path.startsWith("http")) return path;
+  const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
+  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
+  return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
 const getContrastColor = (hexcolor: string) => {
   if (!hexcolor || hexcolor === 'transparent') return 'white';
   const r = parseInt(hexcolor.slice(1, 3), 16);
@@ -427,7 +435,25 @@ const fetchProfile = async () => {
 };
 
 const handleFollowToggle = async () => { if (!authStore.user) return; followLoading.value = true; try { const result = await followStore.toggleFollow(displayedUser.value.id); if (result.status === "FOLLOWING") { displayedUser.value.isFollowing = true; displayedUser.value._count.followers++; } else { displayedUser.value.isFollowing = false; displayedUser.value._count.followers = Math.max(0, displayedUser.value._count.followers - 1); } toast.success(result.message); } catch { toast.error("İşlem başarısız."); } finally { followLoading.value = false; } };
-const handleSaveProfile = async (data: any) => { try { const { username, ...updateData } = data; const res = await apiClient.patch(`/users/${displayedUser.value.id}`, updateData, { params: { currentUserId: authStore.user?.id } }); displayedUser.value = { ...displayedUser.value, ...res.data }; if (authStore.user?.id === Number(displayedUser.value.id)) authStore.updateUser(res.data); showEditModal.value = false; toast.success("Profil güncellendi! ✨"); } catch { toast.error("Güncelleme başarısız."); } };
+const handleSaveProfile = async (data: any) => {
+  try {
+    const res = await apiClient.patch(
+      `/users/${displayedUser.value.id}`,
+      data,
+      {
+        params: { currentUserId: authStore.user?.id },
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+    displayedUser.value = { ...displayedUser.value, ...res.data };
+    if (authStore.user?.id === Number(displayedUser.value.id))
+      authStore.updateUser(res.data);
+    showEditModal.value = false;
+    toast.success("Profil güncellendi! ✨");
+  } catch {
+    toast.error("Güncelleme başarısız.");
+  }
+};
 const handleInteraction = (data: any) => { const { type, postId, status } = data; const update = (list: any[]) => { list.forEach(p => { const t = p.repostOf || p; if (t.id === postId) { if (type === 'like') { t.isLiked = status; t._count.likes += status ? 1 : -1; } if (type === 'repost') { t.isReposted = status; t._count.reposts += status ? 1 : -1; } } }); }; update(userPosts.value); update(reposts.value); update(likedPosts.value); };
 const handleDeletePost = async (postId: number) => { if (!confirm("Silmek istediğine emin misin?")) return; try { await postsStore.deletePost(postId); fetchProfile(); } catch {} };
 const handleShowComments = (id: number) => { selectedPostId.value = id; commentsModalOpen.value = true; };
