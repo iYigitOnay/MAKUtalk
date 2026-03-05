@@ -287,6 +287,24 @@
           </div>
         </div>
 
+        <!-- Category & Sentiment (Placed directly under the name row) -->
+        <div class="flex flex-wrap gap-1.5 mb-2">
+          <span
+            v-if="displayPost.category"
+            class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider text-white shadow-sm"
+            :style="{
+              backgroundColor: displayPost.category.color || '#3b82f6',
+            }"
+            >{{ displayPost.category.name }}</span
+          >
+          <span
+            v-if="displayPost.sentiment"
+            class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider shadow-sm transition-all hover:scale-105 border"
+            :class="getSentimentStyles(displayPost.sentiment).class"
+            >{{ translateSentiment(displayPost.sentiment) }}</span
+          >
+        </div>
+
         <!-- Global Overlay -->
         <div
           v-if="showMenu"
@@ -300,24 +318,6 @@
         >
           <HashtagText :text="displayPost.content || ''" />
         </p>
-
-        <!-- Category & Sentiment -->
-        <div class="flex flex-wrap gap-2 mb-3">
-          <span
-            v-if="displayPost.category"
-            class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider text-white shadow-sm"
-            :style="{
-              backgroundColor: displayPost.category.color || '#3b82f6',
-            }"
-            >{{ displayPost.category.name }}</span
-          >
-          <span
-            v-if="displayPost.sentiment"
-            class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider shadow-sm transition-all hover:scale-105 border"
-            :class="getSentimentStyles(displayPost.sentiment).class"
-            >{{ translateSentiment(displayPost.sentiment) }}</span
-          >
-        </div>
 
         <!-- Post Image -->
         <div

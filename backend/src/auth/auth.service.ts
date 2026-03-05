@@ -61,7 +61,6 @@ export class AuthService {
       throw new UnauthorizedException('E-posta veya parola hatalı.');
     }
 
-    // ÖZEL: Admin E-posta Kontrolü (Süper Yönetici)
     if (
       user.email === '2312101063@ogr.mehmetakif.edu.tr' &&
       user.role !== 'ADMIN'
