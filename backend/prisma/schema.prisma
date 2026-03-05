@@ -338,11 +338,16 @@ model Club {
   name             String   @unique
   slug             String   @unique
   description      String   @db.Text
+  mainType         ClubMainType @default(DIGITAL)
   category         String   
   emoji            String?  
   color            String   @default("#e11d48")
   logoUrl          String?  
   memberCount      Int      @default(0)
+  maxMembers       Int?     
+  deadline         DateTime?
+  requiredSkills   String?  // Virgülle ayrılmış yetenekler
+  metadata         Json?    // Dinamik alanlar için (mevki, proje kodu vb.)
   status           ClubStatus @default(PENDING)
   founderId        Int?
   advisorName      String?
@@ -359,7 +364,13 @@ model Club {
   events           Event[]
 }
 
-model ClubMember {
+enum ClubMainType {
+  DIGITAL
+  PROJECT
+  SOCIAL
+}
+
+enum ClubStatus {
   id        Int      @id @default(autoincrement())
   clubId    Int
   userId    Int

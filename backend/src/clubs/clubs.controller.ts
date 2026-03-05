@@ -8,9 +8,14 @@ export class ClubsController {
 
   // LİSTELEME
   @Get()
-  findAll(@Request() req, @Query('currentUserId') currentUserId?: string) {
+  findAll(
+    @Request() req, 
+    @Query('currentUserId') currentUserId?: string,
+    @Query('mainType') mainType?: string,
+    @Query('category') category?: string
+  ) {
     const userId = currentUserId ? parseInt(currentUserId) : req.user?.id;
-    return this.clubsService.findAll(userId);
+    return this.clubsService.findAll(userId, mainType, category);
   }
 
   @Get('my-founded')

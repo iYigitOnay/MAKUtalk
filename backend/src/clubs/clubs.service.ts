@@ -5,9 +5,13 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ClubsService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll(userId?: number) {
+  async findAll(userId?: number, mainType?: string, category?: string) {
+    const where: any = { status: 'APPROVED' };
+    if (mainType) where.mainType = mainType;
+    if (category) where.category = category;
+
     const clubs = await (this.prisma as any).club.findMany({
-      where: { status: 'APPROVED' },
+      where,
       orderBy: { name: 'asc' },
       include: { _count: { select: { members: true } }, badges: { include: { badge: true } } }
     });
@@ -104,11 +108,30 @@ export class ClubsService {
   }
 
   async createProposal(userId: number, data: any) {
-    const { name, category, emoji, color, advisorEmail, description } = data;
+    const { name, mainType, category, emoji, color, advisorEmail, description, maxMembers, deadline, requiredSkills, metadata } = data;
     const slug = name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[ğ]/g, 'g').replace(/[ü]/g, 'u').replace(/[ş]/g, 's').replace(/[ı]/g, 'i').replace(/[ö]/g, 'o').replace(/[ç]/g, 'c').replace(/[^a-z0-9-]/g, '');
+    
     const existing = await (this.prisma as any).club.findFirst({ where: { OR: [{ name }, { slug }] } });
     if (existing) throw new ConflictException('Bu isimde bir topluluk zaten mevcut.');
-    const club = await (this.prisma as any).club.create({ data: { name, category, emoji, color: color || '#e11d48', advisorEmail, description, slug, founderId: userId, status: 'PENDING' } });
+    
+    const club = await (this.prisma as any).club.create({ 
+      data: { 
+        name, 
+        mainType: mainType || 'DIGITAL',
+        category, 
+        emoji, 
+        color: color || '#e11d48', 
+        advisorEmail, 
+        description, 
+        slug, 
+        founderId: userId, 
+        status: 'PENDING',
+        maxMembers: maxMembers ? parseInt(maxMembers) : null,
+        deadline: deadline ? new Date(deadline) : null,
+        requiredSkills,
+        metadata: metadata || null
+      } 
+    });
     return club;
   }
 

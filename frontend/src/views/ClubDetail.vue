@@ -33,16 +33,44 @@
         </h1>
 
         <!-- Detay Bilgileri -->
-        <div class="flex items-center gap-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-white dark:bg-white/5 px-4 py-2 rounded-full shadow-sm">
-          <span>{{ club.memberCount }} Üye</span>
+        <div class="flex flex-wrap justify-center gap-3 text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest bg-white dark:bg-white/5 px-6 py-2.5 rounded-full shadow-sm">
+          <div class="flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+            <span>{{ club.memberCount }}{{ club.maxMembers ? '/' + club.maxMembers : '' }} Üye</span>
+          </div>
           <span class="opacity-30">•</span>
           <span :style="{ color: isEmoji(club.emoji) ? '#e11d48' : club.color }">{{ club.category }}</span>
           <span class="opacity-30">•</span>
-          <span>Kuruluş: {{ formatDate(club.createdAt) }}</span>
+          <span v-if="club.mainType === 'PROJECT'" class="text-blue-500">🚀 Proje Ekibi</span>
+          <span v-else-if="club.mainType === 'SOCIAL'" class="text-amber-500">🌍 Sosyal Grup</span>
+          <span v-else class="text-emerald-500">🛡️ Dijital Topluluk</span>
         </div>
       </section>
 
-      <!-- 2. HAKKINDA -->
+      <!-- 2. PROJE / SOSYAL EK DETAYLAR (YENİ) -->
+      <section v-if="club.mainType !== 'DIGITAL' && (club.deadline || club.requiredSkills)" class="w-full max-w-2xl grid grid-cols-1 gap-4">
+        <div class="bg-white dark:bg-gray-900 border-2 border-dashed border-slate-100 dark:border-white/5 rounded-[2rem] p-6 flex flex-col items-center gap-4">
+          <div v-if="club.deadline" class="flex flex-col items-center text-center">
+            <p class="text-[8px] font-black text-rose-500 uppercase tracking-[0.3em] mb-1">
+              {{ club.mainType === 'PROJECT' ? 'Son Başvuru Tarihi' : 'Etkinlik Tarihi' }}
+            </p>
+            <p class="text-lg font-black text-slate-800 dark:text-slate-200">
+              {{ new Date(club.deadline).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' }) }}
+            </p>
+          </div>
+
+          <div v-if="club.requiredSkills" class="w-full pt-4 border-t border-slate-50 dark:border-white/5">
+            <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em] mb-3 text-center">Aranan Yetenekler</p>
+            <div class="flex flex-wrap justify-center gap-2">
+              <span v-for="skill in club.requiredSkills.split(',')" :key="skill" class="px-3 py-1 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold rounded-lg border border-blue-100 dark:border-blue-800 uppercase tracking-tighter">
+                {{ skill.trim() }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. HAKKINDA -->
       <section class="w-full max-w-2xl">
         <div class="bg-white dark:bg-gray-900/50 border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-8 shadow-sm relative overflow-hidden group">
           <p class="text-slate-600 dark:text-slate-300 font-medium leading-relaxed italic text-lg relative z-10 break-words whitespace-pre-wrap text-center">
