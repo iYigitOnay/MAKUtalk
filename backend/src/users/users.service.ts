@@ -28,15 +28,22 @@ export class UsersService {
     });
 
     if (existingUser) {
-      throw new ConflictException('Bu e-posta veya kullanıcı adı zaten kullanımda.');
+      throw new ConflictException(
+        'Bu e-posta veya kullanıcı adı zaten kullanımda.',
+      );
     }
 
     const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000,
+    ).toString();
 
     // AKADEMİSYEN OTOMATIK ROL ATAMASI (@mehmetakif.edu.tr)
     let role: any = 'USER';
-    if (createUserDto.email.endsWith('@mehmetakif.edu.tr') && !createUserDto.email.includes('@ogr.')) {
+    if (
+      createUserDto.email.endsWith('@mehmetakif.edu.tr') &&
+      !createUserDto.email.includes('@ogr.')
+    ) {
       role = 'ACADEMIC';
     }
 
@@ -51,10 +58,12 @@ export class UsersService {
 
     // AKADEMİSYEN ROZETİ OTOMATIK ATAMA
     if (role === 'ACADEMIC') {
-      const academicBadge = await this.prisma.badge.findFirst({ where: { name: 'Akademisyen' } });
+      const academicBadge = await this.prisma.badge.findFirst({
+        where: { name: 'Akademisyen' },
+      });
       if (academicBadge) {
         await this.prisma.userBadge.create({
-          data: { userId: user.id, badgeId: academicBadge.id }
+          data: { userId: user.id, badgeId: academicBadge.id },
         });
       }
     }
@@ -167,38 +176,45 @@ export class UsersService {
       if (files?.avatar?.[0]) {
         const file = files.avatar[0];
         const fileName = `avatar-${userId}-${Date.now()}.webp`;
-        const uploadPath = path.join(process.cwd(), 'uploads', 'avatars', fileName);
-        
+        const uploadPath = path.join(
+          process.cwd(),
+          'uploads',
+          'avatars',
+          fileName,
+        );
+
         await sharp(file.buffer)
           .resize(400, 400, { fit: 'cover' })
           .webp({ quality: 80 })
           .toFile(uploadPath);
-        
+
         updateData.avatarUrl = `/uploads/avatars/${fileName}`;
         uploadedFiles.push(uploadPath);
 
-        // Eski dosyayı sil (Eğer bir URL değilse ve yerel bir yolsa)
         if (user.avatarUrl && user.avatarUrl.startsWith('/uploads/avatars/')) {
           const oldPath = path.join(process.cwd(), user.avatarUrl);
           if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
         }
       }
 
-      // COVER İŞLEME
       if (files?.cover?.[0]) {
         const file = files.cover[0];
         const fileName = `cover-${userId}-${Date.now()}.webp`;
-        const uploadPath = path.join(process.cwd(), 'uploads', 'covers', fileName);
-        
+        const uploadPath = path.join(
+          process.cwd(),
+          'uploads',
+          'covers',
+          fileName,
+        );
+
         await sharp(file.buffer)
           .resize(1200, 400, { fit: 'cover' })
           .webp({ quality: 80 })
           .toFile(uploadPath);
-        
+
         updateData.coverUrl = `/uploads/covers/${fileName}`;
         uploadedFiles.push(uploadPath);
 
-        // Eski dosyayı sil
         if (user.coverUrl && user.coverUrl.startsWith('/uploads/covers/')) {
           const oldPath = path.join(process.cwd(), user.coverUrl);
           if (fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
@@ -222,7 +238,6 @@ export class UsersService {
         },
       });
     } catch (error) {
-      // Hata durumunda yeni yüklenen dosyaları temizle
       uploadedFiles.forEach((filePath) => {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
       });
@@ -231,12 +246,14 @@ export class UsersService {
   }
 
   async toggleBan(userId: number, currentUserId: number) {
-    const admin = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+    const admin = await this.prisma.user.findUnique({
+      where: { id: currentUserId },
+    });
     if (admin?.role !== 'ADMIN') throw new ForbiddenException();
-    
+
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException();
-    
+
     return this.prisma.user.update({
       where: { id: userId },
       data: { isBanned: !user.isBanned },
@@ -244,8 +261,13 @@ export class UsersService {
   }
 
   async deleteUser(userId: number, currentUserId: number) {
-    const admin = await this.prisma.user.findUnique({ where: { id: currentUserId } });
-    if (admin?.role !== 'ADMIN' && admin?.email !== '2312101063@ogr.mehmetakif.edu.tr') {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: currentUserId },
+    });
+    if (
+      admin?.role !== 'ADMIN' &&
+      admin?.email !== '2312101063@ogr.mehmetakif.edu.tr'
+    ) {
       throw new ForbiddenException();
     }
     return this.prisma.user.delete({ where: { id: userId } });
@@ -254,26 +276,39 @@ export class UsersService {
   async getUserPosts(userId: number, currentUserId?: number) {
     return this.prisma.post.findMany({
       where: { authorId: userId, published: true, repostId: null },
-      include: { author: { select: { id: true, username: true, fullName: true, avatarUrl: true, badges: { include: { badge: true } } } }, category: true, _count: true },
-      orderBy: { createdAt: 'desc' }
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            fullName: true,
+            avatarUrl: true,
+            badges: { include: { badge: true } },
+          },
+        },
+        category: true,
+        _count: true,
+      },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   async toggleBlock(blockerId: number, blockedId: number) {
-    const existing = await this.prisma.block.findFirst({ where: { blockerId, blockedId } });
+    const existing = await this.prisma.block.findFirst({
+      where: { blockerId, blockedId },
+    });
     if (existing) {
       await this.prisma.block.delete({ where: { id: existing.id } });
       return { blocked: false };
     }
     await this.prisma.block.create({ data: { blockerId, blockedId } });
-    // Bloklayınca takibi de bırak
     await this.prisma.follow.deleteMany({
       where: {
         OR: [
           { followerId: blockerId, followingId: blockedId },
-          { followerId: blockedId, followingId: blockerId }
-        ]
-      }
+          { followerId: blockedId, followingId: blockerId },
+        ],
+      },
     });
     return { blocked: true };
   }
@@ -281,7 +316,11 @@ export class UsersService {
   async getBlockedUsers(userId: number) {
     return this.prisma.block.findMany({
       where: { blockerId: userId },
-      include: { blocked: { select: { id: true, username: true, fullName: true, avatarUrl: true } } }
+      include: {
+        blocked: {
+          select: { id: true, username: true, fullName: true, avatarUrl: true },
+        },
+      },
     });
   }
 
@@ -294,28 +333,41 @@ export class UsersService {
         reportedCommentId: data.reportedCommentId,
         reason: data.reason,
         subReason: data.subReason,
-      }
+      },
     });
   }
 
   async createFeedback(userId: number | null, type: string, message: string) {
     return (this.prisma as any).feedback.create({
-      data: { userId, type, message }
+      data: { userId, type, message },
     });
   }
 
   async getAllBadges() {
-    return this.prisma.badge.findMany({ where: { type: 'USER' }, orderBy: { name: 'asc' } });
+    return this.prisma.badge.findMany({
+      where: { type: 'USER' },
+      orderBy: { name: 'asc' },
+    });
   }
 
-  async toggleUserBadge(userId: number, badgeId: number, currentUserId: number) {
-    const admin = await this.prisma.user.findUnique({ where: { id: currentUserId } });
+  async toggleUserBadge(
+    userId: number,
+    badgeId: number,
+    currentUserId: number,
+  ) {
+    const admin = await this.prisma.user.findUnique({
+      where: { id: currentUserId },
+    });
     if (admin?.role !== 'ADMIN') throw new ForbiddenException();
 
-    const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
+    const badge = await this.prisma.badge.findUnique({
+      where: { id: badgeId },
+    });
     if (!badge || badge.type !== 'USER') throw new ForbiddenException();
 
-    const ex = await this.prisma.userBadge.findUnique({ where: { userId_badgeId: { userId, badgeId } } });
+    const ex = await this.prisma.userBadge.findUnique({
+      where: { userId_badgeId: { userId, badgeId } },
+    });
     if (ex) {
       await this.prisma.userBadge.delete({ where: { id: ex.id } });
       return { assigned: false };
@@ -333,22 +385,33 @@ export class UsersService {
     if (role) {
       where.role = role;
     }
-    return this.prisma.user.findMany({ where, take: 5, select: { id: true, username: true, fullName: true, avatarUrl: true } });
+    return this.prisma.user.findMany({
+      where,
+      take: 5,
+      select: { id: true, username: true, fullName: true, avatarUrl: true },
+    });
   }
 
   async forgotPassword(email: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
     const code = Math.floor(100000 + Math.random() * 900000).toString();
-    await this.prisma.user.update({ where: { email }, data: { verificationCode: code } });
+    await this.prisma.user.update({
+      where: { email },
+      data: { verificationCode: code },
+    });
     await this.mailService.sendVerificationCode(email, code);
     return { message: 'Sıfırlama kodu gönderildi.' };
   }
 
   async resetPassword(email: string, code: string, newPassword: string) {
     const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user || user.verificationCode !== code) throw new ForbiddenException('Kod hatalı.');
+    if (!user || user.verificationCode !== code)
+      throw new ForbiddenException('Kod hatalı.');
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    return this.prisma.user.update({ where: { email }, data: { password: hashedPassword, verificationCode: null } });
+    return this.prisma.user.update({
+      where: { email },
+      data: { password: hashedPassword, verificationCode: null },
+    });
   }
 }

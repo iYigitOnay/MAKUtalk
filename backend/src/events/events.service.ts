@@ -13,7 +13,7 @@ export class EventsService implements OnModuleInit {
 
   async onModuleInit() { }
 
-  @Cron('0 1 * * 1')
+  @Cron('0 1 * * *')
   async handleAutoScrape() {
     this.logger.log('MAKÜ Resmi etkinlikleri API üzerinden çekiliyor...');
     await this.scrapeUniversityEvents();
