@@ -4,12 +4,12 @@
     class="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300"
   >
     <!-- Main Layout (Sidebar + Content + RightSidebar) -->
-    <div v-if="showMainLayout" class="flex flex-col sm:flex-row justify-center h-screen overflow-hidden bg-[#f8fafc] dark:bg-gray-950">
+    <div v-if="showMainLayout" class="flex flex-col sm:flex-row justify-center min-h-screen bg-[#f8fafc] dark:bg-gray-950">
       
       <!-- Mobile Navbar (Top) -->
       <Navbar v-if="!hideNavbar" class="sm:hidden flex-shrink-0" />
 
-      <div class="flex w-full max-w-[1300px] bg-white dark:bg-gray-950 shadow-2xl shadow-slate-200/50 dark:shadow-none overflow-hidden">
+      <div class="flex w-full max-w-[1300px] bg-white dark:bg-gray-950 shadow-2xl shadow-slate-200/50 dark:shadow-none">
         <!-- Desktop Sidebar -->
         <Sidebar class="hidden sm:flex" />
 
@@ -17,16 +17,18 @@
         <main
           ref="mainContent"
           class="flex-1 border-x border-slate-100 dark:border-primary-900/20 sm:pb-0"
-          :class="[hideNavbar ? 'overflow-hidden pb-0' : 'overflow-y-auto pb-20']"
+          :class="[hideNavbar ? '' : 'pb-20 sm:pb-0']"
         >
           <router-view />
         </main>
 
         <!-- Desktop Right Sidebar -->
         <aside
-          class="hidden lg:block w-80 bg-white dark:bg-gray-950 overflow-y-auto"
+          class="hidden lg:block w-80 bg-white dark:bg-gray-950"
         >
-          <RightSidebar />
+          <div class="sticky top-0 h-screen overflow-y-auto no-scrollbar">
+            <RightSidebar />
+          </div>
         </aside>
       </div>
 
@@ -66,9 +68,7 @@ const hideNavbar = computed(() => {
 watch(
   () => route.fullPath,
   () => {
-    if (mainContent.value) {
-      mainContent.value.scrollTo({ top: 0, behavior: "instant" });
-    }
+    window.scrollTo({ top: 0, behavior: "instant" });
   }
 );
 

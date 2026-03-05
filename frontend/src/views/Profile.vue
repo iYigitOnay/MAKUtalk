@@ -21,10 +21,21 @@
         </div>
         <button v-if="isMyProfile" @click="showEditModal = true" class="absolute top-4 right-4 px-4 py-2 bg-black/50 hover:bg-black/70 text-white rounded-full text-sm font-bold backdrop-blur-sm transition-all hover:scale-105 active:scale-95">Profili Düzenle</button>
         <div class="absolute -bottom-16 left-6">
-          <div class="p-1 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 shadow-xl">
-            <img v-if="displayedUser.avatarUrl" :src="getImageUrl(displayedUser.avatarUrl)" alt="Avatar" class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-950 object-cover" />
+          <div 
+            @click="displayedUser.avatarUrl ? showAvatarZoom = true : null"
+            class="relative group p-1 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 shadow-xl overflow-hidden"
+            :class="[displayedUser.avatarUrl ? 'cursor-pointer' : '']"
+          >
+            <img v-if="displayedUser.avatarUrl" :src="getImageUrl(displayedUser.avatarUrl)" alt="Avatar" class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-950 object-cover transition-transform duration-500 group-hover:scale-110" />
             <div v-else class="w-32 h-32 rounded-full border-4 border-white dark:border-gray-950 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
               <span class="text-white font-bold text-4xl">{{ userInitials }}</span>
+            </div>
+            
+            <!-- Premium Hover Overlay -->
+            <div v-if="displayedUser.avatarUrl" class="absolute inset-0 rounded-full bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 backdrop-blur-[2px]">
+              <div class="p-2 bg-white/20 rounded-full border border-white/30 text-white shadow-2xl transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                <component :is="getBadgeComponent('search-plus')" class="w-6 h-6" />
+              </div>
             </div>
           </div>
         </div>
@@ -172,6 +183,16 @@
         </div>
       </transition>
     </Teleport>
+
+    <!-- AVATAR ZOOM MODAL -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="showAvatarZoom" class="fixed inset-0 z-[400] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:p-10" @click="showAvatarZoom = false">
+          <button class="absolute top-6 right-6 text-white/70 hover:text-white transition-colors p-2"><component :is="getBadgeComponent('x')" class="w-8 h-8" /></button>
+          <img :src="getImageUrl(displayedUser.avatarUrl)" class="max-w-full max-h-full rounded-2xl shadow-2xl animate-in zoom-in-95 duration-300 object-contain" @click.stop />
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
@@ -211,6 +232,7 @@ const error = ref("");
 
 const showOptionsMenu = ref(false);
 const showEditModal = ref(false);
+const showAvatarZoom = ref(false);
 const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
 
