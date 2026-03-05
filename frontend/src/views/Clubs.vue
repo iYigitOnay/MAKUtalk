@@ -664,6 +664,7 @@ const selectAdvisor = (u: any) => {
   form.value.advisorEmail = u.email;
   advisorSearchQuery.value = `@${u.username}`;
   showAdvisorSuggestions.value = false;
+  console.log("Seçilen Danışman:", form.value.advisorEmail); // Debug için
 };
 
 const fetchClubs = async () => {
@@ -690,7 +691,10 @@ const handleCreateClub = async () => {
     toast.success("Başvuru iletildi! 🛡️");
     showCreateModal.value = false;
     form.value = { name: "", mainType: "DIGITAL", category: "KÜLTÜR", emoji: "", color: "#e11d48", advisorName: "", advisorEmail: "", description: "", maxMembers: null, deadline: null, requiredSkills: "", metadata: {} };
-  } catch (err: any) { toast.error(err.response?.data?.message || "Hata!"); } 
+  } catch (err: any) { 
+    const msg = err.response?.data?.message;
+    toast.error(Array.isArray(msg) ? msg[0] : (msg || "Hata oluştu!")); 
+  } 
   finally { submitting.value = false; }
 };
 

@@ -389,7 +389,7 @@ export class UsersService {
     return this.prisma.user.findMany({
       where,
       take: 5,
-      select: { id: true, username: true, fullName: true, avatarUrl: true },
+      select: { id: true, username: true, fullName: true, avatarUrl: true, email: true },
     });
   }
 

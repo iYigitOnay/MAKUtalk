@@ -364,13 +364,7 @@ model Club {
   events           Event[]
 }
 
-enum ClubMainType {
-  DIGITAL
-  PROJECT
-  SOCIAL
-}
-
-enum ClubStatus {
+model ClubMember {
   id        Int      @id @default(autoincrement())
   clubId    Int
   userId    Int
@@ -381,6 +375,12 @@ enum ClubStatus {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([clubId, userId])
+}
+
+enum ClubMainType {
+  DIGITAL
+  PROJECT
+  SOCIAL
 }
 
 enum ClubStatus {

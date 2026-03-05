@@ -6,41 +6,33 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class ClubsController {
   constructor(private readonly clubsService: ClubsService) {}
 
-  // LİSTELEME
   @Get()
-  findAll(
-    @Request() req, 
-    @Query('currentUserId') currentUserId?: string,
-    @Query('mainType') mainType?: string,
-    @Query('category') category?: string
-  ) {
-    const userId = currentUserId ? parseInt(currentUserId) : req.user?.id;
-    return this.clubsService.findAll(userId, mainType, category);
-  }
-
-  @Get('my-founded')
-  @UseGuards(JwtAuthGuard)
-  findMyFounded(@Request() req) {
-    return this.clubsService.findMyFounded(req.user.id);
+  findAll(@Query('userId') userId?: string, @Query('mainType') mainType?: string, @Query('category') category?: string) {
+    return this.clubsService.findAll(userId ? parseInt(userId) : undefined, mainType, category);
   }
 
   @Get('pending')
   @UseGuards(JwtAuthGuard)
-  getPending(@Request() req) {
+  getPendingProposals(@Request() req) {
     return this.clubsService.getPendingProposalsForAdmin();
   }
 
-  @Get('academic-proposals')
-  @UseGuards(JwtAuthGuard)
-  getAcademicProposals(@Request() req) {
-    return this.clubsService.getProposalsForAcademic(req.user.email);
+  @Get('badges/all')
+  getAllBadges() {
+    return this.clubsService.getAllBadges();
   }
 
-  // ONAY & RED (Frontend Formatı: /api/clubs/:id/...)
-  @Post(':id/approve-academic')
+  @Get(':slug')
+  findOne(@Param('slug') slug: string, @Query('currentUserId') userId?: string) {
+    // Not: Frontend'den bazen query ile bazen header ile gelebilir. 
+    // En sağlamı findOne içinde her iki durumu da desteklemek.
+    return this.clubsService.findOne(slug, userId ? parseInt(userId) : undefined);
+  }
+
+  @Post()
   @UseGuards(JwtAuthGuard)
-  approveAcademic(@Request() req, @Param('id') id: string) {
-    return this.clubsService.approveByAcademic(req.user.id, parseInt(id));
+  create(@Request() req, @Body() createClubDto: any) {
+    return this.clubsService.createProposal(req.user.id, createClubDto);
   }
 
   @Post(':id/approve-admin')
@@ -55,41 +47,22 @@ export class ClubsController {
     return this.clubsService.rejectProposal(req.user.id, parseInt(id));
   }
 
-  // OLUŞTURMA
-  @Post()
-  @UseGuards(JwtAuthGuard)
-  propose(@Request() req, @Body() data: any) {
-    return this.clubsService.createProposal(req.user.id, data);
-  }
-
-  // ROZETLER
-  @Get('badges/all')
-  getBadges() {
-    return this.clubsService.getAllBadges();
-  }
-
-  @Post(':id/badges')
-  @UseGuards(JwtAuthGuard)
-  assignBadge(@Request() req, @Param('id') id: string, @Body() data: { badgeId: number }) {
-    return this.clubsService.assignBadge(req.user.id, parseInt(id), data.badgeId);
-  }
-
-  // ÜYELİK & DETAY
   @Post(':id/toggle-join')
   @UseGuards(JwtAuthGuard)
   toggleJoin(@Request() req, @Param('id') id: string) {
     return this.clubsService.toggleJoin(req.user.id, parseInt(id));
   }
 
-  @Get(':slug')
-  findOne(@Param('slug') slug: string, @Request() req) {
-    return this.clubsService.findOne(slug, req.user?.id);
+  @Post(':id/badges')
+  @UseGuards(JwtAuthGuard)
+  assignBadge(@Request() req, @Param('id') id: string, @Body('badgeId') badgeId: number) {
+    return this.clubsService.assignBadge(req.user.id, parseInt(id), badgeId);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Request() req, @Param('id') id: string) {
-    return this.clubsService.remove(req.user.id, parseInt(id));
+    return this.clubsService.remove(req.user.id, parseInt(id), req.user.role);
   }
 
   @Post('seed')

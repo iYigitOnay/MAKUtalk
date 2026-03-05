@@ -63,7 +63,7 @@
                     <td class="p-8">
                       <div class="flex items-center gap-4">
                         <div class="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-gray-800 flex items-center justify-center font-black text-blue-600 uppercase shadow-inner group-hover:rotate-3 transition-transform overflow-hidden">
-                          <img v-if="user.avatarUrl" :src="user.avatarUrl" class="w-full h-full object-cover" />
+                          <img v-if="user.avatarUrl" :src="getImageUrl(user.avatarUrl)" class="w-full h-full object-cover" />
                           <span v-else>{{ user.username.charAt(0) }}</span>
                         </div>
                         <div>
@@ -79,7 +79,7 @@
               </table>
             </div>
             
-            <!-- Yeni Mobil Kullanıcı Kartları (HATA DÜZELTİLDİ) -->
+            <!-- Mobil Kullanıcı Kartları -->
             <div class="md:hidden space-y-4 px-1">
               <div v-for="user in users" :key="user.id" class="relative bg-white dark:bg-gray-900 p-6 rounded-[2.5rem] border border-gray-100 dark:border-white/5 shadow-xl overflow-hidden group">
                 <div class="absolute top-4 right-6 flex items-center gap-1.5">
@@ -90,7 +90,7 @@
                 <div class="flex items-center gap-5">
                   <div class="relative flex-shrink-0">
                     <div class="w-16 h-16 rounded-[1.8rem] bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-gray-800 dark:to-gray-800 flex items-center justify-center border border-gray-100 dark:border-white/5 shadow-inner">
-                      <img v-if="user.avatarUrl" :src="user.avatarUrl" class="w-full h-full object-cover rounded-[1.8rem]" />
+                      <img v-if="user.avatarUrl" :src="getImageUrl(user.avatarUrl)" class="w-full h-full object-cover rounded-[1.8rem]" />
                       <span v-else class="text-2xl font-black text-blue-600 uppercase">{{ user.username.charAt(0) }}</span>
                     </div>
                   </div>
@@ -150,7 +150,6 @@
                 </div>
               </div>
 
-              <!-- EK DETAYLAR (YENİ) -->
               <div v-if="club.mainType !== 'DIGITAL'" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div v-if="club.deadline" class="p-4 bg-rose-50/30 dark:bg-rose-900/5 rounded-2xl border border-rose-100/50 dark:border-rose-900/20">
                   <p class="text-[8px] font-black text-rose-500 uppercase tracking-widest mb-1">{{ club.mainType === 'PROJECT' ? 'Son Başvuru' : 'Etkinlik Tarihi' }}</p>
@@ -173,7 +172,7 @@
                 <div class="flex items-center gap-3">
                   <span class="text-[8px] sm:text-[9px] font-black text-gray-400 uppercase tracking-widest">Danışman:</span>
                   <div class="flex items-center gap-2 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-xl border border-blue-100 dark:border-blue-900/30">
-                    <div v-if="club.advisor?.avatarUrl" class="w-5 h-5 rounded-full overflow-hidden"><img :src="club.advisor.avatarUrl" class="w-full h-full object-cover" /></div>
+                    <div v-if="club.advisor?.avatarUrl" class="w-5 h-5 rounded-full overflow-hidden"><img :src="getImageUrl(club.advisor.avatarUrl)" class="w-full h-full object-cover" /></div>
                     <p class="text-[10px] sm:text-xs font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">{{ club.advisor?.fullName || club.advisorName }}</p>
                   </div>
                 </div>
@@ -199,7 +198,6 @@
                 <span class="text-[9px] font-black text-gray-400 uppercase">{{ formatDate(report.createdAt) }}</span>
               </div>
 
-              <!-- Şikayet Edilen İçerik -->
               <div v-if="report.reportedPost || report.reportedComment" class="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-dashed border-gray-200 dark:border-white/10">
                 <p class="text-[9px] font-black text-gray-400 uppercase mb-2">Şikayet Edilen İçerik:</p>
                 <p class="text-sm text-gray-800 dark:text-gray-200 font-medium">
@@ -210,10 +208,9 @@
                 </p>
               </div>
 
-              <!-- Şikayet Edilen Kullanıcı (Profil Şikayeti ise) -->
               <div v-else-if="report.reportedUser" class="p-4 bg-gray-50 dark:bg-black/20 rounded-2xl border border-dashed border-gray-200 dark:border-white/10 flex items-center gap-3">
                 <div class="w-10 h-10 rounded-xl bg-gray-200 dark:bg-gray-800 overflow-hidden">
-                  <img v-if="report.reportedUser.avatarUrl" :src="report.reportedUser.avatarUrl" class="w-full h-full object-cover" />
+                  <img v-if="report.reportedUser.avatarUrl" :src="getImageUrl(report.reportedUser.avatarUrl)" class="w-full h-full object-cover" />
                   <div v-else class="w-full h-full flex items-center justify-center font-black text-gray-400">{{ report.reportedUser.username.charAt(0) }}</div>
                 </div>
                 <div>
@@ -267,7 +264,13 @@ const reports = ref<any[]>([]);
 const pendingClubs = ref<any[]>([]);
 const stats = ref({ totalUsers: 0, totalReports: 0, totalFeedbacks: 0 });
 
-// KULLANICILAR MERKEZDE
+const getImageUrl = (url: string | null) => {
+  if (!url) return null;
+  if (url.startsWith("http")) return url;
+  const cleanPath = url.startsWith("/") ? url.substring(1) : url;
+  return `http://localhost:3000/${cleanPath}`;
+};
+
 const adminTabs = [
   { id: 'clubs', name: 'Topluluklar' },
   { id: 'reports', name: 'Şikayetler' },
