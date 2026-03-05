@@ -68,6 +68,7 @@
               <router-link
                 :to="`/profile/${displayPost.author.username}`"
                 class="hover:underline"
+                @click.stop
                 >{{
                   displayPost.author.fullName || displayPost.author.username
                 }}</router-link
@@ -137,6 +138,7 @@
             <router-link
               :to="`/profile/${displayPost.author.username}`"
               class="text-gray-500 dark:text-gray-400 truncate text-sm"
+              @click.stop
               >@{{ displayPost.author.username }}</router-link
             >
             <p class="text-gray-500 dark:text-gray-400 text-xs flex-shrink-0">

@@ -37,13 +37,14 @@
           </div>
         </div>
         <div class="flex-1 min-w-0 relative">
-          <textarea 
+            <textarea 
             ref="textareaRef"
             v-model="newPostContent" 
             @input="handleInput" 
             placeholder="Ne Düşünüyorsun?" 
-            class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium min-h-[100px] overflow-hidden pt-2.5" 
+            class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium min-h-[100px] overflow-hidden pt-2.5 pr-12" 
             :disabled="postsStore.loading" 
+            maxlength="280"
           />
           
           <div v-if="showMentions" :style="{ top: mentionPos.y + 'px', left: mentionPos.x + 'px' }" class="absolute z-[60] w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
@@ -86,7 +87,24 @@
               <button @click="imageInputRef?.click()" class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.414a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></button>
               <EmojiPicker :modelValue="newPostContent" @update:modelValue="(e) => (newPostContent += e)" />
             </div>
-            <button @click="handleCreatePost" :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading" class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg active:scale-95 disabled:opacity-50 transition-all">PAYLAŞ</button>
+
+            <div class="flex items-center gap-4">
+              <!-- Animated Character Counter (Next to Button) -->
+              <transition name="scale-fade">
+                <div v-if="newPostContent.length > 0" class="flex items-center gap-2">
+                  <div class="relative w-6 h-6 flex items-center justify-center">
+                    <svg class="w-full h-full -rotate-90">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="transparent" class="text-gray-100 dark:text-gray-800" />
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" fill="transparent" class="transition-all duration-500" :class="newPostContent.length > 250 ? 'text-red-500' : newPostContent.length > 200 ? 'text-orange-500' : 'text-primary-500'" :stroke-dasharray="63" :stroke-dashoffset="63 - (Math.min(newPostContent.length, 250) / 250) * 63" stroke-linecap="round" />
+                    </svg>
+                    <span v-if="newPostContent.length > 200" class="absolute text-[8px] font-black" :class="newPostContent.length > 250 ? 'text-red-500' : 'text-gray-400'">{{ 250 - newPostContent.length }}</span>
+                  </div>
+                  <div v-if="newPostContent.length > 250" class="w-px h-4 bg-gray-200 dark:bg-gray-800"></div>
+                </div>
+              </transition>
+
+              <button @click="handleCreatePost" :disabled="(!newPostContent.trim() && !selectedImage) || postsStore.loading || newPostContent.length > 250" class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50 disabled:grayscale transition-all">PAYLAŞ</button>
+            </div>
           </div>
         </div>
       </div>
@@ -320,4 +338,12 @@ watch([newPostContent, selectedImage], async ([content, img]) => {
 .carousel-item, .composer-item { transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.scale-fade-enter-active, .scale-fade-leave-active {
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.scale-fade-enter-from, .scale-fade-leave-to {
+  opacity: 0;
+  transform: scale(0.5) rotate(-45deg);
+}
 </style>

@@ -9,7 +9,15 @@
     >
       <button
         v-if="activeSection"
-        @click="activeSection = activeSection === 'blocked' ? 'privacy' : null"
+        @click="
+          if (activeMoreItem) {
+            activeMoreItem = null;
+          } else if (activeSection === 'blocked') {
+            activeSection = 'privacy';
+          } else {
+            activeSection = null;
+          }
+        "
         class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors text-gray-600 dark:text-gray-400"
       >
         <svg
@@ -68,9 +76,6 @@
             <p class="text-[15px] font-black text-gray-900 dark:text-white">
               Hesabım
             </p>
-            <p class="text-xs text-gray-500 mt-0.5">
-              Güvenlik, şifre ve gece modu ayarları.
-            </p>
           </div>
         </div>
         <svg
@@ -110,13 +115,52 @@
             <p class="text-[15px] font-black text-gray-900 dark:text-white">
               Gizlilik & Güvenlik
             </p>
-            <p class="text-xs text-gray-500 mt-0.5">
-              Hesap görünürlüğü ve veri kontrolü.
-            </p>
           </div>
         </div>
         <svg
           class="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </button>
+
+      <button
+        @click="activeSection = 'ata'"
+        class="w-full p-5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-900/60 transition-all group text-left relative overflow-hidden"
+      >
+        <div class="flex items-center gap-5 relative z-10">
+          <div
+            class="w-6 h-6 flex items-center justify-center text-gray-900 dark:text-white"
+          >
+            <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2z"
+              />
+            </svg>
+          </div>
+          <div>
+            <p
+              class="text-[15px] font-black text-gray-900 dark:text-white uppercase tracking-widest"
+            >
+              ATA
+            </p>
+            <p
+              class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5 font-bold italic"
+            >
+              "Ey yükselen yeni nesil, istikbal sizindir."
+            </p>
+          </div>
+        </div>
+        <svg
+          class="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform relative z-10"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -170,6 +214,45 @@
       </button>
 
       <button
+        @click="activeSection = 'more'"
+        class="w-full p-5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-900/40 transition-all group text-left"
+      >
+        <div class="flex items-center gap-5">
+          <svg
+            class="w-6 h-6 text-orange-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+            />
+          </svg>
+          <div>
+            <p class="text-[15px] font-black text-gray-900 dark:text-white">
+              Daha Fazla
+            </p>
+          </div>
+        </div>
+        <svg
+          class="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
+        </svg>
+      </button>
+
+      <button
         @click="logout"
         class="w-full p-5 flex items-center gap-5 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all group text-left"
       >
@@ -195,6 +278,121 @@
       v-else
       class="flex-1 p-6 animate-in fade-in slide-in-from-right-3 duration-200"
     >
+      <!-- Ata İçeriği -->
+      <div v-if="activeSection === 'ata'" class="space-y-8 pb-20 font-black">
+        <!-- Premium Tribute Card -->
+        <section
+          class="p-10 bg-gradient-to-b from-black via-gray-900 to-gray-950 rounded-[3rem] text-center border-4 border-white/10 relative overflow-hidden shadow-2xl"
+        >
+          <!-- Background Decoration -->
+          <div class="absolute inset-0 opacity-5 pointer-events-none">
+            <svg class="w-full h-full" fill="none" viewBox="0 0 100 100">
+              <pattern
+                id="grid-white"
+                width="10"
+                height="10"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle cx="1" cy="1" r="1" fill="#ffffff" />
+              </pattern>
+              <rect width="100" height="100" fill="url(#grid-white)" />
+            </svg>
+          </div>
+
+          <div class="relative z-10 space-y-6">
+            <div
+              class="w-24 h-24 mx-auto bg-white/5 rounded-full flex items-center justify-center border border-white/10"
+            >
+              <svg
+                class="w-16 h-16 text-white"
+                fill="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14l-5-4.87 6.91-1.01L12 2z"
+                />
+              </svg>
+            </div>
+
+            <h3
+              class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-gray-300 via-white to-gray-300 uppercase tracking-[0.2em]"
+            >
+              MUSTAFA KEMAL ATATÜRK
+            </h3>
+
+            <div class="w-12 h-0.5 bg-white/30 mx-auto rounded-full"></div>
+
+            <p
+              class="text-gray-300/80 text-sm font-medium leading-relaxed italic px-4"
+            >
+              "Benim naçiz vücudum elbet bir gün toprak olacaktır, ancak Türkiye
+              Cumhuriyeti ilelebet payidar kalacaktır."
+            </p>
+
+            <div class="pt-6">
+              <span
+                class="px-6 py-2 border border-white/20 rounded-full text-[10px] text-white font-black tracking-widest uppercase bg-white/5"
+              >
+                MAKUtalk Saygı Köşesi
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Manifesto Sections -->
+        <div class="grid grid-cols-1 gap-4">
+          <div
+            class="p-6 bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-white/5 rounded-3xl space-y-3"
+          >
+            <h4
+              class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2L1 21h22L12 2zm0 3.83L19.17 19H4.83L12 5.83z" />
+              </svg>
+              İSTİKBAL GÖKLERDEDİR
+            </h4>
+            <p
+              class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium"
+            >
+              MAKUtalk olarak, Cumhuriyetimizin ışığında, bilimin ve
+              teknolojinin izinde ilerliyoruz. Gençliğin gücüne ve Atatürk'ün
+              vizyonuna olan inancımızla kampüsün dijital kalbini inşa ediyoruz.
+            </p>
+          </div>
+
+          <div
+            class="p-6 bg-white dark:bg-gray-900 border-2 border-gray-100 dark:border-white/5 rounded-3xl space-y-3"
+          >
+            <h4
+              class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2"
+            >
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                <path
+                  d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"
+                />
+              </svg>
+              FİKRİ HÜR, VİCDANI HÜR
+            </h4>
+            <p
+              class="text-[11px] text-gray-500 dark:text-gray-400 leading-relaxed font-medium"
+            >
+              Öğrenci topluluğumuzun her bir ferdi, özgürce düşünme ve üretme
+              hakkına sahiptir. Bu platform, fikirlerin saygı çerçevesinde
+              yarıştığı bir kampüs ekosistemidir.
+            </p>
+          </div>
+        </div>
+
+        <div class="text-center py-6 opacity-40">
+          <p
+            class="text-[9px] text-gray-600 dark:text-gray-400 font-black uppercase tracking-[0.4em]"
+          >
+            Saygı ve Özlemle...
+          </p>
+        </div>
+      </div>
+
       <!-- Hesabım İçeriği -->
       <div v-if="activeSection === 'account'" class="space-y-8">
         <div
@@ -644,6 +842,207 @@
           </p>
         </div>
       </div>
+
+      <!-- Daha Fazla İçeriği -->
+      <div v-if="activeSection === 'more'" class="space-y-6 pb-20 font-black">
+        <!-- Hakkımızda -->
+        <section
+          class="p-8 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden"
+        >
+          <div class="relative z-10">
+            <h3 class="text-2xl font-black uppercase tracking-tighter mb-4">
+              MAKUtalk Nedir?
+            </h3>
+            <p class="text-sm font-medium leading-relaxed opacity-90">
+              MAKUtalk, Burdur Mehmet Akif Ersoy Üniversitesi öğrencilerinin
+              kampüs hayatını dijitalde daha canlı, güvenli ve etkileşimli
+              yaşaması için geliştirilmiş bir sosyal platformdur.
+            </p>
+            <div class="mt-6 flex items-center gap-4">
+              <div
+                class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black"
+              >
+                ÖĞRENCİ ODAKLI
+              </div>
+              <div
+                class="px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-[10px] font-black"
+              >
+                YAPAY ZEKA DESTEKLİ
+              </div>
+            </div>
+          </div>
+          <div class="absolute -right-10 -bottom-10 opacity-10">
+            <svg class="w-64 h-64" fill="currentColor" viewBox="0 0 24 24">
+              <path
+                d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"
+              />
+            </svg>
+          </div>
+        </section>
+
+        <!-- Menü Maddeleri -->
+        <div class="space-y-3">
+          <button
+            @click="activeMoreItem = 'contact'"
+            class="w-full p-5 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-primary-900/10 flex items-center justify-between hover:scale-[1.02] transition-all"
+          >
+            <span
+              class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider"
+              >İletişim & Destek</span
+            >
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+          <div
+            v-if="activeMoreItem === 'contact'"
+            class="p-6 bg-white dark:bg-gray-950 border border-gray-100 dark:border-primary-900/10 rounded-2xl animate-in slide-in-from-top-2 duration-200"
+          >
+            <p
+              class="text-xs text-gray-500 dark:text-gray-400 leading-relaxed font-medium mb-4"
+            >
+              Uygulama hakkında soruların, iş birliği tekliflerin veya sadece
+              selam vermek için bize ulaşabilirsin.
+            </p>
+            <div class="space-y-2">
+              <a
+                href="mailto:makutalk.iletisim@gmail.com
+"
+                class="block p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-black text-center"
+                >makutalk.iletisim@gmail.com
+              </a>
+              <div
+                class="p-3 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-500 text-center text-[10px] font-black uppercase"
+              >
+                Mehmet Akif Ersoy Üniversitesi, Burdur
+              </div>
+            </div>
+          </div>
+
+          <button
+            @click="activeMoreItem = 'privacy'"
+            class="w-full p-5 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-primary-900/10 flex items-center justify-between hover:scale-[1.02] transition-all"
+          >
+            <span
+              class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider"
+              >Gizlilik Politikası</span
+            >
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+          <div
+            v-if="activeMoreItem === 'privacy'"
+            class="p-6 bg-white dark:bg-gray-950 border border-gray-100 dark:border-primary-900/10 rounded-2xl animate-in slide-in-from-top-2 duration-200"
+          >
+            <div
+              class="space-y-4 text-[11px] text-gray-600 dark:text-gray-400 font-medium leading-relaxed"
+            >
+              <p>
+                <strong class="text-gray-900 dark:text-gray-200 uppercase"
+                  >Veri Güvenliği:</strong
+                >
+                E-posta adresin sadece üniversite doğrulaması için kullanılır ve
+                üçüncü taraflarla asla paylaşılmaz.
+              </p>
+              <p>
+                <strong class="text-gray-900 dark:text-gray-200 uppercase"
+                  >Yapay Zeka:</strong
+                >
+                Paylaşımların Gemini AI tarafından analiz edilir. Bu analiz
+                sadece topluluk huzurunu korumak ve içerik kategorize etmek
+                içindir.
+              </p>
+              <p>
+                <strong class="text-gray-900 dark:text-gray-200 uppercase"
+                  >Çerezler:</strong
+                >
+                Sadece oturumunu açık tutmak ve tercihlerini hatırlamak için
+                gerekli verileri saklarız.
+              </p>
+            </div>
+          </div>
+
+          <button
+            @click="activeMoreItem = 'terms'"
+            class="w-full p-5 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-primary-900/10 flex items-center justify-between hover:scale-[1.02] transition-all"
+          >
+            <span
+              class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider"
+              >Kullanım Şartları</span
+            >
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+          <div
+            v-if="activeMoreItem === 'terms'"
+            class="p-6 bg-white dark:bg-gray-950 border border-gray-100 dark:border-primary-900/10 rounded-2xl animate-in slide-in-from-top-2 duration-200"
+          >
+            <div
+              class="space-y-4 text-[11px] text-gray-600 dark:text-gray-400 font-medium leading-relaxed"
+            >
+              <p>
+                <strong class="text-gray-900 dark:text-gray-200 uppercase"
+                  >Topluluk Saygısı:</strong
+                >
+                Her kullanıcı bir diğerinin haklarına saygı göstermekle
+                yükümlüdür.
+              </p>
+              <p>
+                <strong class="text-gray-900 dark:text-gray-200 uppercase"
+                  >İçerik Sorumluluğu:</strong
+                >
+                Paylaştığın her gönderi senin sorumluluğundadır. Küfür, taciz ve
+                yasa dışı içerikler anında silinir.
+              </p>
+              <p>
+                <strong class="text-gray-900 dark:text-gray-200 uppercase"
+                  >Hesap Güvenliği:</strong
+                >
+                Şifreni kimseyle paylaşma. Şüpheli bir durumda ayarlar kısmından
+                şifreni güncelleyebilirsin.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center pt-8">
+          <p class="text-[9px] text-gray-400 uppercase tracking-[0.3em]">
+            MAKUtalk ile kampüs elinin altında.
+          </p>
+        </div>
+      </div>
     </div>
 
     <!-- Modallar -->
@@ -795,6 +1194,7 @@ const { toggleDarkMode: toggle } = useDarkMode();
 const isDarkMode = ref(document.documentElement.classList.contains("dark"));
 
 const activeSection = ref<string | null>(null);
+const activeMoreItem = ref<string | null>(null);
 const loading = ref(false);
 
 // Kimlik Doğrulama
@@ -943,7 +1343,8 @@ const toggleAccountPrivacy = async () => {
     const response = await apiClient.patch(`/users/${authStore.user.id}`, {
       isPrivate: targetValue,
     });
-    authStore.user = response.data;
+    // authStore.updateUser hem state'i hem de localStorage'ı günceller
+    authStore.updateUser(response.data);
     if (authStore.user.isPrivate) toast.success("Hesabınız artık gizli! 🔒");
     else toast.info("Hesabınız artık herkese açık. 🌍");
   } catch {
@@ -984,6 +1385,8 @@ const sectionTitle = computed(() => {
     privacy: "Gizlilik & Güvenlik",
     help: "Yardım Merkezi",
     blocked: "Engellenen Hesaplar",
+    ata: "Saygı Köşesi",
+    more: "Daha Fazla",
   };
   return titles[activeSection.value || ""] || "Ayarlar";
 });

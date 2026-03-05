@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength } from 'class-validator';
+import { IsOptional, IsString, MaxLength, IsBoolean } from 'class-validator';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -30,5 +30,6 @@ export class UpdateUserDto {
   class?: string;
 
   @IsOptional()
+  @IsBoolean()
   isPrivate?: boolean;
 }
