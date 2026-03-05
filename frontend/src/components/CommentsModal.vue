@@ -317,7 +317,7 @@
                   <p
                     class="text-[14px] text-gray-700 dark:text-gray-300 leading-relaxed break-words"
                   >
-                    {{ comment.content }}
+                    <HashtagText :text="comment.content" />
                   </p>
                 </div>
               </div>
@@ -403,6 +403,7 @@ import { useCommentsStore } from "@/stores/comments";
 import { usePostsStore } from "@/stores/posts";
 import { useToast } from "vue-toastification";
 import apiClient from "@/api/client";
+import HashtagText from "./HashtagText.vue";
 
 interface Props {
   isOpen: boolean;

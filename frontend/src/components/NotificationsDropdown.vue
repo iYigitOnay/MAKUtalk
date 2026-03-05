@@ -200,6 +200,8 @@ const getNotificationText = (type: string) => {
       return "paylaşımına yorum yaptı";
     case "FOLLOW":
       return "seni takip etti";
+    case "MENTION":
+      return "seni bir yorumda etiketledi";
     default:
       return "";
   }
@@ -213,6 +215,8 @@ const getNotificationBadge = (type: string) => {
       return "Yorum";
     case "FOLLOW":
       return "Takip";
+    case "MENTION":
+      return "Etiketleme";
     default:
       return "";
   }
@@ -226,6 +230,8 @@ const getNotificationBadgeClass = (type: string) => {
       return "bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400";
     case "FOLLOW":
       return "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400";
+    case "MENTION":
+      return "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400";
     default:
       return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400";
   }

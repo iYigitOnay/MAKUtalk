@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
 export enum NotificationType {
   LIKE = 'LIKE',
   COMMENT = 'COMMENT',
   FOLLOW = 'FOLLOW',
+  MENTION = 'MENTION',
+}
+  MENTION = 'MENTION',
 }
 
 @Injectable()

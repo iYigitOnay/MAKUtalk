@@ -45,6 +45,33 @@ export class CommentsService {
       postId,
     );
 
+    // ETİKETLEME (MENTION) SİSTEMİ
+    const mentionRegex = /@(\w+)/g;
+    const matches = [...createCommentDto.content.matchAll(mentionRegex)];
+    const mentionedUsernames = [...new Set(matches.map((match) => match[1]))];
+
+    if (mentionedUsernames.length > 0) {
+      const mentionedUsers = await this.prisma.user.findMany({
+        where: {
+          username: { in: mentionedUsernames },
+          id: { not: userId }, // Kendini etiketleyince bildirim gitmesin
+        },
+        select: { id: true, username: true },
+      });
+
+      for (const mentionedUser of mentionedUsers) {
+        // Eğer etiketlenen kişi post sahibi ise zaten COMMENT bildirimi gittiği için tekrar MENTION gitmesin
+        if (mentionedUser.id !== post.authorId) {
+          await this.notificationsService.createNotification(
+            NotificationType.MENTION,
+            mentionedUser.id,
+            userId,
+            postId,
+          );
+        }
+      }
+    }
+
     // 'user' → 'author' olarak döndür
     const { user, ...rest } = comment;
     return { ...rest, author: user };
