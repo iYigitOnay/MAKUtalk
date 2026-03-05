@@ -4,31 +4,29 @@
     class="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300"
   >
     <!-- Main Layout (Sidebar + Content + RightSidebar) -->
-    <div v-if="showMainLayout" class="flex flex-col sm:flex-row justify-center min-h-screen bg-[#f8fafc] dark:bg-gray-950">
+    <div v-if="showMainLayout" class="flex flex-col sm:flex-row justify-start sm:justify-center min-h-screen bg-[#f8fafc] dark:bg-gray-950 relative">
       
       <!-- Mobile Navbar (Top) -->
       <Navbar v-if="!hideNavbar" class="sm:hidden flex-shrink-0" />
 
-      <div class="flex w-full max-w-[1300px] bg-white dark:bg-gray-950 shadow-2xl shadow-slate-200/50 dark:shadow-none">
+      <div class="flex w-full max-w-[1300px] bg-white dark:bg-gray-950 shadow-2xl shadow-slate-200/50 dark:shadow-none min-w-0">
         <!-- Desktop Sidebar -->
-        <Sidebar class="hidden sm:flex" />
+        <Sidebar class="hidden sm:flex sticky top-0 h-screen" />
 
         <!-- Main Content Area -->
         <main
           ref="mainContent"
-          class="flex-1 border-x border-slate-100 dark:border-primary-900/20 sm:pb-0"
-          :class="[hideNavbar ? '' : 'pb-20 sm:pb-0']"
+          class="flex-1 border-x border-slate-100 dark:border-primary-900/20 sm:pb-0 min-w-0"
+          :class="[hideNavbar ? '' : 'pb-24 sm:pb-0']"
         >
           <router-view />
         </main>
 
         <!-- Desktop Right Sidebar -->
         <aside
-          class="hidden lg:block w-80 bg-white dark:bg-gray-950"
+          class="hidden lg:block w-80 bg-white dark:bg-gray-950 sticky top-0 h-screen overflow-y-auto no-scrollbar"
         >
-          <div class="sticky top-0 h-screen overflow-y-auto no-scrollbar">
-            <RightSidebar />
-          </div>
+          <RightSidebar />
         </aside>
       </div>
 

@@ -394,12 +394,12 @@
 
     <!-- ANA KATEGORİ ÇARKI (Artık en üstte sticky: top-0) -->
     <div
-      class="sticky top-0 z-30 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden"
+      class="sticky top-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden"
     >
       <div
         ref="categoryNavRef"
         @scroll="handleCarouselScroll"
-        class="flex items-center gap-4 overflow-x-auto px-[35%] scrollbar-hide snap-x snap-mandatory scroll-smooth h-20"
+        class="flex items-center gap-4 overflow-x-auto px-[20%] sm:px-[35%] scrollbar-hide snap-x snap-mandatory scroll-smooth h-20"
       >
         <div
           v-for="(item, index) in allItems"

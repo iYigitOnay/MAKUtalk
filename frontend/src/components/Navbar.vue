@@ -1,6 +1,6 @@
 <template>
   <!-- Sadece Mobil Navbar -->
-  <nav class="sm:hidden sticky top-0 z-50 bg-white/80 dark:bg-gray-950/80 backdrop-blur-md border-b border-slate-200 dark:border-primary-900/20 transition-colors duration-300">
+  <nav class="sm:hidden relative z-50 bg-white dark:bg-gray-950 border-b border-slate-200 dark:border-primary-900/20 transition-colors duration-300">
     <div class="h-14 px-4 flex items-center justify-between">
       <!-- Sol: Profil Açma -->
       <button 
