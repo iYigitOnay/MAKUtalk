@@ -33,6 +33,11 @@ export class UsersController {
     return this.usersService.getBlockedUsers(user.id);
   }
 
+  @Get('search-mentions')
+  async searchMentions(@Query('q') query: string, @Query('role') role?: string) {
+    return this.usersService.searchMentions(query || '', role);
+  }
+
   @Get('username/:username')
   async getUserByUsername(
     @Param('username') username: string,
@@ -40,11 +45,6 @@ export class UsersController {
   ) {
     const userId = currentUserId ? parseInt(currentUserId) : undefined;
     return this.usersService.findByUsername(username, userId);
-  }
-
-  @Get('search-mentions')
-  async searchMentions(@Query('q') query: string, @Query('role') role?: string) {
-    return this.usersService.searchMentions(query || '', role);
   }
 
   // DINAMIK ROUTE'LAR (DAHA SONRA)

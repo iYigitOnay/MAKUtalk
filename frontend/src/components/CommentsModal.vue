@@ -454,15 +454,13 @@ const handleInput = async (e: any) => {
   if (lastWord && lastWord.startsWith("@")) {
     const q = lastWord.substring(1);
     mentionPos.value = getCursorXY(e.target, cursor - q.length - 1);
-    if (q.length >= 2) {
-      try {
-        const res = await apiClient.get(`/users/search-mentions?q=${q}`);
-        mentionUsers.value = res.data;
-        showMentions.value = mentionUsers.value.length > 0;
-      } catch {
-        showMentions.value = false;
-      }
-    } else {
+    
+    // q boş da olsa (sadece @) arama yap ki liste hemen gelsin
+    try {
+      const res = await apiClient.get(`/users/search-mentions?q=${q}`);
+      mentionUsers.value = res.data;
+      showMentions.value = mentionUsers.value.length > 0;
+    } catch {
       showMentions.value = false;
     }
   } else {

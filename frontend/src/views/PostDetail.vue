@@ -78,8 +78,23 @@
             <img v-if="authStore.user?.avatarUrl" :src="getImageUrl(authStore.user.avatarUrl)" class="w-full h-full object-cover" />
             <div v-else class="w-full h-full flex items-center justify-center font-bold text-blue-600 uppercase">{{ authStore.user?.username?.charAt(0) }}</div>
           </div>
-          <div class="flex-1 space-y-3">
-            <textarea ref="commentInput" v-model="commentContent" rows="2" placeholder="Fikrini paylaş..." class="w-full p-4 bg-slate-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[1.5rem] text-[15px] focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all dark:text-white"></textarea>
+          <div class="flex-1 space-y-3 relative">
+            <textarea ref="commentInput" v-model="commentContent" @input="handleInput" rows="2" placeholder="Fikrini paylaş..." class="w-full p-4 bg-slate-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[1.5rem] text-[15px] focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all dark:text-white"></textarea>
+            
+            <!-- MENTION TOOLTIP -->
+            <div v-if="showMentions" :style="{ top: mentionPos.y + 'px', left: mentionPos.x + 'px' }" class="absolute z-[60] w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
+              <div class="max-h-48 overflow-y-auto no-scrollbar">
+                <button v-for="user in mentionUsers" :key="user.id" @click="selectMention(user.username)" class="w-full flex items-center gap-3 p-2.5 hover:bg-blue-600 hover:text-white transition-colors group text-left">
+                  <img v-if="user.avatarUrl" :src="getImageUrl(user.avatarUrl)" class="w-7 h-7 rounded-full object-cover border border-white/20" />
+                  <div v-else class="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-[10px] font-black group-hover:bg-white group-hover:text-blue-600 transition-colors">{{ user.username.charAt(0).toUpperCase() }}</div>
+                  <div class="flex flex-col min-w-0">
+                    <span class="text-xs font-bold truncate">{{ user.fullName || user.username }}</span>
+                    <span class="text-[10px] opacity-70 truncate">@{{ user.username }}</span>
+                  </div>
+                </button>
+              </div>
+            </div>
+
             <div class="flex justify-end">
               <button @click="submitComment" :disabled="!commentContent.trim() || commentLoading" class="px-6 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl uppercase hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20 active:scale-95">Yorum Yap</button>
             </div>
@@ -138,6 +153,74 @@ const loading = ref(true);
 const commentContent = ref('');
 const commentLoading = ref(false);
 const commentInput = ref<HTMLTextAreaElement | null>(null);
+
+// MENTION STATES
+const mentionUsers = ref<any[]>([]);
+const showMentions = ref(false);
+const mentionPos = ref({ x: 0, y: 0 });
+
+const getCursorXY = (el: HTMLTextAreaElement, cursorIndex: number) => {
+  const style = window.getComputedStyle(el);
+  const mirror = document.createElement("div");
+  const copyStyle = [
+    "fontFamily",
+    "fontSize",
+    "fontWeight",
+    "padding",
+    "boxSizing",
+    "lineHeight",
+    "width",
+    "wordBreak",
+    "whiteSpace"
+  ];
+  copyStyle.forEach((prop) => {
+    (mirror.style as any)[prop] = (style as any)[prop];
+  });
+  mirror.style.position = "absolute";
+  mirror.style.visibility = "hidden";
+  mirror.textContent = el.value.substring(0, cursorIndex);
+  document.body.appendChild(mirror);
+  const x = mirror.clientWidth;
+  const y = mirror.clientHeight;
+  document.body.removeChild(mirror);
+  return { x: Math.min(x + 20, el.clientWidth - 240), y: Math.min(y + 20, 100) };
+};
+
+const handleInput = async (e: any) => {
+  const val = e.target.value;
+  const cursor = e.target.selectionStart;
+  const words = val.substring(0, cursor).split(/\s/);
+  const lastWord = words[words.length - 1];
+
+  if (lastWord && lastWord.startsWith("@")) {
+    const q = lastWord.substring(1);
+    mentionPos.value = getCursorXY(e.target, cursor - q.length - 1);
+    
+    try {
+      const res = await apiClient.get(`/users/search-mentions?q=${q}`);
+      mentionUsers.value = res.data;
+      showMentions.value = mentionUsers.value.length > 0;
+    } catch {
+      showMentions.value = false;
+    }
+  } else {
+    showMentions.value = false;
+  }
+};
+
+const selectMention = (username: string) => {
+  const val = commentContent.value;
+  const el = commentInput.value;
+  const cursor = el?.selectionStart || val.length;
+  
+  const beforeCursor = val.substring(0, cursor);
+  const afterCursor = val.substring(cursor);
+  const lastAt = beforeCursor.lastIndexOf("@");
+
+  commentContent.value = beforeCursor.substring(0, lastAt) + `@${username} ` + afterCursor;
+  showMentions.value = false;
+  el?.focus();
+};
 
 // ✅ POST SENKRONİZASYON KİLİDİ
 // Store'daki postu takip eder, eğer store'da yoksa yerel veriyi kullanır.
