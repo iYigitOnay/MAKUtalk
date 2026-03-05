@@ -302,6 +302,7 @@ export class UsersService {
       return { blocked: false };
     }
     await this.prisma.block.create({ data: { blockerId, blockedId } });
+    // Bloklayınca takibi de bırak
     await this.prisma.follow.deleteMany({
       where: {
         OR: [
