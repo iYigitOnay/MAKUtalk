@@ -66,7 +66,11 @@ export class UsersController {
     FileFieldsInterceptor([
       { name: 'avatar', maxCount: 1 },
       { name: 'cover', maxCount: 1 },
-    ]),
+    ], {
+      limits: {
+        fileSize: 20 * 1024 * 1024, // 20 MB
+      }
+    }),
   )
   async updateProfile(
     @Param('id', ParseIntPipe) id: number,
