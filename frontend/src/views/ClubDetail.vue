@@ -73,7 +73,7 @@
             ></span>
             <span
               >{{ club.memberCount
-              }}{{ club.maxMembers ? "/" + club.maxMembers : "" }}
+              }}{{ club.maxMembers ? "/" + club.maxMembers : "" }} ÜYE
             </span>
           </div>
           <span class="opacity-30">•</span>
@@ -182,78 +182,6 @@
               }"
               ># {{ skill.trim() }}</span
             >
-          </div>
-        </div>
-      </section>
-
-      <!-- 2. DİJİTAL TOPLULUK PRESTİJ PANELİ -->
-      <section
-        v-if="club.mainType === 'DIGITAL'"
-        class="w-full max-w-2xl animate-in slide-in-from-top-4 duration-500"
-      >
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div
-            class="bg-white dark:bg-gray-900 border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-6 flex items-center gap-4 shadow-sm group hover:-translate-y-1 transition-all duration-500"
-            :style="{ hoverBorderColor: club.color + '40' }"
-          >
-            <img
-              v-if="club.advisorUser?.avatarUrl"
-              :src="getImageUrl(club.advisorUser.avatarUrl)"
-              class="w-14 h-14 rounded-2xl object-cover border-2 shadow-sm"
-              :style="{ borderColor: club.color + '20' }"
-            />
-            <div
-              v-else
-              class="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl shadow-inner"
-              :style="{ backgroundColor: club.color + '10', color: club.color }"
-            >
-              🎓
-            </div>
-            <div class="text-left overflow-hidden">
-              <p
-                class="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1"
-              >
-                Akademik Danışman
-              </p>
-              <p
-                class="text-sm font-black text-slate-800 dark:text-slate-200 truncate uppercase tracking-tight"
-              >
-                {{
-                  club.advisorUser?.fullName || club.advisorName || "Danışman"
-                }}
-              </p>
-            </div>
-          </div>
-
-          <div
-            class="bg-white dark:bg-gray-900 border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-6 flex items-center gap-4 shadow-sm group hover:-translate-y-1 transition-all duration-500"
-            :style="{ hoverBorderColor: club.color + '40' }"
-          >
-            <img
-              v-if="club.founder?.avatarUrl"
-              :src="getImageUrl(club.founder.avatarUrl)"
-              class="w-14 h-14 rounded-2xl object-cover border-2 shadow-sm"
-              :style="{ borderColor: club.color + '20' }"
-            />
-            <div
-              v-else
-              class="w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl shadow-inner"
-              :style="{ backgroundColor: club.color + '10', color: club.color }"
-            >
-              @
-            </div>
-            <div class="text-left overflow-hidden">
-              <p
-                class="text-[8px] font-black text-slate-400 uppercase tracking-[0.2em] mb-1"
-              >
-                Kurucu Başkan
-              </p>
-              <p
-                class="text-sm font-black text-slate-800 dark:text-slate-200 truncate tracking-tight"
-              >
-                @{{ club.founder?.username }}
-              </p>
-            </div>
           </div>
         </div>
       </section>
@@ -388,61 +316,6 @@
             </div>
           </div>
         </div>
-
-        <!-- TARİH VE DİJİTAL SAYAÇ PANELİ -->
-        <div
-          v-if="club.deadline"
-          class="bg-white dark:bg-gray-900/50 border border-slate-100 dark:border-white/5 rounded-[3rem] p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8"
-        >
-          <div class="flex items-center gap-5">
-            <div
-              class="w-14 h-14 rounded-[1.5rem] flex items-center justify-center text-2xl shadow-inner"
-              :style="{ backgroundColor: club.color + '10', color: club.color }"
-            >
-              📅
-            </div>
-            <div class="text-left">
-              <p
-                class="text-[9px] font-black text-slate-400 uppercase tracking-[0.3em] mb-1"
-              >
-                Yolculuk Tarihi
-              </p>
-              <p
-                class="text-xl font-black text-slate-800 dark:text-white tracking-tighter uppercase"
-              >
-                {{
-                  new Date(club.deadline).toLocaleDateString("tr-TR", {
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })
-                }}
-              </p>
-            </div>
-          </div>
-          <div class="flex items-center gap-3">
-            <div
-              v-for="(val, label) in getDigitalTime(club.deadline)"
-              :key="label"
-              class="flex flex-col items-center"
-            >
-              <div
-                class="w-14 h-16 bg-slate-50 dark:bg-white/5 rounded-2xl flex items-center justify-center border-b-4 shadow-sm transition-all"
-                :style="{ borderColor: club.color }"
-              >
-                <span
-                  class="text-2xl font-black tracking-tighter"
-                  :style="{ color: club.color }"
-                  >{{ val }}</span
-                >
-              </div>
-              <span
-                class="text-[7px] font-black text-slate-400 uppercase tracking-[0.2em] mt-2"
-                >{{ label }}</span
-              >
-            </div>
-          </div>
-        </div>
       </section>
 
       <!-- 2. SOSYAL GRUP - HALI SAHA PANELİ -->
@@ -450,7 +323,6 @@
         v-if="club.mainType === 'SOCIAL' && club.category === 'HALISAHA'"
         class="w-full max-w-2xl animate-in slide-in-from-top-4 duration-500 space-y-6"
       >
-        <!-- MAÇ GERİ SAYIM & TABELA -->
         <div
           class="bg-white dark:bg-gray-900 border border-slate-100 dark:border-white/5 rounded-[3rem] p-10 shadow-xl flex flex-col items-center gap-8 relative overflow-hidden"
         >
@@ -819,6 +691,7 @@
         v-if="club.mainType === 'SOCIAL' && club.category === 'AKTİVİTE'"
         class="w-full max-w-2xl animate-in slide-in-from-top-4 duration-500 space-y-8"
       >
+        <!-- VIBE TRACKER -->
         <div
           class="bg-white dark:bg-gray-900 border border-slate-100 dark:border-white/5 rounded-[3rem] p-10 shadow-xl relative overflow-hidden"
         >
@@ -844,8 +717,9 @@
                         ? 'bg-amber-500/10 text-amber-500'
                         : 'bg-rose-500/10 text-rose-600',
                 ]"
-                >{{ club.metadata?.activityVibe || "CHILL" }} VIBE</span
               >
+                {{ club.metadata?.activityVibe || "CHILL" }} VIBE
+              </span>
             </div>
             <div class="relative h-4 flex items-center px-2">
               <div
@@ -908,6 +782,8 @@
             </div>
           </div>
         </div>
+
+        <!-- AKTİVİTE KARTLARI -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div
             class="bg-white dark:bg-gray-900/40 border border-slate-100 dark:border-white/5 rounded-[2.5rem] p-6 flex items-center gap-4 shadow-sm transition-all hover:-translate-y-1"
@@ -978,6 +854,8 @@
             </div>
           </div>
         </div>
+
+        <!-- ŞARTLAR & TARİH -->
         <div class="grid grid-cols-1 gap-4">
           <div
             v-if="club.metadata?.activityRequirement"
@@ -997,6 +875,7 @@
               "{{ club.metadata.activityRequirement }}"
             </p>
           </div>
+          <!-- TARİH PANELİ (AKTİVİTE) -->
           <div
             v-if="club.deadline"
             class="bg-white dark:bg-gray-900 border border-slate-100 dark:border-white/5 rounded-[3rem] p-8 shadow-xl flex flex-col md:flex-row items-center justify-between gap-8"
@@ -1069,71 +948,7 @@
         </div>
       </section>
 
-      <!-- 3.5 EKİP ÜYELERİ -->
-      <section class="w-full max-w-2xl space-y-6">
-        <div class="flex items-center justify-between px-2">
-          <h3
-            class="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em]"
-          >
-            EKİP ÜYELERİ
-          </h3>
-          <div
-            class="flex items-center gap-2 px-3 py-1 bg-slate-100 dark:bg-white/5 rounded-full border border-slate-200 dark:border-white/5"
-          >
-            <span
-              class="text-[9px] font-black text-slate-500 uppercase tracking-tighter"
-              >{{ club.members?.length || 0 }} /
-              {{ club.maxMembers || "∞" }} KATILIMCI</span
-            >
-          </div>
-        </div>
-        <div
-          class="bg-white dark:bg-gray-900 border border-slate-100 dark:border-white/5 rounded-[3rem] p-8 shadow-sm"
-        >
-          <div
-            v-if="club.members && club.members.length > 0"
-            class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-6"
-          >
-            <div
-              v-for="member in club.members"
-              :key="member.id"
-              class="flex flex-col items-center gap-2 group cursor-pointer"
-              @click="$router.push(`/profile/${member.username}`)"
-            >
-              <div class="relative">
-                <img
-                  v-if="member.avatarUrl"
-                  :src="getImageUrl(member.avatarUrl)"
-                  class="w-12 h-12 rounded-2xl object-cover border-2 border-transparent transition-all group-hover:scale-110 group-hover:shadow-lg"
-                  :style="{ groupHoverBorderColor: club.color }"
-                />
-                <div
-                  v-else
-                  class="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center font-black text-slate-400 group-hover:scale-110 transition-all"
-                >
-                  @
-                </div>
-                <div
-                  class="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-gray-900 rounded-full"
-                ></div>
-              </div>
-              <span
-                class="text-[9px] font-black text-slate-500 dark:text-slate-400 truncate w-full text-center group-hover:text-slate-900 dark:group-hover:text-white"
-                >@{{ member.username }}</span
-              >
-            </div>
-          </div>
-          <div v-else class="py-10 text-center opacity-30 italic">
-            <p
-              class="text-xs font-bold text-slate-400 uppercase tracking-widest"
-            >
-              Henüz kimse katılmadı
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <!-- 3. EKİP KARTLARI (SADECE DİJİTAL OLMAYANLAR İÇİN) -->
+      <!-- 3. EKİP KARTLARI -->
       <section
         v-if="club.mainType !== 'DIGITAL'"
         class="w-full max-w-2xl"
@@ -1149,7 +964,7 @@
         >
           <img
             v-if="club.advisorUser?.avatarUrl"
-            :src="getImageUrl(club.advisorUser.avatarUrl)"
+            :src="club.advisorUser.avatarUrl"
             class="w-12 h-12 rounded-2xl object-cover border border-emerald-500/10"
           />
           <div
@@ -1177,7 +992,7 @@
         >
           <img
             v-if="club.founder?.avatarUrl"
-            :src="getImageUrl(club.founder.avatarUrl)"
+            :src="club.founder.avatarUrl"
             class="w-12 h-12 rounded-2xl object-cover border border-blue-500/10"
           />
           <div
@@ -1259,13 +1074,8 @@
       <section class="max-w-xs w-full space-y-4 pt-8">
         <button
           @click="handleToggleJoin"
-          :disabled="
-            joining ||
-            (!club.isJoined &&
-              club.maxMembers &&
-              club.memberCount >= club.maxMembers)
-          "
-          class="w-full py-5 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
+          :disabled="joining"
+          class="w-full py-5 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl"
           :class="
             club.isJoined
               ? 'bg-white dark:bg-gray-800 border-2 border-slate-100 dark:border-white/5 shadow-none'
@@ -1284,7 +1094,7 @@
                 }
           "
         >
-          {{ buttonText }}
+          {{ club.isJoined ? "EKİPTEN AYRIL" : "EKİBE KATIL" }}
         </button>
         <button
           v-if="
@@ -1389,14 +1199,6 @@ const showBadgeModal = ref(false);
 
 const isEmoji = (str: string) =>
   str && /\p{Emoji}/u.test(str) && str.length <= 2;
-
-const getImageUrl = (url: string | null) => {
-  if (!url) return null;
-  if (url.startsWith("http")) return url;
-  const cleanPath = url.startsWith("/") ? url.substring(1) : url;
-  return `http://localhost:3000/${cleanPath}`;
-};
-
 const isBadgeEarned = (badgeId: number) =>
   club.value?.earnedBadges?.some((b: any) => b.id === badgeId);
 const canAwardBadge = computed(() => {
@@ -1405,32 +1207,6 @@ const canAwardBadge = computed(() => {
     authStore.user.role === "ADMIN" ||
     authStore.user.email === club.value.advisorEmail
   );
-});
-
-const buttonText = computed(() => {
-  if (!club.value) return "";
-  if (
-    !club.value.isJoined &&
-    club.value.maxMembers &&
-    club.value.memberCount >= club.value.maxMembers
-  ) {
-    return "KONTENJAN DOLU";
-  }
-  const isJoined = club.value.isJoined;
-  const category = club.value.category;
-  const type = club.value.mainType;
-  if (type === "DIGITAL")
-    return isJoined ? "TOPLULUKTAN AYRIL" : "TOPLULUĞA KATIL";
-  if (type === "PROJECT")
-    return isJoined ? "PROJEDEN AYRIL" : "PROJEYE DAHİL OL";
-  if (category === "HALISAHA")
-    return isJoined ? "KADRODAN ÇIK" : "YAZ BENİ 11'E";
-  if (category === "GEZİ")
-    return isJoined ? "BİLETİ İPTAL ET" : "YOLCULUĞA KATIL";
-  if (category === "OYUN") return isJoined ? "LOBİDEN AYRIL" : "LOBİYE GİR";
-  if (category === "AKTİVİTE")
-    return isJoined ? "KATILIMI İPTAL ET" : "ETKİNLİĞE KATIL";
-  return isJoined ? "EKİPTEN AYRIL" : "EKİBE KATIL";
 });
 
 const fetchClub = async () => {
@@ -1473,8 +1249,7 @@ const handleToggleJoin = async () => {
     const res = await apiClient.post(`/clubs/${club.value.id}/toggle-join`);
     club.value.isJoined = res.data.joined;
     club.value.memberCount += res.data.joined ? 1 : -1;
-    toast.success(res.data.joined ? "Başarıyla katıldınız! ✨" : "Ayrıldınız.");
-    fetchClub();
+    toast.success(res.data.joined ? "Topluluğa katıldınız! ✨" : "Ayrıldınız.");
   } catch {
     toast.error("Hata!");
   } finally {
@@ -1494,6 +1269,8 @@ const confirmDelete = async () => {
   }
 };
 
+const formatDate = (d: string) => new Date(d).getFullYear().toString();
+
 const getDigitalTime = (deadline: string) => {
   if (!deadline) return { GÜN: "00", SAAT: "00", DAKİKA: "00" };
   const now = new Date().getTime();
@@ -1505,6 +1282,20 @@ const getDigitalTime = (deadline: string) => {
   const m = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   const pad = (n: number) => n.toString().padStart(2, "0");
   return { GÜN: pad(d), SAAT: pad(h), DAKİKA: pad(m) };
+};
+
+const getTimeLeft = (deadline: string) => {
+  if (!deadline) return "";
+  const now = new Date().getTime();
+  const target = new Date(deadline).getTime();
+  const diff = target - now;
+  if (diff <= 0) return "TAMAMLANDI";
+  const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+  const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  if (days > 0) return `${pad(days)}G ${pad(hours)}S ${pad(minutes)}D`;
+  return `${pad(hours)}S ${pad(minutes)}D KALDI`;
 };
 
 onMounted(fetchClub);
@@ -1529,6 +1320,7 @@ onMounted(fetchClub);
   0% {
     transform: translateX(-150%);
   }
+
   100% {
     transform: translateX(150%);
   }

@@ -379,8 +379,12 @@ export class UsersService {
   }
 
   async searchMentions(query: string, role?: string) {
+    const q = query.toLowerCase().trim();
     const where: any = {
-      username: { contains: query, mode: 'insensitive' },
+      OR: [
+        { username: { contains: q, mode: 'insensitive' } },
+        { fullName: { contains: q, mode: 'insensitive' } },
+      ],
       isBanned: false,
     };
     if (role) {
@@ -388,8 +392,8 @@ export class UsersService {
     }
     return this.prisma.user.findMany({
       where,
-      take: 5,
-      select: { id: true, username: true, fullName: true, avatarUrl: true, email: true },
+      take: 15,
+      select: { id: true, username: true, fullName: true, avatarUrl: true, email: true, role: true },
     });
   }
 

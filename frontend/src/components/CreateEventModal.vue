@@ -46,9 +46,9 @@
               <!-- Tarih & Saat (CUSTOM PICKER) -->
               <div class="space-y-2 relative">
                 <label class="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">Zaman</label>
-                <button type="button" @click="activeDropdown = activeDropdown === 'date' ? null : 'date'" class="w-full px-5 py-3.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/5 rounded-xl flex items-center justify-between text-sm font-bold dark:text-white shadow-sm">
-                  <span :class="form.date ? 'text-gray-900 dark:text-white' : 'text-gray-400'">{{ formattedDate || 'Tarih Seç' }}</span>
-                  <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                <button type="button" @click="activeDropdown = activeDropdown === 'date' ? null : 'date'" class="w-full px-5 py-3.5 bg-white dark:bg-gray-800 border border-gray-100 dark:border-white/5 rounded-xl flex items-center justify-between gap-3 text-sm font-bold dark:text-white shadow-sm group">
+                  <span :class="form.date ? 'text-gray-900 dark:text-white' : 'text-gray-400'" class="truncate text-left flex-1">{{ formattedDate || 'Tarih Seç' }}</span>
+                  <svg class="w-4 h-4 text-emerald-500 group-hover:scale-110 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
                 </button>
                 
                 <!-- Custom Date Picker Dropdown -->
