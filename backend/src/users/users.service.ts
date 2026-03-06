@@ -405,7 +405,7 @@ export class UsersService {
       where: { email },
       data: { verificationCode: code },
     });
-    await this.mailService.sendVerificationCode(email, code);
+    await this.mailService.sendPasswordResetCode(email, code);
     return { message: 'Sıfırlama kodu gönderildi.' };
   }
 
