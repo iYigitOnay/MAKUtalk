@@ -23,20 +23,24 @@ import { ChatModule } from './chat/chat.module';
 import { ClubsModule } from './clubs/clubs.module';
 import { SpotModule } from './spot/spot.module';
 import { EventsModule } from './events/events.module';
+import { LoggerModule } from './common/logger/logger.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
     }),
+    LoggerModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
     }),
-    ThrottlerModule.forRoot([{
-      ttl: 60,
-      limit: 100,
-    }]),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60,
+        limit: 100,
+      },
+    ]),
     ScheduleModule.forRoot(),
     PrismaModule,
     UsersModule,
