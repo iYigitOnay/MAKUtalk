@@ -115,6 +115,7 @@ model Message {
   senderId       Int
   content        String   @db.Text
   isRead         Boolean  @default(false)
+  isDeleted      Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -214,6 +215,8 @@ model Post {
   repostId   Int?     
   sentiment      String?  
   sentimentScore Float?
+  isDeleted  Boolean  @default(false)
+  isPinned    Boolean   @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
@@ -251,6 +254,7 @@ model Comment {
   content   String   @db.Text
   userId    Int
   postId    Int
+  isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

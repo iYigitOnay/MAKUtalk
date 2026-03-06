@@ -2,7 +2,6 @@ import {
   Injectable,
   NotFoundException,
   ForbiddenException,
-  Logger,
 } from '@nestjs/common';
 
 import { PrismaService } from '../prisma/prisma.service';
@@ -12,24 +11,28 @@ import { AiService } from '../ai/ai.service';
 import sharp from 'sharp';
 import * as fs from 'fs';
 import * as path from 'path';
+import { censorContent } from '../common/utils/content-filter.util';
+import { MyLogger } from '../common/logger/logger.service';
 
 @Injectable()
 export class PostsService {
-  private readonly logger = new Logger(PostsService.name);
-
   constructor(
     private prisma: PrismaService,
     private aiService: AiService,
+    private myLogger: MyLogger,
   ) {}
 
   async create(userId: number, createPostDto: CreatePostDto, file?: Express.Multer.File) {
-    // Eğer kategori seçilmemişse AI kategori ve duygu analizi yapacak
+    const { cleanText, count } = censorContent(createPostDto.content || '');
+    if (count > 0) {
+      this.myLogger.warn(`Kullanıcı ID: ${userId} küfürlü içerik paylaştı (${count} kelime).`, 'Security');
+    }
+
     const shouldIdentifyCategory = !createPostDto.categoryId;
-    const aiAnalysis = await this.aiService.analyzePost(createPostDto.content || '', shouldIdentifyCategory);
+    const aiAnalysis = await this.aiService.analyzePost(cleanText, shouldIdentifyCategory);
 
     let categoryId = createPostDto.categoryId;
 
-    // AI'dan gelen slug'ı veritabanındaki ID ile eşleştir
     if (!categoryId && aiAnalysis.suggestedCategorySlug) {
       const suggestedCategory = await this.prisma.category.findUnique({ 
         where: { slug: aiAnalysis.suggestedCategorySlug.toLowerCase().trim() } 
@@ -42,13 +45,10 @@ export class PostsService {
       categoryId = generalCategory?.id || 1;
     }
 
-    // GÖRSEL İŞLEME
     let imageUrl: string | null = null;
     if (file) {
       const uploadDir = path.join(process.cwd(), 'uploads', 'posts');
-      if (!fs.existsSync(uploadDir)) {
-        fs.mkdirSync(uploadDir, { recursive: true });
-      }
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 
       const fileName = `post-${Date.now()}-${Math.round(Math.random() * 1e9)}.webp`;
       const filePath = path.join(uploadDir, fileName);
@@ -58,16 +58,15 @@ export class PostsService {
           .resize(1200, null, { withoutEnlargement: true })
           .webp({ quality: 80 })
           .toFile(filePath);
-        
         imageUrl = `/uploads/posts/${fileName}`;
       } catch (error) {
-        this.logger.error(`Görsel işleme hatası: ${error.message}`);
+        this.myLogger.error(`Görsel işleme hatası: ${error.message}`, error.stack, 'PostsService');
       }
     }
 
     return this.prisma.post.create({
       data: {
-        content: createPostDto.content,
+        content: cleanText,
         imageUrl: imageUrl,
         published: createPostDto.published ?? true,
         authorId: userId,
@@ -76,33 +75,33 @@ export class PostsService {
         sentimentScore: aiAnalysis.sentimentScore,
       },
       include: {
-        author: {
-          select: { 
-            id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true,
-            badges: { include: { badge: true } }
-          },
-        },
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
         repostOf: {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: true } }
+            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: true } },
+        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
     });
   }
 
   async toggleRepost(userId: number, postId: number) {
-    const existingRepost = await this.prisma.post.findFirst({ where: { authorId: userId, repostId: postId } });
+    const existingRepost = await this.prisma.post.findFirst({
+      where: { authorId: userId, repostId: postId, isDeleted: false },
+    });
     if (existingRepost) {
-      await this.prisma.post.delete({ where: { id: existingRepost.id } });
+      await this.prisma.post.update({
+        where: { id: existingRepost.id },
+        data: { isDeleted: true },
+      });
       return { reposted: false, message: 'Remakü geri alındı.' };
     }
     const newRepost = await this.prisma.post.create({
-      data: { authorId: userId, repostId: postId, published: true },
+      data: { authorId: userId, repostId: postId, published: true, isDeleted: false },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
@@ -110,10 +109,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: true } }
+            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: true } },
+        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
     });
     return { reposted: true, post: newRepost, message: 'Remakülendi!' };
@@ -123,16 +122,11 @@ export class PostsService {
     const posts = await this.prisma.post.findMany({
       where: { 
         published: true,
+        isDeleted: false,
         OR: [
           { author: { isPrivate: false } },
           { authorId: userId },
-          { 
-            author: { 
-              followers: { 
-                some: { followerId: userId }
-              } 
-            } 
-          }
+          { author: { followers: { some: { followerId: userId } } } }
         ]
       },
       include: {
@@ -142,10 +136,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: true } }
+            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: true } },
+        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -157,16 +151,11 @@ export class PostsService {
       where: { 
         categoryId, 
         published: true,
+        isDeleted: false,
         OR: [
           { author: { isPrivate: false } },
           { authorId: userId },
-          { 
-            author: { 
-              followers: { 
-                some: { followerId: userId } 
-              } 
-            } 
-          }
+          { author: { followers: { some: { followerId: userId } } } }
         ]
       },
       include: {
@@ -176,10 +165,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: true } }
+            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: true } },
+        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -188,7 +177,7 @@ export class PostsService {
 
   async findMyPosts(userId: number) {
     const posts = await this.prisma.post.findMany({
-      where: { authorId: userId },
+      where: { authorId: userId, isDeleted: false },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
@@ -196,10 +185,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: true } }
+            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: true } },
+        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -216,7 +205,7 @@ export class PostsService {
     }
 
     const posts = await this.prisma.post.findMany({
-      where: { authorId: userId, NOT: { repostId: null } },
+      where: { authorId: userId, NOT: { repostId: null }, isDeleted: false },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
@@ -224,10 +213,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: true } }
+            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: true } },
+        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -244,7 +233,7 @@ export class PostsService {
     }
 
     const likes = await this.prisma.like.findMany({
-      where: { userId },
+      where: { userId, post: { isDeleted: false } },
       include: {
         post: {
           include: {
@@ -254,10 +243,10 @@ export class PostsService {
               include: {
                 author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
                 category: true,
-                _count: { select: { likes: true, comments: true, reposts: true } },
+                _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
               }
             },
-            _count: { select: { likes: true, comments: true, reposts: true } },
+            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
           }
         }
       },
@@ -272,7 +261,7 @@ export class PostsService {
     if (!userId) return posts;
     const [userLikes, userReposts] = await Promise.all([
       this.prisma.like.findMany({ where: { userId }, select: { postId: true } }),
-      this.prisma.post.findMany({ where: { authorId: userId, NOT: { repostId: null } }, select: { repostId: true } })
+      this.prisma.post.findMany({ where: { authorId: userId, NOT: { repostId: null }, isDeleted: false }, select: { repostId: true } })
     ]);
     const likedPostIds = new Set(userLikes.map((l) => l.postId));
     const repostedPostIds = new Set(userReposts.map((r) => r.repostId));
@@ -283,8 +272,8 @@ export class PostsService {
   }
 
   async findOne(id: number, currentUserId?: number) {
-    const post = await this.prisma.post.findUnique({
-      where: { id },
+    const post = await this.prisma.post.findFirst({
+      where: { id, isDeleted: false },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
@@ -292,10 +281,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: true } }
+            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: true } },
+        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
     });
     if (!post) return null;
@@ -304,9 +293,7 @@ export class PostsService {
       const isFollowing = await this.prisma.follow.findUnique({
         where: { followerId_followingId: { followerId: currentUserId || 0, followingId: post.authorId } }
       });
-      if (!isFollowing) {
-        throw new ForbiddenException('Bu gönderiyi görüntüleme yetkiniz yok. Kullanıcı gizli.');
-      }
+      if (!isFollowing) throw new ForbiddenException('Gizli gönderi.');
     }
 
     let isLiked = false;
@@ -318,12 +305,16 @@ export class PostsService {
   }
 
   async update(id: number, userId: number, updatePostDto: UpdatePostDto) {
-    const post = await this.prisma.post.findUnique({ where: { id } });
+    const post = await this.prisma.post.findFirst({ where: { id, isDeleted: false } });
     if (!post) throw new NotFoundException('Post bulunamadı.');
-    if (post.authorId !== userId) throw new ForbiddenException('Bu postu düzenleme yetkiniz yok.');
+    if (post.authorId !== userId) throw new ForbiddenException('Yetkiniz yok.');
+
+    const { cleanText, count } = censorContent(updatePostDto.content || '');
+    if (count > 0) this.myLogger.warn(`Kullanıcı ID: ${userId} postunu küfürle güncelledi.`, 'Security');
+
     return this.prisma.post.update({
       where: { id },
-      data: updatePostDto,
+      data: { ...updatePostDto, content: cleanText },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
@@ -331,58 +322,41 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: true } }
+            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: true } },
+        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
     });
   }
 
   async remove(id: number, userId: number) {
-    const post = await this.prisma.post.findUnique({ where: { id } });
+    const post = await this.prisma.post.findFirst({ where: { id, isDeleted: false } });
     if (!post) throw new NotFoundException('Post bulunamadı.');
 
-    // Kullanıcı admin mi kontrol et
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     const isAdmin = user?.role === 'ADMIN' || user?.email === '2312101063@ogr.mehmetakif.edu.tr';
 
-    if (post.authorId !== userId && !isAdmin) {
-      throw new ForbiddenException('Bu postu silme yetkiniz yok.');
-    }
+    if (post.authorId !== userId && !isAdmin) throw new ForbiddenException('Yetkiniz yok.');
 
-    // GÖRSELİ SİL
-    if (post.imageUrl) {
-      const filePath = path.join(process.cwd(), post.imageUrl);
-      if (fs.existsSync(filePath)) {
-        try {
-          fs.unlinkSync(filePath);
-        } catch (error) {
-          this.logger.error(`Görsel silme hatası: ${error.message}`);
-        }
-      }
-    }
-
-    await this.prisma.post.delete({ where: { id } });
+    await this.prisma.post.update({ where: { id }, data: { isDeleted: true } });
+    this.myLogger.log(`Post Soft-Deleted: ID ${id} by User ${userId}`, 'Security');
     return { message: 'Post başarıyla silindi.' };
   }
 
   async refreshSentiment(id: number, userId: number) {
-    const post = await this.prisma.post.findUnique({ where: { id } });
+    const post = await this.prisma.post.findFirst({ where: { id, isDeleted: false } });
     if (!post) throw new NotFoundException('Post bulunamadı.');
 
     const aiAnalysis = await this.aiService.analyzePost(post.content || '', false);
 
     return this.prisma.post.update({
       where: { id },
-      data: {
-        sentiment: aiAnalysis.sentiment,
-        sentimentScore: aiAnalysis.sentimentScore,
-      },
+      data: { sentiment: aiAnalysis.sentiment, sentimentScore: aiAnalysis.sentimentScore },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
-        _count: { select: { likes: true, comments: true, reposts: true } },
+        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
     });
   }
