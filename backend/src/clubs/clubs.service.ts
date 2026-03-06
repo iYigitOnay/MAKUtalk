@@ -22,28 +22,41 @@ export class ClubsService {
     if (mainType && mainType !== 'ALL') where.mainType = mainType;
     if (category && category !== 'TÜMÜ') where.category = category;
 
-    const clubs = await (this.prisma as any).club.findMany({
-      where,
-      include: {
-        founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
-        _count: { select: { members: true } }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const [clubs, userMemberships] = await Promise.all([
+      (this.prisma as any).club.findMany({
+        where,
+        include: {
+          founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
+          members: {
+            take: 10,
+            include: {
+              user: {
+                select: { id: true, username: true, fullName: true, avatarUrl: true },
+              },
+            },
+          },
+          _count: { select: { members: true } }
+        },
+        orderBy: { createdAt: 'desc' }
+      }),
+      userId
+        ? (this.prisma as any).clubMember.findMany({
+            where: { userId },
+            select: { clubId: true },
+          })
+        : Promise.resolve([]),
+    ]);
 
-    if (!userId) {
-      return clubs.map((c: any) => ({ ...c, memberCount: c._count.members, isJoined: false }));
-    }
+    const joinedClubIds = new Set(userMemberships.map((m: any) => m.clubId));
 
-    const memberships = await (this.prisma as any).clubMember.findMany({
-      where: { userId }
-    });
-    const joinedIds = new Set(memberships.map((m: any) => m.clubId));
-
-    return clubs.map((c: any) => ({
-      ...c,
-      memberCount: c._count.members,
-      isJoined: joinedIds.has(c.id)
+    return clubs.map((club: any) => ({
+      ...club,
+      isJoined: joinedClubIds.has(club.id),
+      memberCount: club._count.members,
+      members: club.members.map((m: any) => ({
+        ...m.user,
+        role: m.role,
+      })),
     }));
   }
 
@@ -94,7 +107,7 @@ export class ClubsService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     const club = await (this.prisma as any).club.findUnique({ where: { id: clubId } });
     const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
-    
+
     if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
     if (!club) throw new NotFoundException('Topluluk bulunamadı.');
     if (!badge || badge.type !== 'CLUB') throw new ForbiddenException('Bu rozet topluluklara atanamaz.');
@@ -114,34 +127,37 @@ export class ClubsService {
   async createProposal(userId: number, data: any) {
     const { name, category, emoji, color, advisorEmail, description, maxMembers, deadline, requiredSkills, metadata, mainType } = data;
     const slug = name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-    
+
     const existing = await (this.prisma as any).club.findFirst({ where: { OR: [{ name }, { slug }] } });
     if (existing) throw new ConflictException('Bu isimde bir topluluk zaten mevcut.');
 
-    const club = await (this.prisma as any).club.create({ 
-      data: { 
-        name, 
+    const club = await (this.prisma as any).club.create({
+      data: {
+        name,
         mainType: mainType || 'DIGITAL',
-        category, 
-        emoji, 
-        color: color || '#e11d48', 
-        advisorEmail: advisorEmail && advisorEmail.trim() !== "" ? advisorEmail : null, 
-        description, 
-        slug, 
-        founderId: userId, 
+        category,
+        emoji,
+        color: color || '#e11d48',
+        advisorEmail: advisorEmail && advisorEmail.trim() !== "" ? advisorEmail : null,
+        description,
+        slug,
+        founderId: userId,
         status: 'PENDING',
         maxMembers: maxMembers ? parseInt(maxMembers) : null,
         deadline: deadline ? new Date(deadline) : null,
         requiredSkills,
         metadata: metadata || null
-      } 
+      }
     });
     return club;
   }
 
-  async findOne(slug: string, userId?: number) {
+  async findOne(slugOrId: string, userId?: number) {
+    const isId = !isNaN(parseInt(slugOrId));
+    const where: any = isId ? { id: parseInt(slugOrId) } : { slug: slugOrId };
+
     const club = await (this.prisma as any).club.findUnique({
-      where: { slug },
+      where,
       include: {
         founder: { select: { id: true, username: true, fullName: true, avatarUrl: true } },
         advisor: { select: { id: true, username: true, fullName: true, avatarUrl: true, email: true } },
@@ -154,54 +170,61 @@ export class ClubsService {
       }
     });
     if (!club) throw new NotFoundException('Bulunamadı.');
+    
     let isJoined = false;
     if (userId) {
-      const membership = await (this.prisma as any).clubMember.findUnique({ where: { clubId_userId: { clubId: club.id, userId } } });
+      const membership = await (this.prisma as any).clubMember.findUnique({
+        where: { clubId_userId: { clubId: club.id, userId } },
+      });
       isJoined = !!membership;
     }
-    return { 
-      ...club, 
-      isJoined, 
-      memberCount: club.members.length, 
-      members: club.members.map((m: any) => m.user),
-      advisorUser: club.advisor, 
-      earnedBadges: club.badges.map((b: any) => b.badge) 
+    
+    return {
+      ...club,
+      isJoined,
+      memberCount: club.members.length,
+      members: club.members.map((m: any) => ({
+        ...m.user,
+        role: m.role,
+      })),
+      advisorUser: club.advisor,
+      earnedBadges: club.badges.map((b: any) => b.badge)
     };
   }
 
   async toggleJoin(userId: number, clubId: number) {
-    const club = await (this.prisma as any).club.findUnique({ 
+    const club = await (this.prisma as any).club.findUnique({
       where: { id: clubId, status: 'APPROVED' },
-      include: { _count: { select: { members: true } } }
+      include: { members: true, _count: { select: { members: true } } }
     });
     if (!club) throw new NotFoundException('Bulunamadı.');
 
-    const existing = await (this.prisma as any).clubMember.findUnique({ where: { clubId_userId: { clubId, userId } } });
-    
-    // Ayrılma işlemi her zaman yapılabilir
+    const existing = club.members.find(m => m.userId === userId);
+
     if (existing) {
+      if (existing.role === 'ADMIN' || existing.role === 'LEADER') {
+        throw new ForbiddenException('Lider/Yönetici topluluktan ayrılamaz.');
+      }
       await (this.prisma as any).clubMember.delete({ where: { id: existing.id } });
       return { joined: false };
     }
 
-    // Katılma Kontrolü: Kontenjan dolmuş mu?
     if (club.maxMembers && club._count.members >= club.maxMembers) {
       throw new ForbiddenException('Maalesef kontenjan dolu.');
     }
 
-    await (this.prisma as any).clubMember.create({ data: { clubId, userId } });
+    await (this.prisma as any).clubMember.create({ data: { clubId, userId, role: 'MEMBER' } });
     return { joined: true };
   }
 
   async getAllBadges() {
-    return this.prisma.badge.findMany({ where: { type: 'CLUB' } });
+    return (this.prisma as any).badge.findMany({ where: { type: 'CLUB' } });
   }
 
   async remove(userId: number, clubId: number, userRole: string) {
     const club = await (this.prisma as any).club.findUnique({ where: { id: clubId } });
     if (!club) throw new NotFoundException('Bulunamadı.');
 
-    // Silme Yetkisi: Kurucu OR Admin OR Akademisyen
     if (club.founderId !== userId && userRole !== 'ADMIN' && userRole !== 'ACADEMIC') {
       throw new ForbiddenException('Yetkiniz yok.');
     }
@@ -217,7 +240,7 @@ export class ClubsService {
       { name: 'Teknoloji Öncüsü', icon: '💻', color: '#3B82F6', type: 'CLUB' }
     ];
     for (const badge of initialBadges) {
-      await this.prisma.badge.upsert({ where: { name: badge.name }, update: { type: 'CLUB' as any }, create: badge as any });
+      await (this.prisma as any).badge.upsert({ where: { name: badge.name }, update: { type: 'CLUB' as any }, create: badge as any });
     }
     return { message: "Seed OK" };
   }

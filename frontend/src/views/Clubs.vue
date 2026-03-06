@@ -174,104 +174,236 @@
       <div
         v-for="club in filteredClubs"
         :key="club.id"
-        class="group bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/5 rounded-[2.5rem] p-6 sm:p-7 hover:shadow-2xl transition-all duration-500 flex flex-col justify-between hover:-translate-y-1"
+        @click="goToDetail(club)"
+        class="group relative bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/5 rounded-[2.5rem] p-6 sm:p-7 hover:shadow-2xl transition-all duration-500 flex flex-col justify-between hover:-translate-y-2 cursor-pointer overflow-hidden"
       >
+        <!-- KART ARKA PLAN PARLAMASI (Glow) -->
+        <div
+          class="absolute -right-12 -top-12 w-32 h-32 blur-[80px] opacity-0 group-hover:opacity-20 transition-opacity duration-700"
+          :style="{ backgroundColor: club.color }"
+        ></div>
+
         <div>
           <div class="flex justify-between items-start mb-6">
             <div
-              class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-inner border border-gray-100 dark:border-white/5 group-hover:rotate-6 transition-transform overflow-hidden"
+              class="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center shadow-inner border border-gray-100 dark:border-white/5 group-hover:rotate-6 transition-transform overflow-hidden relative"
               :style="{ backgroundColor: club.color + '15', color: club.color }"
             >
-              <span v-if="isEmoji(club.emoji)" class="text-3xl sm:text-4xl">{{
-                club.emoji
-              }}</span>
-              <span
-                v-else
-                class="text-lg sm:text-xl font-black uppercase tracking-tighter"
-                >{{ club.emoji }}</span
-              >
+              <span v-if="isEmoji(club.emoji)" class="text-3xl sm:text-4xl relative z-10">
+                {{ club.emoji }}
+              </span>
+              <span v-else class="text-lg sm:text-xl font-black uppercase tracking-tighter relative z-10">
+                {{ club.emoji }}
+              </span>
             </div>
+
             <div class="flex flex-col items-end gap-1.5">
-              <span
-                class="px-3 py-1 bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 text-[8px] font-black rounded-full border border-rose-100 dark:border-rose-800 uppercase tracking-widest"
-                >{{ club.category }}</span
+              <!-- DURUM ETİKETİ (Status Tag) -->
+              <div
+                v-if="club.maxMembers && (club.maxMembers - club.memberCount) <= 2 && (club.maxMembers - club.memberCount) > 0"
+                class="px-2 py-0.5 bg-rose-500 text-white text-[7px] font-black rounded-full animate-pulse uppercase tracking-widest"
               >
+                SON {{ club.maxMembers - club.memberCount }} KİŞİ
+              </div>
+
               <span
-                v-if="club.mainType === 'PROJECT'"
-                class="text-[7px] font-black text-blue-500 uppercase tracking-widest"
-                >🚀 Proje Ekibi</span
+                class="px-3 py-1 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-[8px] font-black rounded-full border border-gray-100 dark:border-white/5 uppercase tracking-widest"
               >
-              <span
-                v-if="club.mainType === 'SOCIAL'"
-                class="text-[7px] font-black text-amber-500 uppercase tracking-widest"
-                >🌍 Sosyal Grup</span
-              >
+                {{ club.category }}
+              </span>
             </div>
           </div>
+
           <h3
-            class="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-3 leading-tight truncate"
+            class="text-lg sm:text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2 leading-tight truncate group-hover:text-rose-600 transition-colors"
           >
             {{ club.name }}
           </h3>
           <p
-            class="text-xs text-gray-500 dark:text-gray-400 font-medium leading-relaxed mb-6 line-clamp-2 italic h-10"
+            class="text-[11px] text-gray-500 dark:text-gray-400 font-medium leading-relaxed mb-6 line-clamp-2 italic h-8"
           >
             "{{ club.description }}"
           </p>
 
-          <div
-            v-if="club.mainType !== 'DIGITAL'"
-            class="flex flex-wrap gap-2 mb-6"
-          >
+          <!-- KATEGORİYE ÖZEL GÖRSELLEŞTİRME (SPECIALIZED UI) -->
+          <div class="mb-6 min-h-[44px] flex items-center">
+            <!-- 1. HALISAHA & OYUN: Lobi/Slot Görünümü -->
             <div
-              v-if="club.maxMembers"
-              class="px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center gap-1.5 border border-gray-100 dark:border-gray-700"
+              v-if="club.category === 'HALISAHA' || club.category === 'OYUN'"
+              class="w-full space-y-3"
             >
-              <div class="w-1 h-1 rounded-full bg-emerald-500"></div>
-              <span class="text-[8px] font-black text-gray-500 uppercase"
-                >{{ club.memberCount }}/{{ club.maxMembers }} Katılımcı</span
-              >
+              <div class="flex items-center justify-between mb-1">
+                <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Kadro Durumu</span>
+                <span class="text-[9px] font-black text-rose-600">
+                  {{ club.memberCount }}/{{ club.maxMembers || '∞' }}
+                </span>
+              </div>
+              <div class="flex gap-1.5">
+                <div
+                  v-for="i in (club.maxMembers || 5)"
+                  :key="i"
+                  :class="[
+                    'h-1.5 flex-1 rounded-full transition-all duration-500',
+                    i <= club.memberCount
+                      ? 'bg-rose-500 shadow-[0_0_8px_rgba(225,29,72,0.4)]'
+                      : 'bg-gray-100 dark:bg-gray-800',
+                  ]"
+                ></div>
+              </div>
             </div>
+
+            <!-- 2. GEZİ: Rota Görünümü -->
             <div
-              v-if="club.deadline"
-              class="px-2 py-1 bg-gray-50 dark:bg-gray-800 rounded-lg flex items-center gap-1.5 border border-gray-100 dark:border-gray-700"
+              v-if="club.category === 'GEZİ' && club.metadata?.tripFrom"
+              class="w-full flex items-center gap-3 bg-gray-50/50 dark:bg-gray-800/30 p-3 rounded-2xl border border-gray-100 dark:border-white/5"
             >
-              <svg
-                class="w-3 h-3 text-rose-500"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <div class="flex-1 text-center">
+                <p class="text-[7px] font-black text-gray-400 uppercase">Kalkış</p>
+                <p class="text-[9px] font-black text-gray-700 dark:text-gray-200 truncate">
+                  {{ club.metadata.tripFrom }}
+                </p>
+              </div>
+              <div class="flex flex-col items-center px-1">
+                <svg
+                  class="w-4 h-4 text-rose-500 animate-pulse"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2.5"
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </svg>
+              </div>
+              <div v-if="club.metadata.tripTo" class="flex-1 text-center">
+                <p class="text-[7px] font-black text-gray-400 uppercase">Varış</p>
+                <p class="text-[9px] font-black text-rose-600 truncate">
+                  {{ club.metadata.tripTo }}
+                </p>
+              </div>
+            </div>
+
+            <!-- 3. AKTİVİTE: Vibe & Type -->
+            <div v-if="club.category === 'AKTİVİTE'" class="w-full flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></div>
+                <span class="text-[9px] font-black text-gray-700 dark:text-gray-200 uppercase tracking-tighter">
+                  {{ club.metadata?.activityType || 'Buluşma' }}
+                </span>
+              </div>
+              <span
+                class="px-2 py-1 bg-amber-50 dark:bg-amber-900/20 text-amber-600 text-[8px] font-black rounded-lg border border-amber-100 dark:border-amber-900/20 uppercase tracking-widest"
               >
+                {{ club.metadata?.activityVibe || 'Chill' }} Vibe
+              </span>
+            </div>
+
+            <!-- 4. DİJİTAL / PROJE: Tech & Academic -->
+            <div
+              v-if="club.mainType === 'DIGITAL' || club.mainType === 'PROJECT'"
+              class="w-full flex items-center justify-between"
+            >
+              <div class="flex items-center gap-2">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-[9px] font-black text-gray-700 dark:text-gray-200 uppercase tracking-tighter">
+                  {{ club.mainType === 'PROJECT' ? 'Aktif Proje' : 'Dijital Topluluk' }}
+                </span>
+              </div>
+              <div v-if="club.advisorName" class="flex items-center gap-1.5">
+                <svg class="w-3 h-3 text-emerald-500" fill="currentColor" viewBox="0 0 24 24">
+                  <path
+                    d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"
+                  />
+                </svg>
+                <span class="text-[8px] font-black text-emerald-600 uppercase tracking-widest">
+                  Hoca Onaylı
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- ALT BİLGİLER & KATILIMCI SOSYAL LİSTESİ -->
+          <div class="flex items-center justify-between pt-4 border-t border-gray-50 dark:border-white/5">
+            <!-- KATILIMCILAR (Facepile) -->
+            <div class="flex items-center gap-3">
+              <div 
+                class="flex items-center -space-x-2.5 cursor-pointer hover:scale-105 transition-transform"
+                @click.stop="openMembersModal(club)"
+              >
+                <template v-if="club.members && club.members.length > 0">
+                  <div 
+                    v-for="member in club.members.slice(0, 3)" 
+                    :key="member.id"
+                    class="w-7 h-7 rounded-full border-2 border-white dark:border-gray-900 bg-gray-100 dark:bg-gray-800 overflow-hidden shadow-sm"
+                  >
+                    <img 
+                      v-if="member.avatarUrl" 
+                      :src="getAvatarUrl(member.avatarUrl)" 
+                      @error="handleImageError($event, member)"
+                      class="w-full h-full object-cover"
+                    />
+                    <div v-else class="w-full h-full flex items-center justify-center text-[8px] font-black text-gray-400 bg-gray-100 dark:bg-gray-800 uppercase">
+                      {{ member.username ? member.username.charAt(0) : '?' }}
+                    </div>
+                  </div>
+                  <div 
+                    v-if="club.memberCount > 3"
+                    class="w-7 h-7 rounded-full border-2 border-white dark:border-gray-900 bg-gray-100 dark:bg-gray-800 flex items-center justify-center shadow-sm"
+                  >
+                    <span class="text-[8px] font-black text-gray-400">+{{ club.memberCount - 3 }}</span>
+                  </div>
+                </template>
+                <div 
+                  v-else 
+                  class="flex items-center gap-2 opacity-60 hover:opacity-100 transition-opacity cursor-pointer group/join"
+                  @click.stop="toggleJoin(club)"
+                >
+                  <div class="w-6 h-6 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-700 flex items-center justify-center group-hover/join:border-rose-500 group-hover/join:bg-rose-500/10 transition-colors">
+                    <span class="text-[10px] text-gray-400 group-hover/join:text-rose-500">+</span>
+                  </div>
+                  <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest group-hover/join:text-rose-600">İlk Sen Katıl</span>
+                </div>
+              </div>
+
+              <!-- HIZLI KATIL / AYRIL BUTONU -->
+              <button 
+                v-if="club.members && club.members.length > 0"
+                @click.stop="toggleJoin(club)"
+                :class="[
+                  'w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 shadow-lg active:scale-90 group/toggle',
+                  club.isJoined 
+                    ? 'bg-emerald-50 dark:bg-emerald-950/20 text-emerald-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 hover:text-rose-600 shadow-none border border-emerald-100 dark:border-emerald-900/20' 
+                    : 'bg-rose-500 text-white shadow-rose-500/20 hover:bg-rose-600 hover:rotate-90 hover:scale-110'
+                ]"
+                :title="club.isJoined ? 'Ayrıl' : 'Hızlı Katıl'"
+              >
+                <!-- Katılmamışsa: Artı İkonu -->
+                <svg v-if="!club.isJoined" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M12 6v12m6-6H6" /></svg>
+                
+                <!-- Katılmışsa: Tik İkonu (Hover'da Çarpı olacak) -->
+                <div v-else class="relative w-full h-full flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 group-hover/toggle:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7" /></svg>
+                  <svg class="w-3.5 h-3.5 hidden group-hover/toggle:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M6 18L18 6M6 6l12 12" /></svg>
+                </div>
+              </button>
+            </div>
+
+            <button
+              class="w-8 h-8 rounded-xl bg-gray-50 dark:bg-gray-800 text-gray-400 group-hover:bg-rose-600 group-hover:text-white transition-all flex items-center justify-center shadow-sm"
+            >
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
                   stroke-width="2.5"
+                  d="M9 5l7 7-7 7"
                 />
               </svg>
-              <span class="text-[8px] font-black text-gray-500 uppercase">{{
-                formatDate(club.deadline)
-              }}</span>
-            </div>
+            </button>
           </div>
-        </div>
-
-        <div
-          class="flex items-center justify-between pt-5 border-t border-gray-50 dark:border-white/5"
-        >
-          <div class="flex flex-col">
-            <span
-              class="text-[8px] font-black text-gray-400 uppercase tracking-widest"
-              >{{ club.mainType === "PROJECT" ? "Ekip" : "Üye" }}</span
-            >
-            <span class="text-base font-black text-gray-900 dark:text-white">{{
-              club.memberCount
-            }}</span>
-          </div>
-          <button
-            @click="$router.push(`/campus/clubs/${club.slug}`)"
-            class="px-7 py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-rose-600 dark:hover:bg-rose-600 hover:text-white transition-all active:scale-95 shadow-sm"
-          >
-            İncele
-          </button>
         </div>
       </div>
     </div>
@@ -280,6 +412,52 @@
         Bu kategoride henüz topluluk bulunamadı
       </p>
     </div>
+
+    <!-- KATILIMCI LİSTESİ MODALI -->
+    <transition name="fade">
+      <div v-if="showMembersModal" class="fixed inset-0 z-[200] flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-white/40 dark:bg-gray-950/70 backdrop-blur-xl" @click="showMembersModal = false"></div>
+        <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-white/10 relative flex flex-col overflow-hidden max-h-[70vh] animate-in zoom-in-95 duration-300">
+          <div class="p-6 text-center border-b border-gray-50 dark:border-white/5">
+            <h3 class="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter italic">
+              Katılımcı <span class="text-rose-600">Listesi</span>
+            </h3>
+            <p class="text-[8px] text-gray-400 font-black uppercase tracking-widest mt-1">{{ selectedClubForMembers?.memberCount }} ÜYE MEVCUT</p>
+          </div>
+          <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+            <div class="space-y-3">
+              <div 
+                v-for="member in selectedClubForMembers?.members" 
+                :key="member.id"
+                class="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-gray-800/50 hover:bg-slate-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-full border-2 border-white dark:border-gray-900 bg-white dark:bg-gray-800 overflow-hidden shadow-sm">
+                    <img 
+                      v-if="member.avatarUrl" 
+                      :src="getAvatarUrl(member.avatarUrl)" 
+                      @error="handleImageError($event, member)"
+                      class="w-full h-full object-cover" 
+                    />
+                    <div v-else class="w-full h-full flex items-center justify-center text-xs font-black text-rose-500 bg-rose-50 dark:bg-rose-900/20 uppercase">
+                      {{ member.username ? member.username.charAt(0) : '?' }}
+                    </div>
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-black text-gray-900 dark:text-white uppercase tracking-tight">{{ member.fullName || member.username }}</p>
+                    <p class="text-[9px] font-bold text-rose-500">@{{ member.username }}</p>
+                  </div>
+                </div>
+                <div v-if="member.role === 'LEADER'" class="px-2 py-0.5 bg-rose-600 text-white text-[7px] font-black rounded-full uppercase tracking-widest">LİDER</div>
+              </div>
+            </div>
+          </div>
+          <div class="p-4 border-t border-gray-50 dark:border-white/5">
+            <button @click="showMembersModal = false" class="w-full py-3 bg-gray-900 dark:bg-white text-white dark:text-gray-900 text-[9px] font-black rounded-xl uppercase tracking-widest active:scale-95 transition-all">KAPAT</button>
+          </div>
+        </div>
+      </div>
+    </transition>
 
     <!-- CREATE MODAL -->
     <div
@@ -1379,12 +1557,14 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import apiClient from "@/api/client";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "vue-toastification";
 import { VueDatePicker } from "@vuepic/vue-datepicker";
 import "@vuepic/vue-datepicker/dist/main.css";
 
+const router = useRouter();
 const toast = useToast();
 const authStore = useAuthStore();
 const searchQuery = ref("");
@@ -1394,6 +1574,77 @@ const clubs = ref<any[]>([]);
 const loading = ref(true);
 const submitting = ref(false);
 const showCreateModal = ref(false);
+const showMembersModal = ref(false);
+const selectedClubForMembers = ref<any>(null);
+
+const getAvatarUrl = (path: string | null) => {
+  if (!path) return null;
+  if (path.startsWith("http") || path.startsWith("data:")) return path;
+  
+  // Eğer path zaten /uploads ile başlıyorsa sadece hostu ekle
+  if (path.startsWith("/uploads/")) {
+    return `http://localhost:3000${path}`;
+  }
+  
+  // Aksi halde varsayılan avatar klasörünü ekle
+  return `http://localhost:3000/uploads/avatars/${path}`;
+};
+
+const handleImageError = (e: any, member: any) => {
+  console.error("❌ Resim Yüklenemedi:", e.target.src, "Üye:", member.username);
+};
+
+const goToDetail = (club: any) => {
+  const identifier = club.slug || club.id;
+  router.push(`/campus/clubs/${identifier}`);
+};
+
+const openMembersModal = (club: any) => {
+  console.log("👥 Modal Açılıyor. Üyeler:", club.members);
+  selectedClubForMembers.value = club;
+  showMembersModal.value = true;
+};
+
+const toggleJoin = async (club: any) => {
+  if (!authStore.user) {
+    toast.error("Önce giriş yapmalısınız! 🛡️");
+    return;
+  }
+  try {
+    const res = await apiClient.post(`/clubs/${club.id}/toggle-join`);
+    const isJoining = res.data.joined;
+
+    const targetClub = clubs.value.find((c) => c.id === club.id);
+    if (targetClub) {
+      if (isJoining) {
+        targetClub.memberCount++;
+        targetClub.isJoined = true;
+        if (!targetClub.members) targetClub.members = [];
+        
+        const myAvatar = authStore.user.avatarUrl || authStore.user.avatar;
+        console.log("✅ Katılma İşlemi. Benim PP:", myAvatar);
+        
+        targetClub.members.unshift({
+          id: authStore.user.id,
+          username: authStore.user.username,
+          fullName: authStore.user.fullName,
+          avatarUrl: myAvatar,
+          role: "MEMBER",
+        });
+        toast.success("Topluluğa katıldın! 🚀");
+      } else {
+        targetClub.memberCount--;
+        targetClub.isJoined = false;
+        targetClub.members = targetClub.members.filter(
+          (m: any) => (m.id || m.user?.id) !== authStore.user.id
+        );
+        toast.info("Topluluktan ayrıldın.");
+      }
+    }
+  } catch (err: any) {
+    toast.error(err.response?.data?.message || "İşlem başarısız.");
+  }
+};
 
 const mainTypeNavRef = ref<HTMLElement | null>(null);
 const categoryNavRef = ref<HTMLElement | null>(null);
