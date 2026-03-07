@@ -4,6 +4,7 @@ import { LoginDto } from './dto/login.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('auth')
 export class AuthController {
@@ -11,12 +12,14 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
+  @Throttle({ medium: { limit: 5, ttl: 60000 } })
   async register(@Body() createUserDto: CreateUserDto) {
     return this.authService.register(createUserDto);
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ medium: { limit: 5, ttl: 60000 } })
   async login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
   }
@@ -29,12 +32,14 @@ export class AuthController {
 
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ medium: { limit: 3, ttl: 60000 } })
   async forgotPassword(@Body('email') email: string) {
     return this.authService.forgotPassword(email);
   }
 
   @Post('reset-password')
   @HttpCode(HttpStatus.OK)
+  @Throttle({ medium: { limit: 3, ttl: 60000 } })
   async resetPassword(
     @Body('email') email: string,
     @Body('code') code: string,

@@ -37,8 +37,19 @@ import { LoggerModule } from './common/logger/logger.module';
     }),
     ThrottlerModule.forRoot([
       {
-        ttl: 60,
-        limit: 100,
+        name: 'short',
+        ttl: 1000, 
+        limit: 3,
+      },
+      {
+        name: 'medium',
+        ttl: 60000, 
+        limit: 30,
+      },
+      {
+        name: 'long',
+        ttl: 3600000, 
+        limit: 1000,
       },
     ]),
     ScheduleModule.forRoot(),

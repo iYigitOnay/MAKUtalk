@@ -18,6 +18,7 @@ import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('posts')
 export class PostsController {
@@ -26,6 +27,7 @@ export class PostsController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('image'))
+  @Throttle({ medium: { limit: 2, ttl: 60000 } }) // Dakikada max 2 post
   create(
     @CurrentUser() user,
     @Body() createPostDto: CreatePostDto,
@@ -60,6 +62,7 @@ export class PostsController {
 
   @Post(':id/repost')
   @UseGuards(JwtAuthGuard)
+  @Throttle({ medium: { limit: 5, ttl: 60000 } }) // Dakikada max 5 remakü
   toggleRepost(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
     return this.postsService.toggleRepost(user.id, id);
   }
