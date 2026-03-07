@@ -326,16 +326,78 @@ export class UsersService {
   }
 
   async createReport(reporterId: number, data: any) {
-    return (this.prisma as any).report.create({
-      data: {
+    const {
+      reportedUserId,
+      reportedPostId,
+      reportedCommentId,
+      reason,
+      subReason,
+    } = data;
+
+    // 1. AYNI KULLANICI AYNI ŞEYİ TEKRAR ŞİKAYET EDEMEZ
+    const existingReport = await (this.prisma as any).report.findFirst({
+      where: {
         reporterId,
-        reportedUserId: data.reportedUserId,
-        reportedPostId: data.reportedPostId,
-        reportedCommentId: data.reportedCommentId,
-        reason: data.reason,
-        subReason: data.subReason,
+        reportedPostId: reportedPostId || null,
+        reportedCommentId: reportedCommentId || null,
+        reportedUserId: reportedUserId || null,
       },
     });
+
+    if (existingReport) {
+      throw new ConflictException(
+        'Bu içerik için zaten bir bildirimde bulundunuz.',
+      );
+    }
+
+    // 2. ŞİKAYETİ OLUŞTUR
+    const report = await (this.prisma as any).report.create({
+      data: {
+        reporterId,
+        reportedUserId,
+        reportedPostId,
+        reportedCommentId,
+        reason,
+        subReason,
+      },
+    });
+
+    // 3. OTOMATİK MODERASYON KONTROLÜ (EŞİK DEĞERİ: 3)
+    const THRESHOLD = 3;
+
+    if (reportedPostId) {
+      const reportCount = await (this.prisma as any).report.count({
+        where: { reportedPostId },
+      });
+
+      if (reportCount >= THRESHOLD) {
+        await this.prisma.post.update({
+          where: { id: reportedPostId },
+          data: { published: false }, // Postu gizle
+        });
+        console.warn(
+          `[Moderasyon] Post #${reportedPostId} çok fazla şikayet aldığı için otomatik gizlendi.`,
+        );
+      }
+    }
+
+    if (reportedCommentId) {
+      const reportCount = await (this.prisma as any).report.count({
+        where: { reportedCommentId },
+      });
+
+      if (reportCount >= THRESHOLD) {
+        await this.prisma.comment.update({
+          where: { id: reportedCommentId },
+          data: { isDeleted: true }, // Yorumu gizle (Soft Delete)
+        });
+        console.warn(
+          `[Moderasyon] Yorum #${reportedCommentId} otomatik olarak karantinaya alındı.`,
+        );
+      }
+    }
+
+    return report;
   }
 
   async createFeedback(userId: number | null, type: string, message: string) {
