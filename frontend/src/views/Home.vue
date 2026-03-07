@@ -691,7 +691,6 @@ const removeSelectedImage = () => {
   selectedImagePreview.value = null;
   if (imageInputRef.value) imageInputRef.value.value = "";
 };
-
 const handleCreatePost = async () => {
   if (!newPostContent.value.trim() && !selectedImage.value) return;
   try {
@@ -706,8 +705,10 @@ const handleCreatePost = async () => {
     removeSelectedImage();
     nextTick(adjustTextareaHeight);
     toast.success("Paylaşıldı!");
-  } catch {
-    toast.error("Hata!");
+  } catch (err: any) {
+    // Store zaten error.response.data'yı fırlattığı için direkt içindeki message'a bakıyoruz
+    const msg = err.message || (err.response?.data?.message);
+    toast.error(Array.isArray(msg) ? msg[0] : (msg || "Hata!"));
   }
 };
 
@@ -782,8 +783,9 @@ const submitReport = async (sub: string) => {
       subReason: sub,
     });
     toast.warning("Bildirildi.");
-  } catch {
-    toast.error("Hata!");
+  } catch (err: any) {
+    const msg = err.response?.data?.message;
+    toast.error(Array.isArray(msg) ? msg[0] : (msg || "Hata!"));
   } finally {
     closeReport();
   }

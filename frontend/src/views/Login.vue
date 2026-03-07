@@ -174,8 +174,8 @@ const handleLogin = async () => {
     toast.success("Giriş başarılı!");
     router.push("/");
   } catch (error: any) {
-    const message = error.message?.[0] || "Giriş yapılamadı.";
-    toast.error(message);
+    const msg = error.response?.data?.message || error.message;
+    toast.error(Array.isArray(msg) ? msg[0] : (msg || "Giriş yapılamadı."));
   } finally {
     loading.value = false;
   }

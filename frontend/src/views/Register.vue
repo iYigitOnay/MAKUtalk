@@ -253,10 +253,8 @@ const handleRegister = async () => {
     toast.success("Kayıt başarılı! Lütfen mailini doğrula.");
     router.push("/login");
   } catch (error: any) {
-    const message = Array.isArray(error.response?.data?.message) 
-      ? error.response.data.message[0] 
-      : error.response?.data?.message || "Kayıt yapılamadı.";
-    toast.error(message);
+    const msg = error.response?.data?.message || error.message;
+    toast.error(Array.isArray(msg) ? msg[0] : (msg || "Kayıt yapılamadı."));
   } finally {
     loading.value = false;
   }
