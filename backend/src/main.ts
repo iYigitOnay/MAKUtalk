@@ -18,6 +18,7 @@ async function bootstrap() {
   const logger = app.get(MyLogger);
   app.useLogger(logger);
 
+  // --- KATMAN 1: IP VE ISTEK TAKIBI ---
   app.use(
     morgan(
       ':method :url :status :res[content-length] - :response-time ms | IP: :remote-addr | User: :user-agent',
@@ -29,15 +30,60 @@ async function bootstrap() {
     ),
   );
 
-  // Body limitlerini artır
-  app.use(json({ limit: '20mb' }));
-  app.use(urlencoded({ extended: true, limit: '20mb' }));
+  // --- KATMAN 5: API KALKANI VE GÜVENLIK ---
+  
+  // 1. JSON Limitleri (Dosya şişirme saldırılarına karşı)
+  app.use(json({ limit: '10mb' }));
+  app.use(urlencoded({ extended: true, limit: '10mb' }));
 
+  // 2. Helmet Zırhı (En sıkı ayarlar)
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"],
+          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+          fontSrc: ["'self'", "https://fonts.gstatic.com"],
+          imgSrc: ["'self'", "data:", "http://localhost:3000", "https://*"],
+          connectSrc: ["'self'", "http://localhost:3000", "ws://localhost:3000"],
+        },
+      },
+      xssFilter: true, // XSS Koruması
+      noSniff: true,   // MIME sniffing engeli
+      hidePoweredBy: true, // "X-Powered-By: Express" başlığını gizle
     }),
   );
+
+  // 3. Kesin CORS Politikası
+  app.enableCors({
+    origin: [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:5174',
+      'https://makutalk.com', // Canlı domain (varsa)
+    ],
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  });
+
+  // 4. Strict Veri Denetimi (Validation)
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,               // Sadece DTO'da tanımlı alanları kabul et
+      forbidNonWhitelisted: true,    // Beklenmeyen alan gelirse isteği REDDET
+      transform: true,               // Gelen veriyi otomatik tipe çevir (string -> number vb.)
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
+    }),
+  );
+
+  // 5. Global Hata Filtresi
+  app.useGlobalFilters(new HttpExceptionFilter());
 
   // Statik dosyaları dışarı aç
   const uploadsPath = join(process.cwd(), 'uploads');
@@ -45,28 +91,13 @@ async function bootstrap() {
     prefix: '/uploads',
   });
 
-  app.enableCors({
-    origin: true,
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-  });
-
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-    }),
-  );
-
-  app.useGlobalFilters(new HttpExceptionFilter());
-
   app.setGlobalPrefix('api');
 
-  await app.listen(3000);
+  const port = process.env.PORT || 3000;
+  await app.listen(port);
+  
   logger.log(
-    '🚀 MAKUtalk Backend is running on http://localhost:3000/api',
+    `🚀 MAKUtalk Shield Active. Running on http://localhost:${port}/api`,
     'Bootstrap',
   );
 }
