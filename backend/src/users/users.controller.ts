@@ -134,6 +134,7 @@ export class UsersController {
     return this.usersService.toggleUserBadge(userId, badgeId, admin.id);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('feedback')
   async submitFeedback(
     @CurrentUser() user,

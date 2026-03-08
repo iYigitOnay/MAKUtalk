@@ -92,7 +92,7 @@ const router = createRouter({
       path: "/admin",
       name: "Admin",
       component: () => import("@/views/Admin.vue"),
-      meta: { requiresAuth: true, layout: "main" },
+      meta: { requiresAuth: true, layout: "admin" },
       beforeEnter: (to, from, next) => {
         const authStore = useAuthStore();
         if (authStore.user?.role === 'ADMIN' || authStore.user?.email === '2312101063@ogr.mehmetakif.edu.tr') {

@@ -24,6 +24,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   private readonly logger = new Logger(ChatGateway.name);
+  private static onlineUsers = new Set<number>();
 
   constructor(
     private chatService: ChatService,
@@ -31,23 +32,42 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     private prisma: PrismaService,
   ) {}
 
+  static getOnlineCount(): number {
+    return this.onlineUsers.size;
+  }
+
+  static isUserOnline(userId: number): boolean {
+    return this.onlineUsers.has(userId);
+  }
+
   async handleConnection(client: Socket) {
     try {
       const token = client.handshake.auth.token?.split(' ')[1];
       if (!token) return client.disconnect();
 
       const payload = this.jwtService.verify(token);
-      client.data.userId = payload.sub;
+      const userId = payload.sub;
+      client.data.userId = userId;
       
-      const userRoom = `user_${client.data.userId}`;
+      ChatGateway.onlineUsers.add(userId);
+      
+      const userRoom = `user_${userId}`;
       await client.join(userRoom);
-      this.logger.log(`Client connected: ${client.id} to room ${userRoom}`);
+      this.logger.log(`Client connected: ${client.id} (User: ${userId})`);
+      
+      // Adminlere yeni birinin geldiğini haber ver (opsiyonel)
+      this.server.emit('online_count', ChatGateway.onlineUsers.size);
     } catch (e) {
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
+    const userId = client.data.userId;
+    if (userId) {
+      ChatGateway.onlineUsers.delete(userId);
+      this.server.emit('online_count', ChatGateway.onlineUsers.size);
+    }
     this.logger.log(`Client disconnected: ${client.id}`);
   }
 

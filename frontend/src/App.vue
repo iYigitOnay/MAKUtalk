@@ -9,6 +9,8 @@
       <!-- Mobile Navbar (Top) -->
       <Navbar v-if="!hideNavbar" class="sm:hidden flex-shrink-0" />
 
+      <ToastNotifications />
+
       <div class="flex w-full max-w-[1300px] bg-white dark:bg-gray-950 shadow-2xl shadow-slate-200/50 dark:shadow-none min-w-0">
         <!-- Desktop Sidebar -->
         <Sidebar class="hidden sm:flex sticky top-0 h-screen" />
@@ -71,7 +73,8 @@ watch(
 );
 
 const showMainLayout = computed(() => {
-  return (route.meta.layout as string) === "main";
+  const layout = route.meta.layout as string;
+  return layout === "main";
 });
 </script>
 

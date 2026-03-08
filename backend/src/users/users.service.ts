@@ -400,7 +400,8 @@ export class UsersService {
     return report;
   }
 
-  async createFeedback(userId: number | null, type: string, message: string) {
+  async createFeedback(userId: number, type: string, message: string) {
+    if (!userId) throw new Error('UserId gerekli.');
     return (this.prisma as any).feedback.create({
       data: { userId, type, message },
     });
