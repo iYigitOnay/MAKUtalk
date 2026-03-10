@@ -128,4 +128,32 @@ export class AiService implements OnModuleInit {
   }
 
   async moderateContent(content: string) { return { safe: true }; }
+
+  async summarizeCampusLife(stats: {
+    totalPosts: number;
+    topCategory: string;
+    sentimentSummary: string;
+    spotVolume: number;
+    activeInteractions: number;
+  }) {
+    if (!this.model) return "Bu hafta kampüs oldukça hareketliydi! Detaylar için grafikleri inceleyebilirsin.";
+
+    try {
+      const prompt = `Aşağıdaki kampüs verilerine dayanarak, üniversite öğrencilerine hitap eden, samimi, biraz esprili ve ilgi çekici 2-3 cümlelik bir haftalık özet yaz.
+      
+      VERİLER:
+      - Toplam Paylaşım: ${stats.totalPosts}
+      - En Çok Konuşulan Konu: ${stats.topCategory}
+      - Genel Duygu: ${stats.sentimentSummary}
+      - Spot İlan Hacmi: ${stats.spotVolume} TL
+      - Toplam Etkileşim: ${stats.activeInteractions}
+      
+      ÖNEMLİ: Yanıtın sadece metin olsun, JSON veya tırnak işareti içermesin.`;
+
+      const result = await this.model.generateContent(prompt);
+      return result.response.text().trim();
+    } catch (error) {
+      return "Kampüste bu hafta etkileşim tavan yaptı! Herkes bir şeyler paylaşıyor.";
+    }
+  }
 }

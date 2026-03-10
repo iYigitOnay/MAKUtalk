@@ -135,6 +135,12 @@ const router = createRouter({
       meta: { requiresAuth: true, layout: "main" },
     },
     {
+      path: "/campus/analytics",
+      name: "CampusAnalysis",
+      component: () => import("../views/CampusAnalysis.vue"),
+      meta: { requiresAuth: true, layout: "analytics" },
+    },
+    {
       path: "/campus/clubs",
       name: "Clubs",
       component: () => import("@/views/Clubs.vue"),

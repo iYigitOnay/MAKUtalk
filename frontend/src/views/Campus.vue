@@ -23,7 +23,7 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
       <div
-        @click="activeSubPage = 'analytics'"
+        @click="$router.push('/campus/analytics')"
         class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left"
       >
         <div
