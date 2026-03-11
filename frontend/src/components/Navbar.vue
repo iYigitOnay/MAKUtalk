@@ -121,7 +121,10 @@
             </button>
           </div>
 
-          <div class="flex items-center gap-4">
+          <div 
+            class="flex items-center gap-4 cursor-pointer active:scale-[0.98] transition-transform"
+            @click="handleNav(`/profile/${authStore.user?.username}`)"
+          >
             <div
               class="p-0.5 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500"
             >

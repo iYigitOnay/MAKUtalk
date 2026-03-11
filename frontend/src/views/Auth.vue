@@ -14,8 +14,11 @@
     >
       <!-- Brand Panel -->
       <div
-        class="relative md:absolute top-0 left-0 w-full md:w-1/2 h-auto md:h-full z-20 transition-transform duration-700 ease-in-out md:pointer-events-none"
-        :class="activeTab === 'register' ? 'md:translate-x-full' : 'md:translate-x-0'"
+        class="relative md:absolute top-0 left-0 w-full md:w-1/2 h-auto md:h-full z-20 transition-all duration-700 ease-in-out md:pointer-events-none"
+        :class="[
+          activeTab === 'register' ? 'md:translate-x-full' : 'md:translate-x-0',
+          (showForgotModal || showVerification) ? 'hidden md:block' : 'block'
+        ]"
       >
         <div
           class="relative md:absolute inset-0 m-0 md:m-2 md:rounded-[26px] flex flex-col items-center justify-center text-center p-8 md:p-12 md:pointer-events-auto transition-all duration-500 bg-slate-50 dark:bg-gradient-to-br dark:from-[#0f1117] dark:to-[#1a1f2e] border-b md:border border-slate-100 dark:border-white/[0.05]"

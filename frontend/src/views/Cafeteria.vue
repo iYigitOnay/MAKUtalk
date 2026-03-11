@@ -147,6 +147,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
 import { useToast } from 'vue-toastification';
+import apiClient from '@/api/client';
 
 const toast = useToast();
 const activeWeek = ref<'this' | 'next'>('this');
@@ -159,39 +160,18 @@ const locations = [
   { id: 'district', name: 'İlçe Yemekhaneleri', desc: 'Bucak, Gölhisar ve Diğer' }
 ];
 
-// GERÇEK VERİLER (Senin gönderdiklerin)
-const realData = {
-  central: {
-    thisWeek: [
-      { day: 'Pazartesi', items: ['Mahluta Çorba', 'Et Döner', 'Pirinç Pilavı', 'Ayran'], calorie: '950 Kalori' },
-      { day: 'Salı', items: ['Tavuk Çorba', 'Mantı / Yoğurt', 'Zeytinyağlı Barbunya', 'Tatlı'], calorie: '1280 Kalori' },
-      { day: 'Çarşamba', items: ['Yayla Çorba', 'Beşamel Soslu Tavuk', 'Domatesli Bulgur Pilavı', 'Mevsim Salata'], calorie: '980 Kalori' },
-      { day: 'Perşembe', items: ['Mercimek Çorba', 'Zeytinyağlı Pırasa', 'Kıymalı Kol Böreği', 'Hoşaf'], calorie: '1175 Kalori' },
-      { day: 'Cuma', items: ['Tarhana Çorba', 'Püreli Rulo Köfte', 'Cevizli Erişte', 'Tatlı'], calorie: '1200 Kalori' }
-    ],
-    nextWeek: [
-      { day: 'Pazartesi', items: ['Tarhana Çorba', 'Etli Bezelye', 'Safranlı Pilav', 'Haydari'], calorie: '940 Kalori' },
-      { day: 'Salı', items: ['Ezogelin Çorba', 'Orman Kebabı', 'Dereotlu Bulgur Pilavı', 'Tatlı'], calorie: '1150 Kalori' },
-      { day: 'Çarşamba', items: ['Mantar Çorba', 'Kuru Fasulye', 'Özbek Pilavı', 'Turşu'], calorie: '940 Kalori' },
-      { day: 'Perşembe', items: ['Şehriye Çorba', 'Kaşarlı Köfte', 'Sade Makarna', 'Ayran'], calorie: '950 Kalori' },
-      { day: 'Cuma', items: ['Köy Çorba', 'Fırın Tavuk But', 'Arpa Şehriye Pilavı', 'Havuç Tarator'], calorie: '1000 Kalori' }
-    ]
-  },
-  district: {
-    thisWeek: [
-      { day: 'Pazartesi', items: ['Tarhana Çorbası', 'Patates Oturtma', 'Pirinç Pilavı', 'Şam Tatlısı'], calorie: '' },
-      { day: 'Salı', items: ['Domates Çorbası', 'Rosto Köfte+Patates Püresi', 'Bulgur Pilavı', 'Mevsim Meyvesi'], calorie: '' },
-      { day: 'Çarşamba', items: ['Mercimek Çorbası', 'Şehzade Kebabı', 'Şehriyeli Pilav', 'Mevsim Salatası'], calorie: '' },
-      { day: 'Perşembe', items: ['Ezogelin Çorbası', 'Etli Kuru Fasulye', 'Bulgur Pilavı', 'Cacık'], calorie: '' },
-      { day: 'Cuma', items: ['Yayla Çorbası', 'Mantarlı Tavuk Sote', 'Soslu Makarna', 'Mor Lahana Salatası'], calorie: '' }
-    ],
-    nextWeek: [
-      { day: 'Pazartesi', items: ['Tandır Çorba', 'Patlıcan Musakka', 'Soslu Makarna', 'Yoğurt'], calorie: '' },
-      { day: 'Salı', items: ['Tarhana Çorbası', 'Tavuk Döner', 'Pirinç Pilavı', 'Ayran'], calorie: '' },
-      { day: 'Çarşamba', items: ['Yayla Çorbası', 'Etli Nohut', 'Meyane Pilavı', 'Treliçe'], calorie: '' },
-      { day: 'Perşembe', items: ['Mercimek Çorbası', 'Tas Kebabı', 'Arpa Şehriyeli Pirinç Pilavı', 'Mevsim Salatası'], calorie: '' },
-      { day: 'Cuma', items: ['Ezogelin Çorbası', 'Köfte Şiş', 'Soslu Makarna', 'Kakaolu Puding'], calorie: '' }
-    ]
+// BACKEND VERİLERİ İÇİN REF
+const menuData = ref<any>({ thisWeek: [], nextWeek: [] });
+
+const fetchMenu = async () => {
+  loading.value = true;
+  try {
+    const res = await apiClient.get('/campus/cafeteria');
+    menuData.value = res.data;
+  } catch (error) {
+    toast.error("Yemek listesi şu an alınamıyor.");
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -221,25 +201,26 @@ const centerCarouselItem = (index: number) => {
 };
 
 const currentMenuData = computed(() => {
-  const group = selectedLocation.value === 'central' ? realData.central : realData.district;
-  return activeWeek.value === 'this' ? group.thisWeek : group.nextWeek;
+  const group = menuData.value;
+  return activeWeek.value === 'this' ? (group.thisWeek || []) : (group.nextWeek || []);
 });
 
 const todayMenu = computed(() => {
   const menu = currentMenuData.value;
   if (!menu || menu.length === 0) return null;
-  const daysMap: Record<string, string> = { 'Monday': 'Pazartesi', 'Tuesday': 'Salı', 'Wednesday': 'Çarşamba', 'Thursday': 'Perşembe', 'Friday': 'Cuma' };
+  const daysMap: any = { 'Monday': 'Pazartesi', 'Tuesday': 'Salı', 'Wednesday': 'Çarşamba', 'Thursday': 'Perşembe', 'Friday': 'Cuma' };
   const engDay = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
-  return menu.find((m: any) => m.day === (daysMap[engDay] || 'Pazartesi'));
+  return menu.find((m: any) => m.day.includes(daysMap[engDay] || 'Pazartesi'));
 });
 
 const isToday = (dayName: string) => {
-  const daysMap: Record<string, string> = { 'Monday': 'Pazartesi', 'Tuesday': 'Salı', 'Wednesday': 'Çarşamba', 'Thursday': 'Perşembe', 'Friday': 'Cuma' };
+  const daysMap: any = { 'Monday': 'Pazartesi', 'Tuesday': 'Salı', 'Wednesday': 'Çarşamba', 'Thursday': 'Perşembe', 'Friday': 'Cuma' };
   const engDay = new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date());
-  return (daysMap[engDay] || 'Pazartesi') === dayName;
+  return dayName.includes(daysMap[engDay] || 'Pazartesi');
 };
 
-onMounted(() => {
+onMounted(async () => {
+  await fetchMenu();
   setTimeout(() => { centerCarouselItem(0); handleCarouselScroll(); }, 300);
 });
 </script>

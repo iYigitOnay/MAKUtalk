@@ -35,7 +35,7 @@
     </div>
 
     <!-- Main Post Content -->
-    <div class="flex gap-4 items-start">
+    <div class="flex gap-3 sm:gap-4 items-start">
       <!-- Avatar -->
       <router-link
         v-if="displayPost.author"
@@ -47,11 +47,11 @@
           v-if="displayPost.author.avatarUrl"
           :src="getImageUrl(displayPost.author.avatarUrl)"
           :alt="displayPost.author.username"
-          class="w-12 h-12 rounded-full object-cover shadow-sm"
+          class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm"
         />
         <div
           v-else
-          class="w-12 h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold shadow-sm"
+          class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold shadow-sm text-sm sm:text-base"
         >
           {{ displayPost.author.username?.charAt(0).toUpperCase() }}
         </div>

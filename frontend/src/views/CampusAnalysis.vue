@@ -9,128 +9,65 @@
 
     <!-- YÜZEN DOCK MENÜ (Global Zaman Kontrolüyle) -->
     <header
-      class="fixed top-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full max-w-fit px-4 text-left"
+      class="fixed top-4 md:top-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-50 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full md:max-w-fit px-4"
     >
       <nav
-        class="bg-[#0A0A0C]/90 backdrop-blur-2xl border border-white/[0.04] rounded-full p-1.5 flex items-center shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative"
+        class="bg-[#0A0A0C]/90 backdrop-blur-2xl border border-white/[0.04] rounded-2xl md:rounded-full p-1.5 flex flex-col md:flex-row items-center shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden"
       >
-        <!-- Logo & İkon -->
-        <div
-          class="flex items-center px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mr-3 ml-1 group cursor-default hover:bg-white/[0.06] transition-all duration-500 text-left"
-        >
+        <div class="flex items-center w-full md:w-auto">
+          <!-- Logo & İkon -->
           <div
-            class="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 mr-3 group-hover:rotate-[15deg] transition-transform duration-500"
+            class="flex items-center px-3 md:px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mr-2 md:mr-3 ml-1 group cursor-default hover:bg-white/[0.06] transition-all duration-500 text-left flex-shrink-0"
           >
-            <svg
-              class="w-4 h-4 text-white"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2.5"
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-          </div>
-          <div class="flex flex-col items-start leading-none text-left">
-            <span
-              class="text-[10px] font-black text-white tracking-[0.2em] uppercase opacity-90 leading-none"
-              >MAKÜ</span
-            >
-            <span
-              class="text-[7px] font-black text-blue-400 tracking-widest uppercase mt-1 opacity-60 leading-none text-left text-left text-left"
-              >ANALİZ MERKEZİ</span
-            >
-          </div>
-        </div>
-
-        <!-- Menü Butonları -->
-        <div class="flex items-center gap-1 text-left">
-          <button
-            v-for="m in menuItems"
-            :key="m.id"
-            @click="activeTab = m.id"
-            :class="[
-              'h-10 rounded-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative group overflow-hidden',
-              activeTab === m.id
-                ? 'px-5 text-white bg-white/[0.02]'
-                : 'w-10 px-0 text-slate-500 hover:text-slate-200 hover:bg-white/[0.02]',
-            ]"
-          >
-            <component
-              :is="m.icon"
-              :class="[
-                'w-4 h-4 transition-all duration-500 relative z-10',
-                activeTab === m.id ? 'text-blue-400' : '',
-              ]"
-            />
-            <span
-              :class="[
-                'font-black uppercase tracking-[0.2em] text-[9px] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10',
-                activeTab === m.id
-                  ? 'max-w-[120px] ml-2.5 opacity-100'
-                  : 'max-w-0 ml-0 opacity-0',
-              ]"
-            >
-              {{ m.label }}
-            </span>
             <div
+              class="w-6 h-6 md:w-7 md:h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 mr-2 md:mr-3 group-hover:rotate-[15deg] transition-transform duration-500"
+            >
+              <svg class="w-3.5 h-3.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+            </div>
+            <div class="flex flex-col items-start leading-none text-left">
+              <span class="text-[9px] md:text-[10px] font-black text-white tracking-[0.2em] uppercase opacity-90 leading-none">MAKÜ</span>
+              <span class="text-[6px] md:text-[7px] font-black text-blue-400 tracking-widest uppercase mt-1 opacity-60 leading-none">ANALİZ MERKEZİ</span>
+            </div>
+          </div>
+
+          <!-- Menü Butonları (Kaydırılabilir Konteyner) -->
+          <div class="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar px-2 md:px-0">
+            <button
+              v-for="m in menuItems"
+              :key="m.id"
+              @click="activeTab = m.id"
               :class="[
-                'absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] bg-gradient-to-r from-blue-500 to-purple-500',
-                activeTab === m.id ? 'w-1/2 opacity-100' : 'w-0 opacity-0',
+                'h-9 md:h-10 rounded-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative group flex-shrink-0',
+                activeTab === m.id ? 'px-4 md:px-5 text-white bg-white/[0.02]' : 'w-9 md:w-10 text-slate-500 hover:text-slate-200',
               ]"
-            ></div>
+            >
+              <component :is="m.icon" :class="['w-3.5 h-3.5 md:w-4 md:h-4 transition-all duration-500 relative z-10', activeTab === m.id ? 'text-blue-400' : '']" />
+              <span :class="['font-black uppercase tracking-[0.2em] text-[8px] md:text-[9px] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10', activeTab === m.id ? 'max-w-[120px] ml-2 opacity-100' : 'max-w-0 ml-0 opacity-0']">{{ m.label }}</span>
+            </button>
+          </div>
+
+          <div class="hidden md:block w-px h-6 bg-white/[0.04] mx-3"></div>
+
+          <button @click="$router.push('/campus')" class="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-slate-500 flex-shrink-0">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
           </button>
         </div>
 
-        <div class="w-px h-6 bg-white/[0.04] mx-3 text-left"></div>
-
-        <!-- GLOBAL ZAMAN SEÇİCİ -->
-        <div
-          class="flex bg-white/[0.02] p-1 rounded-full border border-white/[0.05] mr-2"
-        >
-          <button
-            v-for="t in timeOptions"
-            :key="t.id"
-            @click="
-              interval = t.id;
-              fetchAnalytics();
-            "
-            :class="[
-              'px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all',
-              interval === t.id
-                ? 'bg-blue-600 text-white shadow-lg'
-                : 'text-slate-500 hover:text-slate-300',
-            ]"
-          >
-            {{ t.label }}
-          </button>
+        <!-- GLOBAL ZAMAN SEÇİCİ (Mobilde Alt Satır) -->
+        <div class="flex md:contents">
+          <div class="w-full md:w-auto mt-1 md:mt-0 flex bg-white/[0.02] p-1 rounded-full border border-white/[0.05] md:mr-2">
+            <button
+              v-for="t in timeOptions"
+              :key="t.id"
+              @click="interval = t.id; fetchAnalytics();"
+              :class="['flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-full text-[7px] md:text-[8px] font-black uppercase tracking-widest transition-all', interval === t.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300']"
+            >
+              {{ t.label }}
+            </button>
+          </div>
         </div>
-
-        <button
-          @click="$router.push('/campus')"
-          class="w-10 h-10 flex items-center justify-center text-slate-500 transition-all duration-500 relative group/exit text-left"
-        >
-          <div
-            class="absolute inset-0 rounded-full bg-rose-500/0 group-hover/exit:bg-rose-500/10 group-hover/exit:scale-150 transition-all duration-700 blur-xl text-left"
-          ></div>
-          <svg
-            class="w-4 h-4 relative z-10 group-hover/exit:text-rose-500 transition-all duration-500"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2.5"
-              d="M10 19l-7-7m0 0l7-7m-7 7h18"
-            />
-          </svg>
-        </button>
       </nav>
     </header>
 
@@ -1012,7 +949,8 @@ const fetchAnalytics = async () => {
 const getAvatarUrl = (path: string) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
-  return `http://localhost:3000${path.startsWith("/uploads") ? path : "/uploads/avatars/" + path}`;
+  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+  return `${baseUrl}${path.startsWith("/uploads") ? path : "/uploads/avatars/" + path}`;
 };
 
 // --- CHART CONFIGS ---

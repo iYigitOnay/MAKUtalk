@@ -4,30 +4,30 @@
     <div class="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
 
     <!-- DOCK MENÜ -->
-    <header class="fixed top-8 left-1/2 -translate-x-1/2 z-50 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)]">
-      <nav class="bg-[#0A0A0C]/90 backdrop-blur-2xl border border-white/[0.04] rounded-full p-1.5 flex items-center shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative">
-        <div class="flex items-center px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mr-3 ml-1 group cursor-default hover:bg-white/[0.06] transition-all duration-500">
+    <header class="fixed top-4 md:top-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-50 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full md:max-w-fit px-4">
+      <nav class="bg-[#0A0A0C]/90 backdrop-blur-2xl border border-white/[0.04] rounded-2xl md:rounded-full p-1.5 flex items-center shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative">
+        <div class="flex items-center px-3 md:px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mr-2 md:mr-3 ml-1 group cursor-default hover:bg-white/[0.06] transition-all duration-500 flex-shrink-0">
           <div class="flex flex-col items-start leading-none">
-            <span class="text-[10px] font-bold text-white tracking-[0.2em] uppercase opacity-90 group-hover:opacity-100 transition-opacity">MAKUtalk</span>
-            <span class="text-[8px] font-semibold text-blue-400 tracking-widest uppercase mt-0.5">Kumanda Odası</span>
+            <span class="text-[9px] md:text-[10px] font-bold text-white tracking-[0.2em] uppercase opacity-90 group-hover:opacity-100 transition-opacity">MAKUtalk</span>
+            <span class="text-[7px] md:text-[8px] font-semibold text-blue-400 tracking-widest uppercase mt-0.5">Kumanda Odası</span>
           </div>
-          <div class="ml-3 w-1.5 h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
+          <div class="ml-2 md:ml-3 w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
         </div>
 
-        <div class="flex items-center gap-1">
-          <button v-for="m in menuItems" :key="m.id" @click="activeTab = m.id" :class="['h-10 rounded-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative group overflow-hidden', activeTab === m.id ? 'px-5 text-white bg-white/[0.02]' : 'w-10 px-0 text-slate-500 hover:text-slate-200 hover:bg-white/[0.02]']">
-            <component :is="m.icon" :class="['w-4 h-4 transition-all duration-500 relative z-10', activeTab === m.id ? 'text-white' : '']" />
-            <span :class="['font-semibold uppercase tracking-[0.2em] text-[9px] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10', activeTab === m.id ? 'max-w-[100px] ml-2.5 opacity-100' : 'max-w-0 ml-0 opacity-0']">
+        <div class="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar px-2 md:px-0">
+          <button v-for="m in menuItems" :key="m.id" @click="activeTab = m.id" :class="['h-9 md:h-10 rounded-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative group flex-shrink-0', activeTab === m.id ? 'px-4 md:px-5 text-white bg-white/[0.02]' : 'w-9 md:w-10 px-0 text-slate-500 hover:text-slate-200 hover:bg-white/[0.02]']">
+            <component :is="m.icon" :class="['w-3.5 h-3.5 md:w-4 md:h-4 transition-all duration-500 relative z-10', activeTab === m.id ? 'text-white' : '']" />
+            <span :class="['font-semibold uppercase tracking-[0.2em] text-[8px] md:text-[9px] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10', activeTab === m.id ? 'max-w-[100px] ml-2 opacity-100' : 'max-w-0 ml-0 opacity-0']">
               {{ m.label }}
             </span>
             <div :class="['absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] rounded-full transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] bg-gradient-to-r from-blue-500 to-purple-500', activeTab === m.id ? 'w-1/2 opacity-100' : 'w-0 opacity-0']"></div>
           </button>
         </div>
 
-        <div class="w-px h-6 bg-white/[0.04] mx-3"></div>
+        <div class="hidden md:block w-px h-6 bg-white/[0.04] mx-3"></div>
         
         <!-- Premium Çıkış Butonu -->
-        <router-link to="/" class="w-10 h-10 flex items-center justify-center text-slate-500 transition-all duration-500 relative group/exit">
+        <router-link to="/" class="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-slate-500 transition-all duration-500 relative group/exit flex-shrink-0">
           <div class="absolute inset-0 rounded-full bg-rose-500/0 group-hover/exit:bg-rose-500/10 group-hover/exit:scale-150 transition-all duration-700 blur-xl"></div>
           <div class="absolute inset-0 rounded-full border border-rose-500/0 group-hover/exit:border-rose-500/20 group-hover/exit:scale-110 transition-all duration-500"></div>
           <svg class="w-4 h-4 relative z-10 group-hover/exit:text-rose-500 group-hover/exit:translate-x-1 transition-all duration-500 ease-out" fill="none" stroke="currentColor" viewBox="0 0 24 24">
