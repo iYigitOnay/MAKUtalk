@@ -334,7 +334,6 @@ export class UsersService {
       subReason,
     } = data;
 
-    // 1. AYNI KULLANICI AYNI ŞEYİ TEKRAR ŞİKAYET EDEMEZ
     const existingReport = await (this.prisma as any).report.findFirst({
       where: {
         reporterId,
@@ -350,7 +349,6 @@ export class UsersService {
       );
     }
 
-    // 2. ŞİKAYETİ OLUŞTUR
     const report = await (this.prisma as any).report.create({
       data: {
         reporterId,
@@ -362,7 +360,6 @@ export class UsersService {
       },
     });
 
-    // 3. OTOMATİK MODERASYON KONTROLÜ (EŞİK DEĞERİ: 3)
     const THRESHOLD = 3;
 
     if (reportedPostId) {
@@ -373,7 +370,7 @@ export class UsersService {
       if (reportCount >= THRESHOLD) {
         await this.prisma.post.update({
           where: { id: reportedPostId },
-          data: { published: false }, // Postu gizle
+          data: { published: false },
         });
         console.warn(
           `[Moderasyon] Post #${reportedPostId} çok fazla şikayet aldığı için otomatik gizlendi.`,
@@ -456,7 +453,14 @@ export class UsersService {
     return this.prisma.user.findMany({
       where,
       take: 15,
-      select: { id: true, username: true, fullName: true, avatarUrl: true, email: true, role: true },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        avatarUrl: true,
+        email: true,
+        role: true,
+      },
     });
   }
 

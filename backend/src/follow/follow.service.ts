@@ -102,7 +102,7 @@ export class FollowService {
 
     // HESAP AÇIKSA: Takip et ve SOHBETİ AÇ
     await this.prisma.follow.create({ data: { followerId, followingId } });
-    await this.autoAcceptConversations(followerId, followingId); // Sohbet kilidini aç
+    await this.autoAcceptConversations(followerId, followingId);
 
     await this.notificationsService.createNotification(
       NotificationType.FOLLOW,
@@ -126,7 +126,6 @@ export class FollowService {
       this.prisma.followRequest.delete({ where: { id: requestId } }),
     ]);
 
-    // İSTEK KABUL EDİLDİ: SOHBETİ AÇ
     await this.autoAcceptConversations(request.senderId, request.receiverId);
 
     await this.notificationsService.createNotification(

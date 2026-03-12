@@ -129,67 +129,132 @@
 
         <!-- Register Form -->
         <div
-          class="w-full md:w-1/2 flex flex-col items-center justify-center px-8 md:px-12 py-10 md:py-0 transition-all duration-700"
+          class="w-full md:w-1/2 flex flex-col items-center justify-center px-8 md:px-12 py-8 md:py-0 transition-all duration-700"
           :class="[ activeTab === 'login' ? 'md:opacity-0 md:invisible md:translate-y-4 hidden md:flex' : 'opacity-100 visible translate-y-0 flex' ]"
         >
-          <div class="w-full max-w-[340px] pb-24 md:pb-0">
-            <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-6 text-center italic tracking-tighter uppercase">Aramıza Katıl</h2>
-            
-            <form @submit.prevent="handleRegister" class="space-y-4">
-              <!-- Account Type Toggle -->
-              <div class="flex p-1 bg-slate-100 dark:bg-[#1a1f2e] rounded-2xl border border-slate-200/50 dark:border-white/[0.05] mb-2">
-                <button type="button" @click="registerType = 'student'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="registerType === 'student' ? 'bg-white dark:bg-[#252b3d] text-blue-600 shadow-sm' : 'text-slate-400'">Öğrenci</button>
-                <button type="button" @click="registerType = 'academic'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="registerType === 'academic' ? 'bg-white dark:bg-[#252b3d] text-emerald-600 shadow-sm' : 'text-slate-400'">Akademisyen</button>
+          <div class="w-full max-w-[360px] pb-24 md:pb-0">
+            <Transition
+              mode="out-in"
+              enter-active-class="transition duration-500 ease-out"
+              enter-from-class="opacity-0 translate-x-12"
+              enter-to-class="opacity-100 translate-x-0"
+              leave-active-class="transition duration-400 ease-in"
+              leave-from-class="opacity-100 translate-x-0"
+              leave-to-class="opacity-0 -translate-x-12"
+            >
+              <!-- STEP 1: Main Form Inputs -->
+              <div v-if="!isReviewing" key="inputs" class="space-y-6">
+                <div class="text-center">
+                  <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-2 italic tracking-tighter uppercase">Aramıza Katıl</h2>
+                  <p class="text-slate-500 dark:text-white/30 text-[10px] font-bold uppercase tracking-widest italic">Dijital kampüs seni bekliyor</p>
+                </div>
+                
+                <div class="space-y-4">
+                  <div class="flex p-1 bg-slate-100 dark:bg-[#1a1f2e] rounded-2xl border border-slate-200/50 dark:border-white/[0.05]">
+                    <button type="button" @click="registerType = 'student'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="registerType === 'student' ? 'bg-white dark:bg-[#252b3d] text-blue-600 shadow-sm' : 'text-slate-400'">Öğrenci</button>
+                    <button type="button" @click="registerType = 'academic'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="registerType === 'academic' ? 'bg-white dark:bg-[#252b3d] text-emerald-600 shadow-sm' : 'text-slate-400'">Akademisyen</button>
+                  </div>
+
+                  <input v-model="registerForm.fullName" type="text" placeholder="Ad Soyad" class="auth-input" />
+                  
+                  <div class="space-y-1">
+                    <input v-model="registerForm.username" @input="checkUsername" type="text" placeholder="Kullanıcı Adı" class="auth-input" />
+                    <p v-if="usernameError" class="text-[9px] font-black text-red-500 uppercase px-1 tracking-tighter">{{ usernameError }}</p>
+                  </div>
+
+                  <div class="space-y-1">
+                    <div class="relative flex items-center group">
+                      <input v-model="emailPrefix" type="text" placeholder="MAKÜ E-Posta Adresi" class="auth-input pr-32 md:pr-32" />
+                      <span class="absolute right-4 text-[9px] font-black text-slate-400 uppercase tracking-tighter pointer-events-none select-none">
+                        {{ registerType === 'student' ? '@ogr.mehmetakif.edu.tr' : '@mehmetakif.edu.tr' }}
+                      </span>
+                    </div>
+                    <p v-if="emailError" class="text-[9px] font-black text-red-500 uppercase px-1 tracking-tighter">{{ emailError }}</p>
+                  </div>
+
+                  <div class="relative group">
+                    <input v-model="registerForm.password" :type="showPassword ? 'text' : 'password'" placeholder="Şifre" class="auth-input" />
+                    <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-all">
+                       <svg v-if="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                       <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                    </button>
+                  </div>
+
+                  <!-- Şifre Gereksinimleri -->
+                  <div class="grid grid-cols-2 gap-x-2 gap-y-1.5 px-1 py-1">
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.length ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                      <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.length ? 'text-emerald-500' : 'text-gray-400'">8+ Karakter</span>
+                    </div>
+                    <div class="flex items-center justify-end gap-1.5">
+                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.upper ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                      <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.upper ? 'text-emerald-500' : 'text-gray-400'">Büyük Harf</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.special ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                      <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.special ? 'text-emerald-500' : 'text-gray-400'">Özel/Rakam</span>
+                    </div>
+                    <div class="flex items-center justify-end gap-1.5">
+                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.noUsername ? 'bg-emerald-500' : 'bg-red-400/50'"></div>
+                      <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.noUsername ? 'text-emerald-500' : 'text-red-400'">Kullanıcı Adı İçeremez</span>
+                    </div>
+                  </div>
+
+                  <button type="button" @click="isReviewing = true" :disabled="hasErrors" class="auth-btn mt-2 shadow-blue-500/10">Kayıt Ol</button>
+                  <p class="text-center text-gray-500 dark:text-white/30 text-xs mt-4">Zaten üye misin? <button type="button" @click="activeTab = 'login'" class="text-blue-600 dark:text-blue-400 font-black hover:underline transition-all">Giriş Yap</button></p>
+                </div>
               </div>
 
-              <input v-model="registerForm.fullName" type="text" placeholder="Ad Soyad" class="auth-input" />
-              
-              <div>
-                <input v-model="registerForm.username" @input="checkUsername" type="text" placeholder="Kullanıcı Adı" class="auth-input" />
-                <p v-if="usernameError" class="text-[9px] font-black text-red-500 mt-1 uppercase px-1">{{ usernameError }}</p>
-              </div>
+              <!-- STEP 2: Review & Legal -->
+              <div v-else key="review" class="space-y-8 py-4">
+                <div class="text-center space-y-3">
+                  <div class="w-20 h-20 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white dark:border-[#1a1f2e] shadow-2xl scale-110">
+                    <span class="text-3xl font-black text-white">{{ registerForm.fullName.charAt(0) }}</span>
+                  </div>
+                  <h2 class="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter">Son Adım!</h2>
+                  <p class="text-slate-500 dark:text-white/40 text-xs font-medium px-2">
+                    Selam <span class="text-blue-600 dark:text-blue-400 font-black">{{ registerForm.fullName.split(' ')[0] }}</span>, aramıza katılmana saniyeler kaldı.
+                  </p>
+                </div>
 
-              <div>
-                <div class="relative flex items-center group">
-                  <input v-model="emailPrefix" type="text" placeholder="MAKÜ E-Posta Adresi" class="auth-input pr-32 md:pr-32" />
-                  <span class="absolute right-4 text-[9px] font-black text-slate-400 uppercase tracking-tighter pointer-events-none select-none">
-                    {{ registerType === 'student' ? '@ogr.mehmetakif.edu.tr' : '@mehmetakif.edu.tr' }}
-                  </span>
-                </div>
-                <p v-if="emailError" class="text-[9px] font-black text-red-500 mt-1 uppercase px-1">{{ emailError }}</p>
-              </div>
+                <div class="space-y-4 p-6 rounded-[32px] bg-slate-50 dark:bg-white/[0.02] border border-slate-100 dark:border-white/[0.05]">
+                  <div class="flex items-start gap-3 group">
+                    <div class="relative flex items-center mt-1">
+                      <input v-model="agreementsAccepted" type="checkbox" id="terms-final" class="peer h-5 w-5 opacity-0 absolute z-10 cursor-pointer" />
+                      <div class="h-5 w-5 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1a1f2e] peer-checked:bg-blue-600 transition-all flex items-center justify-center">
+                        <svg class="w-3 h-3 text-white scale-0 peer-checked:scale-100 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"/></svg>
+                      </div>
+                    </div>
+                    <label for="terms-final" class="text-[11px] leading-relaxed text-slate-500 dark:text-white/50 font-medium">
+                      <button type="button" @click="openLegal('terms')" class="text-blue-600 font-black hover:underline">Şartları</button>, 
+                      <button type="button" @click="openLegal('privacy')" class="text-blue-600 font-black hover:underline">Gizliliği</button> ve 
+                      <button type="button" @click="openLegal('kvkk')" class="text-blue-600 font-black hover:underline">KVKK</button>'yı onaylıyorum.
+                    </label>
+                  </div>
 
-              <div class="relative group">
-                <input v-model="registerForm.password" :type="showPassword ? 'text' : 'password'" placeholder="Şifre" class="auth-input" />
-                <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-all">
-                   <svg v-if="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
-                   <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
-                </button>
-              </div>
+                  <div class="flex items-start gap-3 group">
+                    <div class="relative flex items-center mt-1">
+                      <input v-model="marketingConsent" type="checkbox" id="marketing-final" class="peer h-5 w-5 opacity-0 absolute z-10 cursor-pointer" />
+                      <div class="h-5 w-5 rounded-xl border border-slate-300 dark:border-white/10 bg-white dark:bg-[#1a1f2e] peer-checked:bg-emerald-500 transition-all flex items-center justify-center">
+                        <svg class="w-3 h-3 text-white scale-0 peer-checked:scale-100 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"/></svg>
+                      </div>
+                    </div>
+                    <label for="marketing-final" class="text-[11px] leading-relaxed text-slate-500 dark:text-white/50 font-medium">
+                      <button type="button" @click="openLegal('etk')" class="text-emerald-600 font-black hover:underline">E-İleti</button> almayı kabul ediyorum. (Opsiyonel)
+                    </label>
+                  </div>
+                </div>
 
-              <!-- Şifre Gereksinimleri (Kayıt İçin) -->
-              <div class="grid grid-cols-2 gap-x-2 gap-y-1.5 px-1 pb-2">
-                <div class="flex items-center gap-1.5">
-                  <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.length ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
-                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.length ? 'text-emerald-500' : 'text-gray-400'">8+ Karakter</span>
-                </div>
-                <div class="flex items-center justify-end gap-1.5">
-                  <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.upper ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
-                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.upper ? 'text-emerald-500' : 'text-gray-400'">Büyük Harf</span>
-                </div>
-                <div class="flex items-center gap-1.5">
-                  <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.special ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
-                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.special ? 'text-emerald-500' : 'text-gray-400'">Özel/Rakam</span>
-                </div>
-                <div class="flex items-center justify-end gap-1.5">
-                  <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks.noUsername ? 'bg-emerald-500' : 'bg-red-400/50'"></div>
-                  <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks.noUsername ? 'text-emerald-500' : 'text-red-400'">Kullanıcı Adı İçeremez</span>
+                <div class="flex flex-col gap-3">
+                  <button @click="handleRegister" :disabled="registerLoading || !agreementsAccepted" class="auth-btn py-4 shadow-xl">
+                    {{ registerLoading ? 'Hesap Oluşturuluyor...' : 'Onayla ve Kaydol' }}
+                  </button>
+                  <button @click="isReviewing = false" class="text-[10px] font-black text-slate-400 hover:text-slate-600 dark:hover:text-white transition-all uppercase tracking-[0.2em] italic">
+                    Bilgilerimi Güncelle
+                  </button>
                 </div>
               </div>
-
-              <button type="submit" :disabled="registerLoading || hasErrors" class="auth-btn mt-4 shadow-blue-500/10 grayscale-0 disabled:grayscale disabled:opacity-50 transition-all">{{ registerLoading ? 'Hesap Oluşturuluyor...' : 'Hesap Oluştur' }}</button>
-              <p class="text-center text-gray-500 dark:text-white/30 text-xs mt-4">Zaten üye misin? <button type="button" @click="activeTab = 'login'" class="text-blue-600 dark:text-blue-400 font-black hover:underline transition-all">Giriş Yap</button></p>
-            </form>
+            </Transition>
           </div>
         </div>
 
@@ -244,7 +309,7 @@
 </style>
 
 <script setup lang="ts">
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { useToast } from "vue-toastification";
@@ -267,6 +332,28 @@ const showForgotModal = ref(false);
 const forgotStep = ref(1);
 const forgotLoading = ref(false);
 const forgotForm = ref({ email: "", code: "", newPassword: "", confirmPassword: "" });
+
+// Özet Ekranı ve Yasal Onaylar
+const isReviewing = ref(false);
+const agreementsAccepted = ref(false);
+const marketingConsent = ref(false);
+const legalModal = reactive({
+  isOpen: false,
+  title: "",
+  type: "terms" as "kvkk" | "terms" | "privacy" | "etk"
+});
+
+const openLegal = (type: "kvkk" | "terms" | "privacy" | "etk") => {
+  const titles = {
+    terms: "Kullanım Koşulları",
+    privacy: "Gizlilik Politikası",
+    kvkk: "KVKK Aydınlatma Metni",
+    etk: "Elektronik İleti İzni"
+  };
+  legalModal.type = type;
+  legalModal.title = titles[type];
+  legalModal.isOpen = true;
+};
 
 const resetPassChecks = computed(() => {
   const p = forgotForm.value.newPassword;
