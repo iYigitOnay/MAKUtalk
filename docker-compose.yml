@@ -1,6 +1,5 @@
-version: "3.8"
-
 services:
+  version: "3.8"                                                                                                                                                                            │
   db:
     image: postgres:15-alpine
     container_name: makutalk_db
