@@ -44,9 +44,20 @@ jobs:
             VITE_API_URL=${VITE_API_URL}
             EOF
 
-            # Build ve başlat
+            # Build ve başlat (SIRALI BUILD - 1GB RAM Optimizasyonu)
             docker compose down --remove-orphans
-            docker compose up -d --build
+
+            echo "🐘 Veritabanı başlatılıyor..."
+            docker compose up -d db
+
+            echo "⚙️ Backend build ediliyor..."
+            docker compose build backend
+            docker compose up -d backend
+
+            echo "🎨 Frontend build ediliyor (RAM yoğun işlem)..."
+            docker compose build frontend
+            docker compose up -d frontend
+
             docker image prune -f
 
             echo "✅ Deploy tamamlandı!"
