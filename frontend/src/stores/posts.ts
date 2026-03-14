@@ -2,105 +2,71 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "@/api/client";
 import type { Post } from "@/types";
-import { useProfileStore } from "./profile"; // <- Eklendi
+import { useProfileStore } from "./profile";
+import { useAuthStore } from "./auth";
 
 export const usePostsStore = defineStore("posts", () => {
   const posts = ref<Post[]>([]);
   const myPosts = ref<Post[]>([]);
-  const currentCategory = ref<number | null>(null); // <- Eklendi
+  const currentCategory = ref<number | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
-
-  // profileStore'a erişim (içeride kullanmak için getter/lazy load mantığı kurabiliriz, ama direkt çağırmak da çalışır)
-  const getProfileStore = () => useProfileStore();
   
-  // Yeni post atıldığında tetiklenecek olan dinleyiciler
-  const postCreationListeners = ref<(() => void)[]>([]);
+  const authStore = useAuthStore();
+  const getProfileStore = () => useProfileStore();
 
-  const onPostCreated = (callback: () => void) => {
-    postCreationListeners.value.push(callback);
-  };
-
-  const notifyPostCreated = () => {
-    postCreationListeners.value.forEach(callback => callback());
-  };
-
-  // Tüm postları getir
   const fetchPosts = async (currentUserId?: number) => {
     loading.value = true;
     try {
       const params = currentUserId ? { currentUserId } : {};
       const response = await apiClient.get<Post[]>("/posts", { params });
       posts.value = response.data;
-    } catch (error) {
-      console.error("Posts fetch error:", error);
-      throw error;
+    } catch (err) {
+      error.value = "Gönderiler yüklenemedi.";
     } finally {
       loading.value = false;
     }
   };
 
-  // Kategoriye göre postları getir
   const fetchPostsByCategory = async (categoryId: number, currentUserId?: number) => {
     loading.value = true;
     currentCategory.value = categoryId;
     try {
       const params = currentUserId ? { currentUserId } : {};
-      const response = await apiClient.get<Post[]>(
-        `/posts/category/${categoryId}`,
-        {
-          params,
-        },
-      );
+      const response = await apiClient.get<Post[]>(`/posts/category/${categoryId}`, { params });
       posts.value = response.data;
-    } catch (error) {
-      console.error("Posts by category fetch error:", error);
-      throw error;
+    } catch (err) {
+      error.value = "Kategori gönderileri yüklenemedi.";
     } finally {
       loading.value = false;
     }
   };
 
-  // Kendi postlarını getir
   const fetchMyPosts = async () => {
     loading.value = true;
     try {
       const response = await apiClient.get<Post[]>("/posts/my-posts");
       myPosts.value = response.data;
-    } catch (error) {
-      console.error("My posts fetch error:", error);
-      throw error;
+    } catch (err) {
+      error.value = "Gönderileriniz yüklenemedi.";
     } finally {
       loading.value = false;
     }
   };
 
-  // Kullanıcının repostlarını getir (Remakü Sekmesi için)
   const fetchUserReposts = async (userId: number, currentUserId?: number) => {
-    loading.value = true;
     try {
       const params = currentUserId ? { currentUserId } : {};
       const response = await apiClient.get<Post[]>(`/posts/user/${userId}/reposts`, { params });
       return response.data;
     } catch (error) {
-      console.error("User reposts fetch error:", error);
-      throw error;
-    } finally {
-      loading.value = false;
+      return [];
     }
   };
 
-  // Repost İşlemi (Remakü)
   const toggleRepost = async (postId: number) => {
-    try {
-      const response = await apiClient.post<{ reposted: boolean; post?: Post; message: string }>(
-        `/posts/${postId}/repost`
-      );
-      return response.data;
-    } catch (error) {
-      console.error("Toggle repost error:", error);
-      throw error;
-    }
+    const response = await apiClient.post(`/posts/${postId}/repost`);
+    return response.data;
   };
 
   // Post oluştur (veya Cevap ver)
@@ -109,7 +75,7 @@ export const usePostsStore = defineStore("posts", () => {
     published = true,
     categoryId?: number,
     image?: File,
-    parentId?: number, // <- TWITTER MANTIĞI: Yanıt veriyorsak parentId gelir
+    parentId?: number,
   ) => {
     loading.value = true;
     try {
@@ -126,7 +92,6 @@ export const usePostsStore = defineStore("posts", () => {
         },
       });
       
-      // Eğer bu bir cevap değilse (ana post ise) anasayfaya ekle
       if (!parentId) {
         posts.value.unshift(response.data);
       }
@@ -163,9 +128,24 @@ export const usePostsStore = defineStore("posts", () => {
     loading.value = true;
     try {
       await apiClient.delete(`/posts/${postId}`);
-      posts.value = posts.value.filter((p) => p.id !== postId);
+      
+      // 1. Yerel listelerden kaldır
+      posts.value = posts.value.filter((p) => p.id !== postId && p.repostId !== postId);
       myPosts.value = myPosts.value.filter((p) => p.id !== postId);
-      notifyPostCreated();
+      
+      // 2. ProfileStore listelerinden kaldır (Küresel Senkronizasyon)
+      const profileStore = getProfileStore();
+      profileStore.userPosts = profileStore.userPosts.filter((p) => p.id !== postId);
+      profileStore.userReplies = profileStore.userReplies.filter((p) => p.id !== postId);
+      profileStore.userReposts = profileStore.userReposts.filter((p) => p.id !== postId && p.repostId !== postId);
+      profileStore.userLikedPosts = profileStore.userLikedPosts.filter((p) => p.id !== postId);
+      
+      // 3. Profil sayacı güncelle
+      if (profileStore.profileUser?._count && profileStore.profileUser.id === authStore.user?.id) {
+        profileStore.profileUser._count.posts--;
+      }
+
+      return true;
     } catch (error: any) {
       throw error.response?.data || error;
     } finally {
@@ -173,126 +153,104 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  // AI Analizini Yenile (Sadece Admin)
-  const refreshSentiment = async (postId: number) => {
-    try {
-      const response = await apiClient.post<Post>(`/posts/${postId}/refresh-sentiment`);
-      return response.data;
-    } catch (error: any) {
-      throw error.response?.data || error;
-    }
+  const updatePost = async (postId: number, content: string) => {
+    const response = await apiClient.patch(`/posts/${postId}`, { content });
+    updatePostLocally(postId, response.data);
+    return response.data;
   };
 
-  // Post güncelle
-  const updatePost = async (
-    postId: number,
-    content: string,
-    categoryId?: number,
-  ) => {
-    loading.value = true;
-    try {
-      const response = await apiClient.patch<Post>(`/posts/${postId}`, {
-        content,
-        categoryId,
-      });
-      const index = posts.value.findIndex((p) => p.id === postId);
-      if (index !== -1) posts.value[index] = response.data;
-
-      const myIndex = myPosts.value.findIndex((p) => p.id === postId);
-      if (myIndex !== -1) myPosts.value[myIndex] = response.data;
-
-      return response.data;
-    } catch (error: any) {
-      throw error.response?.data || error;
-    } finally {
-      loading.value = false;
-    }
-  };
-
-  // Post'u local state'te güncelle (tüm eşleşmeleri bul ve güncelle)
+  // Post'u local state'te güncelle (Referans bütünlüğünü koruyarak)
   const updatePostLocally = (postId: number, updates: any) => {
-    const updateInArray = (arr: Post[]) => {
-      return arr.map((p) => {
-        // Eğer bu direkt hedef post ise
-        if (p.id === postId) {
-          return {
-            ...p,
-            ...updates,
-            _count: updates._count ? { ...p._count, ...updates._count } : p._count,
-          };
+    const updateTarget = (p: Post) => {
+      if (p.id === postId) {
+        if (updates.isLiked !== undefined) p.isLiked = updates.isLiked;
+        if (updates.isReposted !== undefined) p.isReposted = updates.isReposted;
+        if (updates.sentiment !== undefined) p.sentiment = updates.sentiment;
+        if (updates.sentimentScore !== undefined) p.sentimentScore = updates.sentimentScore;
+        
+        if (updates._count) {
+          p._count = { ...p._count, ...updates._count };
         }
-        // Eğer bu bir repost ise ve orijinal post güncelleniyorsa
-        if (p.repostOf && p.repostId === postId) {
-          return {
-            ...p,
-            repostOf: {
-              ...p.repostOf,
-              ...updates,
-              _count: updates._count ? { ...p.repostOf._count, ...updates._count } : p.repostOf._count,
-            },
-          };
+      }
+      
+      if (p.repostOf && p.repostId === postId) {
+        const r = p.repostOf;
+        if (updates.isLiked !== undefined) r.isLiked = updates.isLiked;
+        if (updates.isReposted !== undefined) r.isReposted = updates.isReposted;
+        if (updates.sentiment !== undefined) r.sentiment = updates.sentiment;
+        
+        if (updates._count) {
+          r._count = { ...r._count, ...updates._count };
         }
-        return p;
-      });
+      }
     };
 
-    // 1. Kendi listelerini güncelle
-    posts.value = updateInArray(posts.value);
-    myPosts.value = updateInArray(myPosts.value);
+    posts.value.forEach(updateTarget);
+    myPosts.value.forEach(updateTarget);
     
-    // 2. ProfileStore'u güncelle (Küresel Senkronizasyon)
     const profileStore = getProfileStore();
     if (profileStore) {
-      profileStore.userPosts = updateInArray(profileStore.userPosts);
-      profileStore.userReposts = updateInArray(profileStore.userReposts);
-      profileStore.userLikedPosts = updateInArray(profileStore.userLikedPosts);
+      profileStore.userPosts.forEach(updateTarget);
+      profileStore.userReplies.forEach(updateTarget);
+      profileStore.userReposts.forEach(updateTarget);
+      profileStore.userLikedPosts.forEach(updateTarget);
     }
   };
 
-  // Tüm postlardaki kullanıcı bilgisini güncelle (Canlı profil güncellemesi için)
   const updateUserInPosts = (userId: number, updates: any) => {
     const updateAuthor = (post: Post) => {
-      // Ana postun yazarı
       if (post.authorId === userId) {
         post.author = { ...post.author, ...updates };
       }
-      // Eğer bir repost ise ve orijinal postun yazarı güncellenen kullanıcı ise
       if (post.repostOf && post.repostOf.authorId === userId) {
         post.repostOf.author = { ...post.repostOf.author, ...updates };
       }
       return post;
     };
 
-    // 1. Kendi listelerini güncelle
     posts.value = posts.value.map(updateAuthor);
     myPosts.value = myPosts.value.map(updateAuthor);
     
-    // 2. ProfileStore'u güncelle
     const profileStore = getProfileStore();
     if (profileStore) {
       profileStore.userPosts = profileStore.userPosts.map(updateAuthor);
+      profileStore.userReplies = profileStore.userReplies.map(updateAuthor);
       profileStore.userReposts = profileStore.userReposts.map(updateAuthor);
       profileStore.userLikedPosts = profileStore.userLikedPosts.map(updateAuthor);
     }
   };
 
-  // Kategori filtresini sıfırla
+  const refreshSentiment = async (postId: number) => {
+    const response = await apiClient.post(`/posts/${postId}/refresh-sentiment`);
+    updatePostLocally(postId, response.data);
+    return response.data;
+  };
+
   const resetCategory = () => {
     currentCategory.value = null;
+  };
+
+  const postCreatedCallbacks: Array<() => void> = [];
+  const onPostCreated = (cb: () => void) => {
+    postCreatedCallbacks.push(cb);
+  };
+  const notifyPostCreated = () => {
+    postCreatedCallbacks.forEach((cb) => cb());
   };
 
   return {
     posts,
     myPosts,
-    loading,
     currentCategory,
+    loading,
+    error,
     fetchPosts,
     fetchPostsByCategory,
     fetchMyPosts,
     fetchUserReposts,
     toggleRepost,
     createPost,
-    fetchThread, // <- BURAYA EKLENDİ
+    fetchThread,
     deletePost,
     updatePost,
     updatePostLocally,

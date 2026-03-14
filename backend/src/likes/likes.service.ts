@@ -18,9 +18,12 @@ export class LikesService {
       throw new NotFoundException('Post bulunamadı.');
     }
 
+    // Twitter Mantığı: Repost beğendiğinde orijinal post beğenilir
+    const targetPostId = post.repostId || post.id;
+
     const existingLike = await this.prisma.like.findUnique({
       where: {
-        userId_postId: { userId, postId },
+        userId_postId: { userId, postId: targetPostId },
       },
     });
 
@@ -33,32 +36,39 @@ export class LikesService {
     } else {
       // Like
       await this.prisma.like.create({
-        data: { userId, postId },
+        data: { userId, postId: targetPostId },
       });
 
-      // Bildirim oluştur (post sahibine)
-      await this.notificationsService.createNotification(
-        NotificationType.LIKE,
-        post.authorId,
-        userId,
-        postId,
-      );
+      // Bildirim oluştur (orijinal post sahibine)
+      const targetPost = await this.prisma.post.findUnique({ where: { id: targetPostId } });
+      if (targetPost && targetPost.authorId !== userId) {
+        await this.notificationsService.createNotification(
+          NotificationType.LIKE,
+          targetPost.authorId,
+          userId,
+          targetPostId,
+        );
+      }
 
       return { liked: true, message: 'Post beğenildi.' };
     }
   }
 
   async getPostLikes(postId: number) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    const targetId = post?.repostId || postId;
     const count = await this.prisma.like.count({
-      where: { postId },
+      where: { postId: targetId },
     });
-    return { postId, likes: count };
+    return { postId: targetId, likes: count };
   }
 
   async isLikedByUser(userId: number, postId: number) {
+    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    const targetId = post?.repostId || postId;
     const like = await this.prisma.like.findUnique({
       where: {
-        userId_postId: { userId, postId },
+        userId_postId: { userId, postId: targetId },
       },
     });
     return { liked: !!like };

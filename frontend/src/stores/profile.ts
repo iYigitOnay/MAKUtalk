@@ -7,6 +7,7 @@ import { useAuthStore } from "./auth";
 export const useProfileStore = defineStore("profile", () => {
   const profileUser = ref<User | null>(null);
   const userPosts = ref<Post[]>([]);
+  const userReplies = ref<Post[]>([]);
   const userReposts = ref<Post[]>([]);
   const userLikedPosts = ref<Post[]>([]);
   
@@ -19,15 +20,11 @@ export const useProfileStore = defineStore("profile", () => {
   const fetchProfileByUsername = async (username: string) => {
     loadingProfile.value = true;
     try {
-      // Eğer kendi profilimize bakıyorsak ve auth.user varsa onu kullan
-      if (authStore.user && authStore.user.username === username) {
-         // API'den yine de çekelim ki güncel stats (_count) gelsin
-         const response = await apiClient.get<User>(`/users/username/${username}`);
-         profileUser.value = response.data;
-      } else {
-         const response = await apiClient.get<User>(`/users/username/${username}`);
-         profileUser.value = response.data;
-      }
+      const response = await apiClient.get<User>(`/users/username/${username}`, {
+        params: { currentUserId: authStore.user?.id }
+      });
+      profileUser.value = response.data;
+      return response.data;
     } catch (error) {
       console.error("Profile fetch error:", error);
       profileUser.value = null;
@@ -37,17 +34,19 @@ export const useProfileStore = defineStore("profile", () => {
     }
   };
 
-  // Kullanıcının postlarını, repostlarını ve beğenilerini getir
+  // Kullanıcının postlarını, yanıtlarını, repostlarını ve beğenilerini getir
   const fetchProfileContent = async (userId: number) => {
     loadingPosts.value = true;
     try {
-      const [postsRes, repostsRes, likesRes] = await Promise.all([
-        apiClient.get<Post[]>(`/users/${userId}/posts`),
-        apiClient.get<Post[]>(`/posts/user/${userId}/reposts`),
-        apiClient.get<Post[]>(`/posts/user/${userId}/likes`)
+      const [postsRes, repliesRes, repostsRes, likesRes] = await Promise.all([
+        apiClient.get<Post[]>(`/users/${userId}/posts`, { params: { currentUserId: authStore.user?.id } }),
+        apiClient.get<Post[]>(`/users/${userId}/replies`, { params: { currentUserId: authStore.user?.id } }),
+        apiClient.get<Post[]>(`/posts/user/${userId}/reposts`, { params: { currentUserId: authStore.user?.id } }),
+        apiClient.get<Post[]>(`/posts/user/${userId}/likes`, { params: { currentUserId: authStore.user?.id } })
       ]);
       
       userPosts.value = postsRes.data;
+      userReplies.value = repliesRes.data;
       userReposts.value = repostsRes.data;
       userLikedPosts.value = likesRes.data;
     } catch (error) {
@@ -57,10 +56,11 @@ export const useProfileStore = defineStore("profile", () => {
     }
   };
 
-  // Profil Verilerini Temizle (Bambaşka bir profile geçerken)
+  // Profil Verilerini Temizle
   const clearProfile = () => {
     profileUser.value = null;
     userPosts.value = [];
+    userReplies.value = [];
     userReposts.value = [];
     userLikedPosts.value = [];
   };
@@ -71,13 +71,12 @@ export const useProfileStore = defineStore("profile", () => {
     
     if (profileUser.value._count) {
        profileUser.value._count.followers += isFollowingNow ? 1 : -1;
-       // Güvenlik: Eksiye düşmemesi için
        profileUser.value._count.followers = Math.max(0, profileUser.value._count.followers);
     }
     
-    // Eğer profil gizliyse ve takipten çıktıysak içerikleri gizle
     if (!isFollowingNow && isPrivate) {
        userPosts.value = [];
+       userReplies.value = [];
        userReposts.value = [];
        userLikedPosts.value = [];
     }
@@ -86,6 +85,7 @@ export const useProfileStore = defineStore("profile", () => {
   return {
     profileUser,
     userPosts,
+    userReplies,
     userReposts,
     userLikedPosts,
     loadingProfile,

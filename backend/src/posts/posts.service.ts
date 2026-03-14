@@ -82,10 +82,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
     });
   }
@@ -110,10 +110,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
     });
     return { reposted: true, post: newRepost, message: 'Remakülendi!' };
@@ -138,10 +138,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -167,10 +167,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
@@ -187,14 +187,59 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
     return this.mapInteractionStatus(posts, userId);
+  }
+
+  async getUserPosts(userId: number, currentUserId?: number) {
+    const posts = await this.prisma.post.findMany({
+      where: { authorId: userId, published: true, repostId: null, parentId: null, isDeleted: false },
+      include: {
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
+        category: true,
+        repostOf: {
+          include: {
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
+            category: true,
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
+          }
+        },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return this.mapInteractionStatus(posts, currentUserId);
+  }
+
+  async getUserReplies(userId: number, currentUserId?: number) {
+    const posts = await this.prisma.post.findMany({
+      where: { authorId: userId, published: true, NOT: { parentId: null }, isDeleted: false },
+      include: {
+        author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
+        parent: {
+          include: {
+            author: { select: { username: true } }
+          }
+        },
+        category: true,
+        repostOf: {
+          include: {
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
+            category: true,
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
+          }
+        },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    return this.mapInteractionStatus(posts, currentUserId);
   }
 
   async findUserReposts(userId: number, currentUserId?: number) {
@@ -220,14 +265,14 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
       orderBy: { createdAt: 'desc' },
     });
-    return this.mapInteractionStatus(posts, currentUserId || userId);
+    return this.mapInteractionStatus(posts, currentUserId);
   }
 
   async findLikedPosts(userId: number, currentUserId?: number) {
@@ -250,10 +295,10 @@ export class PostsService {
               include: {
                 author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
                 category: true,
-                _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+                _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
               }
             },
-            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
           }
         }
       },
@@ -261,7 +306,7 @@ export class PostsService {
     });
     
     const posts = likes.map(l => l.post);
-    return this.mapInteractionStatus(posts, currentUserId || userId);
+    return this.mapInteractionStatus(posts, currentUserId);
   }
 
   private async mapInteractionStatus(posts: any[], userId?: number) {
@@ -272,9 +317,16 @@ export class PostsService {
     ]);
     const likedPostIds = new Set(userLikes.map((l) => l.postId));
     const repostedPostIds = new Set(userReposts.map((r) => r.repostId));
+    
     return posts.map((p) => {
+      // Eğer bu post bir repost ise, orijinal postun etkileşim durumuna bak
+      // Eğer bu bir ana post ise, kendi ID'sine bak
       const targetId = p.repostId || p.id;
-      return { ...p, isLiked: likedPostIds.has(targetId), isReposted: repostedPostIds.has(targetId) };
+      return { 
+        ...p, 
+        isLiked: likedPostIds.has(targetId), 
+        isReposted: repostedPostIds.has(targetId) 
+      };
     });
   }
 
@@ -288,10 +340,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
     });
     if (!post) return null;
@@ -304,11 +356,18 @@ export class PostsService {
     }
 
     let isLiked = false;
+    let isReposted = false;
+    
     if (currentUserId) {
-      const like = await this.prisma.like.findUnique({ where: { userId_postId: { userId: currentUserId, postId: id } } });
+      const targetId = post.repostId || post.id;
+      const [like, repost] = await Promise.all([
+        this.prisma.like.findUnique({ where: { userId_postId: { userId: currentUserId, postId: targetId } } }),
+        this.prisma.post.findFirst({ where: { authorId: currentUserId, repostId: targetId, isDeleted: false } })
+      ]);
       isLiked = !!like;
+      isReposted = !!repost;
     }
-    return { ...post, isLiked };
+    return { ...post, isLiked, isReposted };
   }
 
   async update(id: number, userId: number, updatePostDto: UpdatePostDto) {
@@ -329,10 +388,10 @@ export class PostsService {
           include: {
             author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
             category: true,
-            _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } }
+            _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
           }
         },
-        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
     });
   }
@@ -363,7 +422,7 @@ export class PostsService {
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
-        _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
+        _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
     });
   }
@@ -383,10 +442,9 @@ export class PostsService {
           if (!parent) break;
           parents.unshift(parent);
           currentParentId = (parent as any).parentId;
-          // Sonsuz döngü koruması
           if (parents.length > 10) break; 
         } catch {
-          break; // Bir ata gizliyse veya erişilemezse zinciri orada kes
+          break; 
         }
       }
 
@@ -400,10 +458,10 @@ export class PostsService {
             include: {
               author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
               category: true,
-              _count: { select: { likes: true, comments: true, reposts: true, replies: true } }
+              _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } }
             }
           },
-          _count: { select: { likes: true, comments: true, reposts: true, replies: true } },
+          _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
         },
         orderBy: { createdAt: 'asc' },
       });

@@ -796,6 +796,7 @@ const closeReport = () => {
 };
 
 const handleShowComments = (id: number) => {
+  console.log("Home: Opening comments modal for post:", id);
   selectedPostId.value = id;
   commentsModalOpen.value = true;
 };

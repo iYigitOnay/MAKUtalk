@@ -3,23 +3,6 @@
   <div class="max-w-2xl mx-auto min-h-screen bg-white dark:bg-gray-950 pb-20 sm:pb-8 transition-colors duration-500 relative">
     
     <!-- MODERATION OVERLAYS -->
-    <!-- 1. CUSTOM DELETE CONFIRMATION -->
-    <transition name="fade">
-      <div v-if="showDeleteConfirm" class="fixed inset-0 z-[110] bg-white/90 dark:bg-gray-950/90 backdrop-blur-xl flex items-center justify-center p-8">
-        <div class="text-center max-w-xs animate-in zoom-in-95 duration-200">
-          <div class="w-16 h-16 bg-red-50 dark:bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-          </div>
-          <h3 class="text-xl font-bold text-gray-900 dark:text-white tracking-tighter">İçeriği Sil?</h3>
-          <p class="text-gray-500 text-sm mt-2 mb-8">Bu işlem geri alınamaz. İçerik tamamen kaldırılacaktır.</p>
-          <div class="flex flex-col gap-3">
-            <button @click="confirmDelete" class="w-full py-4 bg-red-600 text-white font-black rounded-2xl shadow-xl shadow-red-500/20 active:scale-95 transition-all">SİL</button>
-            <button @click="closeDelete" class="text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-600 transition-colors">VAZGEÇ</button>
-          </div>
-        </div>
-      </div>
-    </transition>
-
     <!-- 2. CATEGORIZED REPORT MODAL -->
     <transition name="fade">
       <div v-if="showReportModal" class="fixed inset-0 z-[110] bg-white dark:bg-gray-950 flex flex-col">
@@ -128,6 +111,18 @@
       </div>
 
     </div>
+
+    <!-- 1. CUSTOM DELETE CONFIRMATION -->
+    <DeleteConfirmModal
+      :is-open="showDeleteConfirm"
+      :loading="isDeleting"
+      title="Gönderiyi Sil?"
+      message="Bu işlem geri alınamaz. İçerik tamamen kaldırılacaktır."
+      confirm-text="SİL"
+      variant="danger"
+      @confirm="confirmDelete"
+      @cancel="closeDelete"
+    />
   </div>
 </template>
 
@@ -139,6 +134,7 @@ import { usePostsStore } from '@/stores/posts';
 import apiClient from '@/api/client';
 import { useToast } from 'vue-toastification';
 import PostCard from '@/components/PostCard.vue';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal.vue';
 import type { Post } from '@/types';
 
 const route = useRoute();
@@ -230,6 +226,7 @@ const selectMention = (username: string) => {
 const isAdmin = computed(() => authStore.user?.role === 'ADMIN' || authStore.user?.email === '2312101063@ogr.mehmetakif.edu.tr');
 const showDeleteConfirm = ref(false);
 const deleteTarget = ref<number | null>(null);
+const isDeleting = ref(false);
 const showReportModal = ref(false);
 const reportStep = ref(1);
 const selectedCategory = ref("");
@@ -316,6 +313,7 @@ const closeDelete = () => { deleteTarget.value = null; showDeleteConfirm.value =
 
 const confirmDelete = async () => {
   if (!deleteTarget.value) return;
+  isDeleting.value = true;
   try {
     await postsStore.deletePost(deleteTarget.value);
     toast.success("Silindi.");
@@ -324,14 +322,16 @@ const confirmDelete = async () => {
       // Eğer ana post silindiyse geri dön
       router.back();
     } else {
-      // Eğer bir cevap silindiyse listeden çıkar
+      // Eğer bir cevap silindiyse veya ata silindiyse listeden çıkar
       replies.value = replies.value.filter(r => r.id !== deleteTarget.value);
       parents.value = parents.value.filter(p => p.id !== deleteTarget.value);
     }
+    showDeleteConfirm.value = false;
   } catch { 
     toast.error("Silinemedi!"); 
   } finally { 
-    closeDelete(); 
+    isDeleting.value = false;
+    deleteTarget.value = null;
   }
 };
 

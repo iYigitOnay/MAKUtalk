@@ -19,10 +19,14 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { PostsService } from '../posts/posts.service';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly postsService: PostsService,
+  ) {}
 
   // STATIK ROUTE'LAR (ÖNCELİKLİ)
   @Get('badges/all')
@@ -91,7 +95,16 @@ export class UsersController {
     @Query('currentUserId') currentUserId?: string,
   ) {
     const userId = currentUserId ? parseInt(currentUserId) : undefined;
-    return this.usersService.getUserPosts(id, userId);
+    return this.postsService.getUserPosts(id, userId);
+  }
+
+  @Get(':id/replies')
+  async getUserReplies(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('currentUserId') currentUserId?: string,
+  ) {
+    const userId = currentUserId ? parseInt(currentUserId) : undefined;
+    return this.postsService.getUserReplies(id, userId);
   }
 
   @Post(':id/block')

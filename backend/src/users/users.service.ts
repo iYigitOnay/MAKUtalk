@@ -273,26 +273,6 @@ export class UsersService {
     return this.prisma.user.delete({ where: { id: userId } });
   }
 
-  async getUserPosts(userId: number, currentUserId?: number) {
-    return this.prisma.post.findMany({
-      where: { authorId: userId, published: true, repostId: null, isDeleted: false },
-      include: {
-        author: {
-          select: {
-            id: true,
-            username: true,
-            fullName: true,
-            avatarUrl: true,
-            badges: { include: { badge: true } },
-          },
-        },
-        category: true,
-        _count: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-  }
-
   async toggleBlock(blockerId: number, blockedId: number) {
     const existing = await this.prisma.block.findFirst({
       where: { blockerId, blockedId },
