@@ -38,6 +38,8 @@ export interface Post {
   categoryId?: number;
   repostId?: number;
   repostOf?: Post;
+  parentId?: number; // TWITTER MANTIĞI: Yanıt verilen postun ID'si
+  parent?: Post;     // TWITTER MANTIĞI: Yanıt verilen ana post verisi
   sentiment?: string;
   sentimentScore?: number;
   createdAt: string;
@@ -56,6 +58,7 @@ export interface Post {
     likes: number;
     comments: number;
     reposts: number;
+    replies?: number; // TWITTER MANTIĞI: Yanıt sayısı
   };
   isLiked?: boolean; // Frontend için
   isReposted?: boolean; // Frontend için

@@ -592,6 +592,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
 import { useFollowStore } from "@/stores/follow";
+import { useProfileStore } from "@/stores/profile";
 import { useToast } from "vue-toastification";
 import apiClient from "@/api/client";
 import PostCard from "@/components/PostCard.vue";
@@ -604,17 +605,19 @@ import * as LucideIcons from "lucide-vue-next";
 const authStore = useAuthStore();
 const postsStore = usePostsStore();
 const followStore = useFollowStore();
+const profileStore = useProfileStore();
 const router = useRouter();
 const route = useRoute();
 const toast = useToast();
 
-const displayedUser = ref<any>(null);
-const userPosts = ref<any[]>([]);
-const reposts = ref<any[]>([]);
-const likedPosts = ref<any[]>([]);
+const displayedUser = computed(() => profileStore.profileUser);
+const userPosts = computed(() => profileStore.userPosts);
+const reposts = computed(() => profileStore.userReposts);
+const likedPosts = computed(() => profileStore.userLikedPosts);
+const loading = computed(() => profileStore.loadingProfile);
+const postsLoading = computed(() => profileStore.loadingPosts);
+
 const activeTab = ref<"posts" | "reposts" | "likes">("posts");
-const loading = ref(true);
-const postsLoading = ref(true);
 const followLoading = ref(false);
 const error = ref("");
 
@@ -867,31 +870,15 @@ const canViewContent = computed(
 const fetchProfile = async () => {
   const username = (route.params.id as string) || authStore.user?.username;
   if (!username) return;
-  loading.value = true;
+  
+  error.value = "";
   try {
-    const res = await apiClient.get(`/users/username/${username}`, {
-      params: { currentUserId: authStore.user?.id },
-    });
-    displayedUser.value = res.data;
-    if (canViewContent.value) {
-      const [p, r, l] = await Promise.all([
-        apiClient.get(`/users/${displayedUser.value.id}/posts`, {
-          params: { currentUserId: authStore.user?.id },
-        }),
-        postsStore.fetchUserReposts(displayedUser.value.id, authStore.user?.id),
-        apiClient.get(`/posts/user/${displayedUser.value.id}/likes`, {
-          params: { currentUserId: authStore.user?.id },
-        }),
-      ]);
-      userPosts.value = p.data;
-      reposts.value = r;
-      likedPosts.value = l.data;
+    await profileStore.fetchProfileByUsername(username);
+    if (canViewContent.value && displayedUser.value) {
+      await profileStore.fetchProfileContent(displayedUser.value.id);
     }
-  } catch {
+  } catch (err) {
     error.value = "Kullanıcı bulunamadı.";
-  } finally {
-    loading.value = false;
-    postsLoading.value = false;
   }
 };
 
@@ -953,11 +940,26 @@ const handleInteraction = (data: any) => {
   update(likedPosts.value);
 };
 const handleDeletePost = async (postId: number) => {
-  if (!confirm("Silinsin mi?")) return;
+  if (!confirm("Bu gönderiyi silmek istediğinizden emin misiniz?")) return;
   try {
     await postsStore.deletePost(postId);
+    
+    // Yerel state'den anında kaldır (Hız ve UX için)
+    userPosts.value = userPosts.value.filter(p => p.id !== postId);
+    reposts.value = reposts.value.filter(p => p.id !== postId && p.repostId !== postId);
+    likedPosts.value = likedPosts.value.filter(p => p.id !== postId);
+    
+    // Profil istatistiklerini güncelle (Opsiyonel ama iyi olur)
+    if (displayedUser.value && displayedUser.value._count) {
+      displayedUser.value._count.posts--;
+    }
+    
+    toast.success("Gönderi silindi.");
+  } catch (err) {
+    toast.error("Gönderi silinirken bir hata oluştu.");
+    // Hata olursa veriyi tekrar çek
     fetchProfile();
-  } catch {}
+  }
 };
 const handleShowComments = (id: number) => {
   selectedPostId.value = id;

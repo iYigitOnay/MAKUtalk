@@ -2,12 +2,17 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "@/api/client";
 import type { Post } from "@/types";
+import { useProfileStore } from "./profile"; // <- Eklendi
 
 export const usePostsStore = defineStore("posts", () => {
   const posts = ref<Post[]>([]);
   const myPosts = ref<Post[]>([]);
+  const currentCategory = ref<number | null>(null); // <- Eklendi
   const loading = ref(false);
-  const currentCategory = ref<number | null>(null);
+  const error = ref<string | null>(null);
+
+  // profileStore'a erişim (içeride kullanmak için getter/lazy load mantığı kurabiliriz, ama direkt çağırmak da çalışır)
+  const getProfileStore = () => useProfileStore();
   
   // Yeni post atıldığında tetiklenecek olan dinleyiciler
   const postCreationListeners = ref<(() => void)[]>([]);
@@ -98,12 +103,13 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  // Post oluştur
+  // Post oluştur (veya Cevap ver)
   const createPost = async (
     content: string,
     published = true,
     categoryId?: number,
     image?: File,
+    parentId?: number, // <- TWITTER MANTIĞI: Yanıt veriyorsak parentId gelir
   ) => {
     loading.value = true;
     try {
@@ -111,6 +117,7 @@ export const usePostsStore = defineStore("posts", () => {
       if (content) formData.append("content", content);
       formData.append("published", String(published));
       if (categoryId) formData.append("categoryId", String(categoryId));
+      if (parentId) formData.append("parentId", String(parentId));
       if (image) formData.append("image", image);
 
       const response = await apiClient.post<Post>("/posts", formData, {
@@ -118,11 +125,34 @@ export const usePostsStore = defineStore("posts", () => {
           "Content-Type": "multipart/form-data",
         },
       });
-      posts.value.unshift(response.data);
+      
+      // Eğer bu bir cevap değilse (ana post ise) anasayfaya ekle
+      if (!parentId) {
+        posts.value.unshift(response.data);
+      }
+      
       notifyPostCreated();
       return response.data;
     } catch (error: any) {
       throw error.response?.data || error;
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // Twitter Tarzı Thread Getir
+  const fetchThread = async (postId: number, currentUserId?: number) => {
+    loading.value = true;
+    try {
+      const params = currentUserId ? { currentUserId } : {};
+      const response = await apiClient.get<{ parents: Post[], post: Post, replies: Post[] }>(
+        `/posts/${postId}/thread`,
+        { params }
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Thread fetch error:", error);
+      throw error;
     } finally {
       loading.value = false;
     }
@@ -206,8 +236,17 @@ export const usePostsStore = defineStore("posts", () => {
       });
     };
 
+    // 1. Kendi listelerini güncelle
     posts.value = updateInArray(posts.value);
     myPosts.value = updateInArray(myPosts.value);
+    
+    // 2. ProfileStore'u güncelle (Küresel Senkronizasyon)
+    const profileStore = getProfileStore();
+    if (profileStore) {
+      profileStore.userPosts = updateInArray(profileStore.userPosts);
+      profileStore.userReposts = updateInArray(profileStore.userReposts);
+      profileStore.userLikedPosts = updateInArray(profileStore.userLikedPosts);
+    }
   };
 
   // Tüm postlardaki kullanıcı bilgisini güncelle (Canlı profil güncellemesi için)
@@ -224,8 +263,17 @@ export const usePostsStore = defineStore("posts", () => {
       return post;
     };
 
+    // 1. Kendi listelerini güncelle
     posts.value = posts.value.map(updateAuthor);
     myPosts.value = myPosts.value.map(updateAuthor);
+    
+    // 2. ProfileStore'u güncelle
+    const profileStore = getProfileStore();
+    if (profileStore) {
+      profileStore.userPosts = profileStore.userPosts.map(updateAuthor);
+      profileStore.userReposts = profileStore.userReposts.map(updateAuthor);
+      profileStore.userLikedPosts = profileStore.userLikedPosts.map(updateAuthor);
+    }
   };
 
   // Kategori filtresini sıfırla
@@ -244,6 +292,7 @@ export const usePostsStore = defineStore("posts", () => {
     fetchUserReposts,
     toggleRepost,
     createPost,
+    fetchThread, // <- BURAYA EKLENDİ
     deletePost,
     updatePost,
     updatePostLocally,

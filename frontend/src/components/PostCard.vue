@@ -3,12 +3,29 @@
   <div
     v-if="displayPost"
     @click="$router.push(`/post/${displayPost.id}`)"
-    class="p-4 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-900/70 transition-colors cursor-pointer border-b border-gray-200 dark:border-primary-900/20"
+    class="p-4 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-900/70 transition-colors cursor-pointer"
+    :class="!isThreadParent ? 'border-b border-gray-200 dark:border-primary-900/20' : ''"
   >
+    <!-- Reply Header (TWITTER MANTIĞI) -->
+    <div
+      v-if="displayPost.parentId"
+      class="flex items-center gap-1.5 mb-2 ml-14 sm:ml-16 text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-bold"
+      @click.stop
+    >
+      <component :is="getBadgeComponent('corner-down-right')" class="w-4 h-4 text-blue-500" />
+      <span v-if="displayPost.parent?.author">
+        <router-link :to="`/profile/${displayPost.parent.author.username}`" class="text-blue-500 hover:underline">
+          @{{ displayPost.parent.author.username }}
+        </router-link>
+        yanıtlanıyor
+      </span>
+      <span v-else class="text-blue-500">Bir gönderiye yanıt</span>
+    </div>
+
     <!-- Repost Header -->
     <div
       v-if="post.repostOf"
-      class="flex items-center gap-2 mb-2 ml-9 text-gray-500 dark:text-gray-400 text-sm font-semibold"
+      class="flex items-center gap-2 mb-2 ml-14 sm:ml-16 text-gray-500 dark:text-gray-400 text-sm font-semibold"
       @click.stop
     >
       <svg
@@ -35,27 +52,32 @@
     </div>
 
     <!-- Main Post Content -->
-    <div class="flex gap-3 sm:gap-4 items-start">
-      <!-- Avatar -->
-      <router-link
-        v-if="displayPost.author"
-        :to="`/profile/${displayPost.author.username}`"
-        @click.stop
-        class="flex-shrink-0 relative z-10"
-      >
-        <img
-          v-if="displayPost.author.avatarUrl"
-          :src="getImageUrl(displayPost.author.avatarUrl)"
-          :alt="displayPost.author.username"
-          class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm"
-        />
-        <div
-          v-else
-          class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold shadow-sm text-sm sm:text-base"
+    <div class="flex gap-3 sm:gap-4 items-stretch">
+      <!-- Avatar & Thread Line -->
+      <div class="flex flex-col items-center">
+        <router-link
+          v-if="displayPost.author"
+          :to="`/profile/${displayPost.author.username}`"
+          @click.stop
+          class="flex-shrink-0 relative z-10"
         >
-          {{ displayPost.author.username?.charAt(0).toUpperCase() }}
-        </div>
-      </router-link>
+          <img
+            v-if="displayPost.author.avatarUrl"
+            :src="getImageUrl(displayPost.author.avatarUrl)"
+            :alt="displayPost.author.username"
+            class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm"
+          />
+          <div
+            v-else
+            class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold shadow-sm text-sm sm:text-base"
+          >
+            {{ displayPost.author.username?.charAt(0).toUpperCase() }}
+          </div>
+        </router-link>
+        
+        <!-- Thread Line (Dikey Bağlantı Çizgisi) -->
+        <div v-if="isThreadParent" class="w-0.5 flex-1 bg-gray-200 dark:bg-gray-800 mt-2 mb-[-1rem] rounded-full"></div>
+      </div>
 
       <!-- Main Content -->
       <div class="flex-1 min-w-0">
@@ -378,7 +400,7 @@
               />
             </svg>
             <span class="text-xs font-black">{{
-              displayPost._count?.comments || 0
+              (displayPost._count?.replies || 0) + (displayPost._count?.comments || 0)
             }}</span>
           </button>
           <button
@@ -423,7 +445,13 @@ import type { Post } from "@/types";
 // LUCIDE ICONS IMPORT
 import * as LucideIcons from "lucide-vue-next";
 
-const props = defineProps<{ post: Post }>();
+const props = withDefaults(defineProps<{ 
+  post: Post;
+  isThreadParent?: boolean;
+}>(), {
+  isThreadParent: false
+});
+
 const authStore = useAuthStore();
 const likesStore = useLikesStore();
 const postsStore = usePostsStore();

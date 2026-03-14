@@ -56,30 +56,40 @@
     <div v-if="loading" class="py-20 text-center"><div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div></div>
     <div v-else-if="!post" class="py-20 text-center text-gray-500 font-bold uppercase text-xs tracking-widest italic border-2 border-dashed border-gray-100 dark:border-white/5 rounded-[2.5rem] mx-4">Gönderi bulunamadı veya silinmiş olabilir.</div>
     
-    <div v-else class="animate-fade-in">
-      <!-- Post Body -->
-      <article class="bg-white dark:bg-gray-950">
+    <div v-else class="animate-fade-in flex flex-col">
+      
+      <!-- 1. ÜST POSTLAR (ATALAR - ANCESTORS) -->
+      <div v-if="parents && parents.length > 0" class="flex flex-col">
         <PostCard 
-          :post="post" 
+          v-for="parent in parents" 
+          :key="parent.id" 
+          :post="parent" 
+          :isThreadParent="true"
           @delete="openDeletePost" 
           @report="handleReportPost" 
-          @interaction="handlePostInteraction"
+        />
+      </div>
+
+      <!-- 2. ANA ODAK POST (MAIN POST) -->
+      <div class="relative">
+        <PostCard 
+          :post="post" 
+          :isThreadParent="false"
+          @delete="openDeletePost" 
+          @report="handleReportPost" 
           @showComments="focusCommentInput"
         />
-      </article>
+      </div>
 
-      <!-- Comments Section -->
-      <div class="px-4 py-6 bg-white dark:bg-gray-950">
-        <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6 ml-2">Yorumlar ({{ comments?.length || 0 }})</h2>
-        
-        <!-- Add Comment -->
-        <div v-if="authStore.isAuthenticated" class="flex gap-3 mb-8">
+      <!-- 3. YANIT VERME ALANI (REPLY BOX) -->
+      <div class="px-4 py-4 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-white/5">
+        <div v-if="authStore.isAuthenticated" class="flex gap-3">
           <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex-shrink-0 overflow-hidden border border-gray-100 dark:border-white/5 shadow-inner">
             <img v-if="authStore.user?.avatarUrl" :src="getImageUrl(authStore.user.avatarUrl)" class="w-full h-full object-cover" />
             <div v-else class="w-full h-full flex items-center justify-center font-bold text-blue-600 uppercase">{{ authStore.user?.username?.charAt(0) }}</div>
           </div>
           <div class="flex-1 space-y-3 relative">
-            <textarea ref="commentInput" v-model="commentContent" @input="handleInput" rows="2" placeholder="Fikrini paylaş..." class="w-full p-4 bg-slate-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[1.5rem] text-[15px] focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all dark:text-white"></textarea>
+            <textarea ref="commentInput" v-model="commentContent" @input="handleInput" rows="2" placeholder="Yanıtını gönder..." class="w-full p-4 bg-slate-50 dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-[1.5rem] text-[15px] focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all dark:text-white"></textarea>
             
             <!-- MENTION TOOLTIP -->
             <div v-if="showMentions" :style="{ top: mentionPos.y + 'px', left: mentionPos.x + 'px' }" class="absolute z-[60] w-64 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 overflow-hidden">
@@ -96,50 +106,40 @@
             </div>
 
             <div class="flex justify-end">
-              <button @click="submitComment" :disabled="!commentContent.trim() || commentLoading" class="px-6 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl uppercase hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20 active:scale-95">Yorum Yap</button>
+              <button @click="submitReply" :disabled="!commentContent.trim() || commentLoading" class="px-6 py-2.5 bg-blue-600 text-white text-xs font-bold rounded-xl uppercase hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-500/20 active:scale-95">Yanıtla</button>
             </div>
           </div>
         </div>
-
-        <!-- Comments List -->
-        <div v-if="comments && comments.length > 0" class="space-y-6">
-          <div v-for="comment in comments" :key="comment.id" class="flex gap-3 animate-fade-in group">
-            <router-link v-if="comment.author" :to="`/profile/${comment.author.username}`" class="flex-shrink-0">
-              <div class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-gray-800 flex items-center justify-center font-bold text-blue-600 uppercase shadow-inner overflow-hidden border border-gray-100 dark:border-white/5">
-                <img v-if="comment.author.avatarUrl" :src="getImageUrl(comment.author.avatarUrl)" class="w-full h-full object-cover" />
-                <span v-else>{{ comment.author.username?.charAt(0) }}</span>
-              </div>
-            </router-link>
-            <div v-if="comment.author" class="flex-1 min-w-0">
-              <div class="bg-slate-50 dark:bg-gray-900/50 p-4 rounded-2xl rounded-tl-none border border-gray-100 dark:border-white/5 relative">
-                <div class="flex items-center justify-between mb-1">
-                  <router-link :to="`/profile/${comment.author.username}`" class="font-bold text-xs text-gray-900 dark:text-white hover:underline">@{{ comment.author.username }}</router-link>
-                  <div class="flex items-center gap-2">
-                    <span class="text-[10px] font-bold text-gray-400 uppercase">{{ formatDate(comment.createdAt) }}</span>
-                    <button v-if="authStore.user?.id === comment.userId || isAdmin" @click="openDeleteComment(comment.id)" class="text-gray-400 hover:text-red-500 transition-colors" :title="isAdmin ? 'Yönetici Olarak Sil' : 'Yorumu Sil'"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                    <button v-if="authStore.user?.id !== comment.userId" @click="openReportComment(comment.id)" class="text-gray-400 hover:text-orange-500 transition-colors" title="Rapor Et"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6h-8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg></button>
-                  </div>
-                </div>
-                <HashtagText :text="comment.content" class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed" />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div v-else class="py-10 text-center opacity-40"><p class="text-xs font-bold uppercase italic">Henüz yorum yapılmamış.</p></div>
       </div>
+
+      <!-- 4. CEVAPLAR (REPLIES) -->
+      <div v-if="replies && replies.length > 0" class="flex flex-col">
+        <PostCard 
+          v-for="reply in replies" 
+          :key="reply.id" 
+          :post="reply" 
+          :isThreadParent="false"
+          @delete="openDeletePost" 
+          @report="handleReportPost" 
+        />
+      </div>
+      <div v-else class="py-10 text-center opacity-40">
+        <p class="text-xs font-bold uppercase italic">İlk yanıtlayan sen ol!</p>
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
 import { usePostsStore } from '@/stores/posts';
 import apiClient from '@/api/client';
 import { useToast } from 'vue-toastification';
-import HashtagText from '@/components/HashtagText.vue';
 import PostCard from '@/components/PostCard.vue';
+import type { Post } from '@/types';
 
 const route = useRoute();
 const router = useRouter();
@@ -147,9 +147,11 @@ const authStore = useAuthStore();
 const postsStore = usePostsStore();
 const toast = useToast();
 
-const localPost = ref<any>(null);
-const comments = ref<any[]>([]);
 const loading = ref(true);
+const parents = ref<Post[]>([]);
+const post = ref<Post | null>(null);
+const replies = ref<Post[]>([]);
+
 const commentContent = ref('');
 const commentLoading = ref(false);
 const commentInput = ref<HTMLTextAreaElement | null>(null);
@@ -163,16 +165,8 @@ const getCursorXY = (el: HTMLTextAreaElement, cursorIndex: number) => {
   const style = window.getComputedStyle(el);
   const mirror = document.createElement("div");
   const copyStyle = [
-    "fontFamily",
-    "fontSize",
-    "fontWeight",
-    "lineHeight",
-    "padding",
-    "border",
-    "width",
-    "boxSizing",
-    "whiteSpace",
-    "wordBreak"
+    "fontFamily", "fontSize", "fontWeight", "lineHeight", "padding", 
+    "border", "width", "boxSizing", "whiteSpace", "wordBreak"
   ];
   copyStyle.forEach((prop) => {
     (mirror.style as any)[prop] = (style as any)[prop];
@@ -233,25 +227,13 @@ const selectMention = (username: string) => {
   el?.focus();
 };
 
-// ✅ POST SENKRONİZASYON KİLİDİ
-// Store'daki postu takip eder, eğer store'da yoksa yerel veriyi kullanır.
-const post = computed(() => {
-  if (!localPost.value) return null;
-  const postId = localPost.value.id;
-  const fromStore = postsStore.posts.find(p => p.id === postId)
-    ?? postsStore.posts.find(p => p.repostId === postId)?.repostOf
-    ?? postsStore.myPosts.find(p => p.id === postId)
-    ?? postsStore.myPosts.find(p => p.repostId === postId)?.repostOf;
-  return fromStore || localPost.value;
-});
-
 const isAdmin = computed(() => authStore.user?.role === 'ADMIN' || authStore.user?.email === '2312101063@ogr.mehmetakif.edu.tr');
 const showDeleteConfirm = ref(false);
-const deleteTarget = ref<{ type: 'post' | 'comment', id: number } | null>(null);
+const deleteTarget = ref<number | null>(null);
 const showReportModal = ref(false);
 const reportStep = ref(1);
 const selectedCategory = ref("");
-const reportTarget = ref<{ type: 'post' | 'comment', id: number } | null>(null);
+const reportTarget = ref<number | null>(null);
 
 const reportCategories: Record<string, string[]> = {
   Nefret: ["Hakaretler", "Irkçı veya cinsiyetçi klişeler", "İnsanlıktan çıkarma", "Korku veya ayrımcılığa teşvik"],
@@ -261,101 +243,118 @@ const reportCategories: Record<string, string[]> = {
   "Yasadışı Davranışlar": ["İnsan sömürüsü", "Cinsel şiddet", "Yasadışı ürün satışı"]
 };
 
-const fetchPost = async () => {
+// YENİ THREAD SİSTEMİ İLE FETCH
+const fetchThread = async () => {
+  const postId = Number(route.params.id);
+  if (isNaN(postId)) {
+    toast.error("Geçersiz gönderi ID'si.");
+    return;
+  }
+
   loading.value = true;
   try {
-    const res = await apiClient.get(`/posts/${route.params.id}?currentUserId=${authStore.user?.id || ''}`);
-    localPost.value = res.data;
+    console.log("Fetching thread for post:", postId);
+    const threadData = await postsStore.fetchThread(postId, authStore.user?.id);
     
-    // Store'u güncelle/besle
-    const exists = postsStore.posts.some(p => p.id === res.data.id);
-    if (!exists) postsStore.posts.unshift(res.data);
-    else postsStore.updatePostLocally(res.data.id, { isLiked: res.data.isLiked, isReposted: res.data.isReposted });
+    if (!threadData || !threadData.post) {
+      console.error("Invalid thread data received:", threadData);
+      post.value = null;
+      toast.error("Gönderi bulunamadı.");
+      return;
+    }
 
-    try {
-      const commentsRes = await apiClient.get(`/comments/post/${route.params.id}`);
-      comments.value = Array.isArray(commentsRes.data) ? commentsRes.data : [];
-    } catch { comments.value = []; }
-  } catch { toast.error("Gönderi yüklenemedi."); }
-  finally { loading.value = false; }
+    parents.value = threadData.parents || [];
+    post.value = threadData.post;
+    replies.value = threadData.replies || [];
+    console.log("Thread data loaded successfully.");
+  } catch (error: any) { 
+    console.error("Thread fetch error:", error);
+    toast.error(error.message || "Gönderi yüklenemedi."); 
+  } finally { 
+    loading.value = false; 
+  }
 };
 
-const handlePostInteraction = (data: { type: string; postId: number; status: boolean; post?: any }) => {
-  // PostCard zaten store'u güncelliyor. 
-  // 'post' computed olduğu için store değişince sayfa kendiliğinden tepki verecek.
-};
+// Aynı sayfada farklı bir post'a (örneğin bir yanıta) tıklandığında sayfayı yenile
+watch(() => route.params.id, (newId, oldId) => {
+  if (newId && newId !== oldId) {
+    fetchThread();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
 
 const focusCommentInput = () => { commentInput.value?.focus(); };
 
-const submitComment = async () => {
+// ARTIK YORUM DEĞİL, BİR 'POST' OLUŞTURUYORUZ (parentId ile)
+const submitReply = async () => {
   if (!commentContent.value.trim() || !post.value) return;
   commentLoading.value = true;
   try {
-    const res = await apiClient.post(`/comments/post/${post.value.id}`, { content: commentContent.value });
-    comments.value.unshift(res.data);
+    const newReply = await postsStore.createPost(
+      commentContent.value,
+      true, // published
+      undefined, // categoryId (opsiyonel)
+      undefined, // image (opsiyonel)
+      post.value.id // parentId
+    );
+    
+    // Yeni cevabı listeye ekle
+    replies.value.unshift(newReply);
     commentContent.value = '';
     
-    // Sayaç güncelleme (Store üzerinden)
-    postsStore.updatePostLocally(post.value.id, {
-      _count: { ...post.value._count, comments: (post.value._count?.comments || 0) + 1 }
-    });
-    
-    toast.success("Yorumun eklendi! 💬");
-  } catch { toast.error("Yorum yapılamadı."); }
-  finally { commentLoading.value = false; }
+    toast.success("Yanıt gönderildi! 💬");
+  } catch (error) { 
+    toast.error("Yanıt gönderilemedi."); 
+  } finally { 
+    commentLoading.value = false; 
+  }
 };
 
-const openDeletePost = (id: number) => { deleteTarget.value = { type: 'post', id }; showDeleteConfirm.value = true; };
-const openDeleteComment = (id: number) => { deleteTarget.value = { type: 'comment', id }; showDeleteConfirm.value = true; };
+// SİLME İŞLEMLERİ
+const openDeletePost = (id: number) => { deleteTarget.value = id; showDeleteConfirm.value = true; };
 const closeDelete = () => { deleteTarget.value = null; showDeleteConfirm.value = false; };
 
 const confirmDelete = async () => {
   if (!deleteTarget.value) return;
   try {
-    if (deleteTarget.value.type === 'post') { 
-      await apiClient.delete(`/posts/${deleteTarget.value.id}`); 
-      toast.success("Gönderi silindi."); 
-      router.back(); 
+    await postsStore.deletePost(deleteTarget.value);
+    toast.success("Silindi.");
+    
+    if (deleteTarget.value === post.value?.id) {
+      // Eğer ana post silindiyse geri dön
+      router.back();
+    } else {
+      // Eğer bir cevap silindiyse listeden çıkar
+      replies.value = replies.value.filter(r => r.id !== deleteTarget.value);
+      parents.value = parents.value.filter(p => p.id !== deleteTarget.value);
     }
-    else { 
-      await apiClient.delete(`/comments/${deleteTarget.value.id}`); 
-      comments.value = comments.value.filter(c => c.id !== deleteTarget.value?.id); 
-      
-      if (post.value) {
-        postsStore.updatePostLocally(post.value.id, {
-          _count: { ...post.value._count, comments: Math.max(0, (post.value._count?.comments || 0) - 1) }
-        });
-      }
-      toast.success("Yorum silindi."); 
-    }
-  } catch { toast.error("Hata!"); }
-  finally { closeDelete(); }
+  } catch { 
+    toast.error("Silinemedi!"); 
+  } finally { 
+    closeDelete(); 
+  }
 };
 
-const handleReportPost = (id: number) => { reportTarget.value = { type: 'post', id }; showReportModal.value = true; reportStep.value = 1; };
-const openReportComment = (id: number) => { reportTarget.value = { type: 'comment', id }; showReportModal.value = true; reportStep.value = 1; };
+// RAPORLAMA İŞLEMLERİ
+const handleReportPost = (id: number) => { reportTarget.value = id; showReportModal.value = true; reportStep.value = 1; };
 const selectReportCategory = (name: string) => { selectedCategory.value = name; reportStep.value = 2; };
 const submitReport = async (sub: string) => {
   if (!reportTarget.value) return;
   try {
-    const payload: any = { reason: selectedCategory.value, subReason: sub };
-    if (reportTarget.value.type === 'post') payload.reportedPostId = reportTarget.value.id;
-    else payload.reportedCommentId = reportTarget.value.id;
+    const payload = { 
+      reason: selectedCategory.value, 
+      subReason: sub,
+      reportedPostId: reportTarget.value 
+    };
     await apiClient.post('/users/report', payload);
     toast.warning("Bildirildi.");
-  } catch { toast.error("Hata!"); }
-  finally { closeReport(); }
+  } catch { 
+    toast.error("Hata!"); 
+  } finally { 
+    closeReport(); 
+  }
 };
 const closeReport = () => { showReportModal.value = false; reportTarget.value = null; };
-
-const formatDate = (date: string) => {
-  const d = new Date(date);
-  const diff = Math.floor((new Date().getTime() - d.getTime()) / 60000);
-  if (diff < 1) return "Az önce";
-  if (diff < 60) return `${diff}d`;
-  if (diff < 1440) return `${Math.floor(diff/60)}s`;
-  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' });
-};
 
 const getImageUrl = (path: string) => {
   if (!path) return "";
@@ -365,7 +364,9 @@ const getImageUrl = (path: string) => {
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
-onMounted(fetchPost);
+onMounted(() => {
+  fetchThread();
+});
 </script>
 
 <style scoped>

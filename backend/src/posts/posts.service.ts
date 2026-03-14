@@ -71,6 +71,7 @@ export class PostsService {
         published: createPostDto.published ?? true,
         authorId: userId,
         categoryId: categoryId,
+        parentId: createPostDto.parentId || null,
         sentiment: aiAnalysis.sentiment,
         sentimentScore: aiAnalysis.sentimentScore,
       },
@@ -123,6 +124,7 @@ export class PostsService {
       where: { 
         published: true,
         isDeleted: false,
+        parentId: null,
         OR: [
           { author: { isPrivate: false } },
           { authorId: userId },
@@ -177,7 +179,7 @@ export class PostsService {
 
   async findMyPosts(userId: number) {
     const posts = await this.prisma.post.findMany({
-      where: { authorId: userId, isDeleted: false },
+      where: { authorId: userId, isDeleted: false, parentId: null },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
@@ -205,7 +207,12 @@ export class PostsService {
     }
 
     const posts = await this.prisma.post.findMany({
-      where: { authorId: userId, NOT: { repostId: null }, isDeleted: false },
+      where: { 
+        authorId: userId, 
+        NOT: { repostId: null }, 
+        isDeleted: false,
+        repostOf: { isDeleted: false }
+      },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
@@ -359,5 +366,58 @@ export class PostsService {
         _count: { select: { likes: true, comments: true, reposts: { where: { isDeleted: false } } } },
       },
     });
+  }
+
+  async getThread(id: number, currentUserId?: number) {
+    try {
+      const post = await this.findOne(id, currentUserId);
+      if (!post) throw new NotFoundException('Post bulunamadı.');
+
+      // Üst postları (Ancestors) bul - Hata korumalı
+      const parents: any[] = [];
+      let currentParentId = (post as any).parentId;
+      
+      while (currentParentId) {
+        try {
+          const parent = await this.findOne(currentParentId, currentUserId);
+          if (!parent) break;
+          parents.unshift(parent);
+          currentParentId = (parent as any).parentId;
+          // Sonsuz döngü koruması
+          if (parents.length > 10) break; 
+        } catch {
+          break; // Bir ata gizliyse veya erişilemezse zinciri orada kes
+        }
+      }
+
+      // Alt cevapları (Replies) bul
+      const replies = await this.prisma.post.findMany({
+        where: { parentId: id, isDeleted: false },
+        include: {
+          author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
+          category: true,
+          repostOf: {
+            include: {
+              author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
+              category: true,
+              _count: { select: { likes: true, comments: true, reposts: true, replies: true } }
+            }
+          },
+          _count: { select: { likes: true, comments: true, reposts: true, replies: true } },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      const mappedReplies = await this.mapInteractionStatus(replies, currentUserId);
+
+      return {
+        parents,
+        post,
+        replies: mappedReplies,
+      };
+    } catch (error) {
+      this.myLogger.error(`Thread fetch error: ${error.message}`, error.stack);
+      throw error;
+    }
   }
 }

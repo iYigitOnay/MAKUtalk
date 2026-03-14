@@ -213,6 +213,7 @@ model Post {
   authorId   Int
   categoryId Int?
   repostId   Int?     
+  parentId   Int?     // <- TWITTER MANTIĞI: Bu post hangi posta cevap olarak atıldı?
   sentiment      String?  
   sentimentScore Float?
   isDeleted  Boolean  @default(false)
@@ -222,8 +223,13 @@ model Post {
 
   author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   category      Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
   repostOf      Post?          @relation("Reposts", fields: [repostId], references: [id], onDelete: Cascade)
   reposts       Post[]         @relation("Reposts")
+  
+  parent        Post?          @relation("PostReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       Post[]         @relation("PostReplies")
+
   likes         Like[]
   comments      Comment[]
   notifications Notification[]
@@ -233,6 +239,7 @@ model Post {
   @@index([categoryId])
   @@index([createdAt])
   @@index([repostId])
+  @@index([parentId])
 }
 
 model Like {

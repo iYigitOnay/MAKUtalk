@@ -1,7 +1,6 @@
 import {
   IsBoolean,
   IsInt,
-  IsNotEmpty,
   IsOptional,
   IsString,
 } from 'class-validator';
@@ -21,4 +20,9 @@ export class CreatePostDto {
   @IsOptional()
   @Type(() => Number)
   categoryId?: number;
+
+  @IsInt()
+  @IsOptional()
+  @Type(() => Number)
+  parentId?: number;
 }

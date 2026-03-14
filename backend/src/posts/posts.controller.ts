@@ -89,6 +89,17 @@ export class PostsController {
     );
   }
 
+  @Get(':id/thread')
+  getThread(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('currentUserId') currentUserId?: string,
+  ) {
+    return this.postsService.getThread(
+      id,
+      currentUserId ? +currentUserId : undefined,
+    );
+  }
+
   @Get(':id')
   findOne(
     @Param('id', ParseIntPipe) id: number,

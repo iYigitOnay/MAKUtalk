@@ -94,7 +94,7 @@ export class UsersService {
       where: { username },
       include: {
         badges: { include: { badge: true } },
-        _count: { select: { posts: true, followers: true, following: true } },
+        _count: { select: { posts: { where: { isDeleted: false } }, followers: true, following: true } },
       },
     });
 
@@ -127,7 +127,7 @@ export class UsersService {
       where: { id },
       include: {
         badges: { include: { badge: true } },
-        _count: { select: { posts: true, followers: true, following: true } },
+        _count: { select: { posts: { where: { isDeleted: false } }, followers: true, following: true } },
       },
     });
     if (!user) throw new NotFoundException();
@@ -275,7 +275,7 @@ export class UsersService {
 
   async getUserPosts(userId: number, currentUserId?: number) {
     return this.prisma.post.findMany({
-      where: { authorId: userId, published: true, repostId: null },
+      where: { authorId: userId, published: true, repostId: null, isDeleted: false },
       include: {
         author: {
           select: {
