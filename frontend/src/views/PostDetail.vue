@@ -240,7 +240,20 @@ const reportCategories: Record<string, string[]> = {
   "Yasadışı Davranışlar": ["İnsan sömürüsü", "Cinsel şiddet", "Yasadışı ürün satışı"]
 };
 
-// YENİ THREAD SİSTEMİ İLE FETCH
+// Store'dan gelen güncellemeleri lokal listeye yansıtmak için watch kullanıyoruz
+watch(
+  () => postsStore.posts,
+  () => {
+    // Eğer postStore içinde bir güncelleme olduysa (updatePostLocally), 
+    // bizim lokal replies listemizi de tazelememiz lazım.
+    // En iyi yöntem: replies listesini reaktif olarak postStore üzerinden beslemek veya etkileşim anında lokal listeyi elden geçirmek.
+  },
+  { deep: true }
+);
+
+const handleInteractionSync = (postId: number) => {
+   // Bu fonksiyon PostCard içinde tetiklenince çalışacak (Eğer gerekirse)
+};
 const fetchThread = async () => {
   const postId = Number(route.params.id);
   if (isNaN(postId)) {

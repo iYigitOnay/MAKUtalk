@@ -159,32 +159,40 @@ export const usePostsStore = defineStore("posts", () => {
     return response.data;
   };
 
-  // Post'u local state'te güncelle (Referans bütünlüğünü koruyarak)
+  // Post'u veya Yanıtı local state'te güncelle
   const updatePostLocally = (postId: number, updates: any) => {
+    // 1. Array içindeki nesneyi doğrudan bulup güncelleme fonksiyonu
     const updateTarget = (p: Post) => {
+      let updated = false;
+
+      // Kendi eşleşirse
       if (p.id === postId) {
         if (updates.isLiked !== undefined) p.isLiked = updates.isLiked;
         if (updates.isReposted !== undefined) p.isReposted = updates.isReposted;
         if (updates.sentiment !== undefined) p.sentiment = updates.sentiment;
         if (updates.sentimentScore !== undefined) p.sentimentScore = updates.sentimentScore;
-        
         if (updates._count) {
           p._count = { ...p._count, ...updates._count };
         }
+        updated = true;
       }
       
+      // Repost ettiği orijinal post eşleşirse
       if (p.repostOf && p.repostId === postId) {
         const r = p.repostOf;
         if (updates.isLiked !== undefined) r.isLiked = updates.isLiked;
         if (updates.isReposted !== undefined) r.isReposted = updates.isReposted;
         if (updates.sentiment !== undefined) r.sentiment = updates.sentiment;
-        
         if (updates._count) {
           r._count = { ...r._count, ...updates._count };
         }
+        updated = true;
       }
+
+      return updated;
     };
 
+    // Tüm ana listelerde tara ve güncelle
     posts.value.forEach(updateTarget);
     myPosts.value.forEach(updateTarget);
     
