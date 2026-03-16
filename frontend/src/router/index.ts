@@ -15,6 +15,13 @@ const router = createRouter({
     { path: "/login", redirect: "/auth" },
     { path: "/register", redirect: "/auth" },
 
+    {
+      path: "/banned",
+      name: "Banned",
+      component: () => import("@/views/Banned.vue"),
+      meta: { layout: "auth" },
+    },
+
     // ── ANA SAYFALAR ──────────────────────────────────────
     {
       path: "/",
@@ -175,6 +182,11 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
+
+  // YASAKLI KULLANICI KONTROLÜ
+  if (authStore.isAuthenticated && authStore.user?.isBanned && to.name !== "Banned") {
+    return next("/banned");
+  }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next("/auth");

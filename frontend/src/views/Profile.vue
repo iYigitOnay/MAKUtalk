@@ -1,6 +1,6 @@
 <!-- src/views/Profile.vue -->
 <template>
-  <div class="max-w-4xl mx-auto pb-20 text-left overflow-x-hidden">
+  <div class="max-w-4xl mx-auto pb-20 text-left">
     <!-- Loading & Error States -->
     <div v-if="loading" class="text-center py-20">
       <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -24,93 +24,217 @@
         </button>
         <div class="absolute -bottom-10 sm:-bottom-16 left-4 sm:left-6">
           <div @click="displayedUser.avatarUrl ? (showAvatarZoom = true) : null" class="relative group p-1 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 shadow-xl overflow-hidden" :class="[displayedUser.avatarUrl ? 'cursor-pointer' : '']">
-            <img v-if="displayedUser.avatarUrl" :src="getImageUrl(displayedUser.avatarUrl)" alt="Avatar" class="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-950 object-cover" />
+            <img v-if="displayedUser.avatarUrl" :src="getImageUrl(displayedUser.avatarUrl)" alt="Avatar" class="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-950 object-cover" :class="{'grayscale opacity-50': displayedUser.isBanned}"/>
             <div v-else class="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-950 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
               <span class="text-white font-bold text-2xl sm:text-4xl">{{ userInitials }}</span>
+            </div>
+            <!-- BANNED OVERLAY ICON -->
+            <div v-if="displayedUser.isBanned" class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full">
+              <component :is="getBadgeComponent('shield-off')" class="w-8 h-8 sm:w-12 sm:h-12 text-white drop-shadow-lg" />
             </div>
           </div>
         </div>
       </div>
 
       <!-- Profile Info Section -->
-      <div class="bg-white dark:bg-gray-900/40 rounded-b-xl border-x border-b border-slate-200 dark:border-primary-900/30 pt-12 sm:pt-20 px-4 sm:px-6 pb-6 shadow-sm overflow-hidden">
+      <div class="bg-white dark:bg-gray-900/40 rounded-b-xl border-x border-b border-slate-200 dark:border-primary-900/30 pt-12 sm:pt-20 px-4 sm:px-6 pb-6 shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2 mb-1">
-              <h1 class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-full">{{ displayedUser.fullName || displayedUser.username }}</h1>
-              <div v-if="displayedUser.role === 'ADMIN'" class="p-1 rounded-full text-white bg-[#1E3A8A] shadow-sm">
-                <component :is="getBadgeComponent('crown')" class="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
+              <h1 class="text-lg sm:text-2xl font-black text-slate-900 dark:text-white truncate max-w-[200px] sm:max-w-full" :class="{'text-gray-400 line-through decoration-red-500': displayedUser.isBanned}">{{ displayedUser.fullName || displayedUser.username }}</h1>
+              
+              <!-- BADGES -->
+              <div v-if="(displayedUser.badges?.length || displayedUser.role === 'ADMIN') && !displayedUser.isBanned" class="flex flex-wrap gap-1 items-center">
+                <div v-if="displayedUser.role === 'ADMIN'" class="p-1 rounded-full text-white bg-[#1E3A8A] shadow-sm group relative">
+                  <component :is="getBadgeComponent('crown')" class="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
+                  <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-1 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[100] pointer-events-none uppercase">Sistem Kurucusu</div>
+                </div>
+                <div v-for="ub in displayedUser.badges" :key="ub.badge?.id || ub.id" class="p-1 rounded-full border border-gray-100 group relative" :style="{ backgroundColor: ub.badge?.color || '#3b82f6', color: 'white' }">
+                  <component :is="getBadgeComponent(ub.badge?.icon || 'award')" class="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />
+                  <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-1 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[100] pointer-events-none uppercase">{{ ub.badge?.name }}</div>
+                </div>
               </div>
             </div>
             <p class="text-xs sm:text-base text-slate-500 dark:text-gray-400 font-bold">@{{ displayedUser.username }}</p>
           </div>
 
           <div v-if="!isMyProfile && authStore.isAuthenticated" class="flex items-center gap-2">
-            <button @click="handleFollowToggle" :disabled="followLoading" class="px-5 py-2 sm:py-2.5 rounded-full font-black text-xs sm:text-sm transition-all shadow-sm active:scale-95 disabled:opacity-50" :class="[isFollowing ? 'bg-slate-100 dark:bg-gray-800 text-slate-900 dark:text-white' : 'bg-blue-600 text-white shadow-blue-500/20']">
-              {{ isFollowing ? "Takipten Çık" : "Takip Et" }}
-            </button>
+            <template v-if="!displayedUser.isBanned">
+              <button @click="handleFollowToggle" :disabled="followLoading" class="px-5 py-2 sm:py-2.5 rounded-full font-black text-xs sm:text-sm transition-all shadow-sm active:scale-95 disabled:opacity-50" :class="[isFollowing ? 'bg-slate-100 dark:bg-gray-800 text-slate-900 dark:text-white' : 'bg-blue-600 text-white shadow-blue-500/20']">
+                {{ isFollowing ? "Takipten Çık" : "Takip Et" }}
+              </button>
+              <button @click="handleMessageUser" class="p-2.5 bg-white dark:bg-gray-800 border border-slate-200 dark:border-white/10 rounded-full hover:bg-slate-50 dark:hover:bg-white/5 transition-all shadow-sm active:scale-95">
+                <component :is="getBadgeComponent('mail')" class="w-5 h-5 text-slate-600 dark:text-gray-300" />
+              </button>
+            </template>
+            
+            <div class="relative" id="profile-options-container">
+              <button @click="showOptionsMenu = !showOptionsMenu" class="p-2.5 bg-white dark:bg-gray-800 border border-slate-200 dark:border-white/10 rounded-full hover:bg-slate-50 dark:hover:bg-white/5 transition-all shadow-sm active:scale-95">
+                <component :is="getBadgeComponent('more-horizontal')" class="w-5 h-5 text-slate-600 dark:text-gray-300" />
+              </button>
+              
+              <!-- DROPDOWN MENU (TELEPORTED TO BODY TO PREVENT CLIPPING) -->
+              <Teleport to="body">
+                <div v-if="showOptionsMenu" 
+                     class="fixed bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-800 rounded-[2rem] shadow-2xl z-[999] py-2 animate-in fade-in zoom-in-95 duration-200 overflow-hidden"
+                     :style="dropdownStyle">
+                  <button v-if="!displayedUser.isBanned" @click="openUserReport" class="w-full text-left px-5 py-3 text-sm font-bold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/10 transition-colors flex items-center gap-3">
+                    <component :is="getBadgeComponent('alert-triangle')" class="w-5 h-5" /> Şikayet Et
+                  </button>
+                  <button @click="handleBlockToggle" class="w-full text-left px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-3">
+                    <component :is="getBadgeComponent('user-x')" class="w-5 h-5" /> {{ displayedUser?.isBlocked ? 'Engeli Kaldır' : 'Engelle' }}
+                  </button>
+                  <!-- ADMIN SECTION -->
+                  <div v-if="authStore.user?.role === 'ADMIN'" class="mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                    <p class="px-5 py-1 text-[10px] font-black text-gray-400 uppercase tracking-widest">Yönetici Paneli</p>
+                    <button @click="handleBanToggle" class="w-full text-left px-5 py-3 text-sm font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors flex items-center gap-3">
+                      <component :is="getBadgeComponent('shield-off')" class="w-5 h-5" /> {{ displayedUser?.isBanned ? 'Yasağı Kaldır' : 'Yasakla' }}
+                    </button>
+                    <button @click="handleAdminDeleteUser" class="w-full text-left px-5 py-3 text-sm font-bold text-red-700 hover:bg-red-100 dark:hover:bg-red-900/20 transition-colors flex items-center gap-3">
+                      <component :is="getBadgeComponent('trash-2')" class="w-5 h-5" /> Tamamen Sil
+                    </button>
+                    <button @click="showBadgeModal = true" class="w-full text-left px-5 py-3 text-sm font-bold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 transition-colors flex items-center gap-3">
+                      <component :is="getBadgeComponent('award')" class="w-5 h-5" /> Rozet Yönetimi
+                    </button>
+                  </div>
+                </div>
+                <!-- Backdrop to close dropdown -->
+                <div v-if="showOptionsMenu" @click="showOptionsMenu = false" class="fixed inset-0 z-[998] bg-transparent"></div>
+              </Teleport>
+            </div>
           </div>
         </div>
 
-        <div class="mt-4 sm:mt-6 space-y-4 border-t border-slate-50 dark:border-white/5 pt-4 sm:pt-6 text-left">
-          <p v-if="displayedUser.bio" class="text-gray-700 dark:text-gray-300 text-xs sm:text-[15px] leading-relaxed whitespace-pre-wrap max-w-2xl">{{ displayedUser.bio }}</p>
-          <div class="grid grid-cols-3 gap-1 sm:flex sm:gap-8 justify-items-center sm:justify-start items-center">
-            <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
-              <span class="text-[15px] sm:text-base font-black text-gray-900 dark:text-white">{{ displayedUser._count?.posts || 0 }}</span>
-              <span class="text-[11px] sm:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight">Paylaşım</span>
-            </div>
-            <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
-              <span class="text-[15px] sm:text-base font-black text-gray-900 dark:text-white">{{ displayedUser._count?.followers || 0 }}</span>
-              <span class="text-[11px] sm:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight">Takipçi</span>
-            </div>
-            <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
-              <span class="text-[15px] sm:text-base font-black text-gray-900 dark:text-white">{{ displayedUser._count?.following || 0 }}</span>
-              <span class="text-[11px] sm:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight">Takip</span>
+        <!-- BANNED PROFILE VIEW -->
+        <div v-if="displayedUser.isBanned" class="mt-8 mb-4">
+          <div class="relative group overflow-hidden bg-gradient-to-br from-red-500/10 via-red-600/5 to-transparent border border-red-500/20 rounded-[2.5rem] p-8 text-center backdrop-blur-sm">
+            <!-- Animated Red Pulse -->
+            <div class="absolute -top-24 -right-24 w-48 h-48 bg-red-500/10 rounded-full blur-3xl animate-pulse"></div>
+            <div class="absolute -bottom-24 -left-24 w-48 h-48 bg-red-600/10 rounded-full blur-3xl animate-pulse delay-700"></div>
+            
+            <div class="relative z-10 flex flex-col items-center gap-4">
+              <div class="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center shadow-2xl shadow-red-600/40 animate-bounce">
+                <component :is="getBadgeComponent('shield-alert')" class="w-10 h-10 text-white" />
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-black text-red-600 uppercase tracking-tighter">BU HESAP ASKIYA ALINDI</h2>
+              <p class="max-w-md text-gray-600 dark:text-gray-400 text-sm sm:text-base font-medium leading-relaxed">
+                Topluluk kurallarını ciddi şekilde ihlal ettiği tespit edildiği için bu hesaba erişim kalıcı olarak sınırlandırılmıştır. 
+                <br><br>
+                <span class="text-[10px] opacity-50 uppercase tracking-widest font-black">Güvenli bir kampüs ortamı için çalışıyoruz.</span>
+              </p>
             </div>
           </div>
         </div>
 
-        <template v-if="canViewContent">
-          <div class="flex border-b border-slate-100 dark:border-gray-800 mt-6 sm:mt-8 mb-4 sm:mb-6 overflow-x-auto no-scrollbar">
-            <button v-for="tab in ['posts', 'replies', 'reposts', 'likes']" :key="tab" @click="activeTab = tab as any" :class="['flex-1 sm:flex-none px-4 sm:px-8 py-3 sm:py-4 text-[9px] sm:text-[11px] font-black uppercase tracking-widest border-b-2 transition-all whitespace-nowrap', activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600']">
-              {{ tab === 'posts' ? 'Gönderiler' : tab === 'replies' ? 'Yanıtlar' : tab === 'reposts' ? 'Remakü' : 'Beğeniler' }}
-            </button>
+        <template v-else>
+          <div class="mt-4 sm:mt-6 space-y-4 border-t border-slate-50 dark:border-white/5 pt-4 sm:pt-6 text-left">
+            <p v-if="displayedUser.bio" class="text-gray-700 dark:text-gray-300 text-xs sm:text-[15px] leading-relaxed whitespace-pre-wrap max-w-2xl">{{ displayedUser.bio }}</p>
+            <div class="grid grid-cols-3 gap-1 sm:flex sm:gap-8 justify-items-center sm:justify-start items-center">
+              <div class="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5">
+                <span class="text-[15px] sm:text-base font-black text-gray-900 dark:text-white">{{ displayedUser._count?.posts || 0 }}</span>
+                <span class="text-[11px] sm:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight">Paylaşım</span>
+              </div>
+              <div @click="openFollowModal('followers')" class="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 cursor-pointer group">
+                <span class="text-[15px] sm:text-base font-black text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">{{ displayedUser._count?.followers || 0 }}</span>
+                <span class="text-[11px] sm:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight group-hover:text-blue-500 transition-colors">Takipçi</span>
+              </div>
+              <div @click="openFollowModal('following')" class="flex flex-col sm:flex-row items-center gap-1 sm:gap-1.5 cursor-pointer group">
+                <span class="text-[15px] sm:text-base font-black text-gray-900 dark:text-white group-hover:text-blue-500 transition-colors">{{ displayedUser._count?.following || 0 }}</span>
+                <span class="text-[11px] sm:text-sm font-bold text-gray-500 dark:text-gray-400 uppercase tracking-tight group-hover:text-blue-500 transition-colors">Takip</span>
+              </div>
+            </div>
           </div>
-          
-          <div v-if="postsLoading" class="py-10 text-center">
-            <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          </div>
-          <div v-else-if="!currentTabPosts || currentTabPosts.length === 0" class="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">Henüz içerik yok</div>
-          <div v-else class="space-y-3 sm:space-y-4">
-            <PostCard 
-              v-for="p in currentTabPosts" 
-              :key="p.id" 
-              :post="p" 
-              @delete="handleDeletePost" 
-              @showComments="handleShowComments" 
-            />
-          </div>
+
+          <template v-if="canViewContent">
+            <div class="flex border-b border-slate-100 dark:border-gray-800 mt-6 sm:mt-8 mb-4 sm:mb-6 overflow-x-auto no-scrollbar">
+              <button v-for="tab in ['posts', 'replies', 'reposts', 'likes']" :key="tab" @click="activeTab = tab as any" :class="['flex-1 sm:flex-none px-4 sm:px-8 py-3 sm:py-4 text-[9px] sm:text-[11px] font-black uppercase tracking-widest border-b-2 transition-all whitespace-nowrap', activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-400 hover:text-slate-600']">
+                {{ tab === 'posts' ? 'Gönderiler' : tab === 'replies' ? 'Yanıtlar' : tab === 'reposts' ? 'Remakü' : 'Beğeniler' }}
+              </button>
+            </div>
+            
+            <div v-if="postsLoading" class="py-10 text-center">
+              <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+            </div>
+            <div v-else-if="!currentTabPosts || currentTabPosts.length === 0" class="py-20 text-center text-slate-400 font-bold uppercase tracking-widest text-[10px]">Henüz içerik yok</div>
+            <div v-else class="space-y-3 sm:space-y-4">
+              <PostCard v-for="p in currentTabPosts" :key="p.id" :post="p" @delete="handleDeletePost" @showComments="handleShowComments" />
+            </div>
+          </template>
         </template>
       </div>
     </template>
 
     <EditProfileModal :is-open="showEditModal" :user="displayedUser" @close="showEditModal = false" @save="handleSaveProfile" />
     <CommentsModal :is-open="commentsModalOpen" :post-id="selectedPostId" @close="commentsModalOpen = false" />
-    <DeleteConfirmModal
-      :is-open="showDeleteModal"
-      :loading="isDeleting"
-      title="Gönderiyi Sil?"
-      message="Bu işlem geri alınamaz. İçerik tamamen kaldırılacaktır."
-      confirm-text="SİL"
-      variant="danger"
-      @confirm="handleConfirmDelete"
-      @cancel="showDeleteModal = false"
-    />
+    <FollowListModal :is-open="showFollowModal" :user-id="displayedUser?.id || 0" :type="followModalType" @close="showFollowModal = false" />
+    <DeleteConfirmModal :is-open="showDeleteModal" :loading="isDeleting" title="Gönderiyi Sil?" message="Bu işlem geri alınamaz. İçerik tamamen kaldırılacaktır." confirm-text="SİL" variant="danger" @confirm="handleConfirmDelete" @cancel="showDeleteModal = false" />
+    <DeleteConfirmModal :is-open="showAdminDeleteModal" :loading="isAdminDeleting" title="Kullanıcıyı Sil?" message="DİKKAT: Bu işlem geri alınamaz! Kullanıcı ve tüm verileri kalıcı olarak silinecektir." confirm-text="KALICI OLARAK SİL" variant="danger" @confirm="executeAdminDelete" @cancel="showAdminDeleteModal = false" />
+
+    <!-- GLOBAL REPORT MODAL -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="showGlobalReport" class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md" @click.self="showGlobalReport = false">
+          <div class="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div class="flex items-center justify-between p-6 border-b border-gray-100 dark:border-white/5">
+              <button v-if="reportStep === 2" @click="reportStep = 1" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-500">
+                <component :is="getBadgeComponent('chevron-left')" class="w-5 h-5" />
+              </button>
+              <div v-else class="w-9"></div>
+              <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter">Şikayet Bildirimi</h3>
+              <button @click="showGlobalReport = false" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-400">
+                <component :is="getBadgeComponent('x')" class="w-5 h-5" />
+              </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 space-y-1.5 max-h-[60vh] no-scrollbar">
+              <div v-if="reportStep === 1">
+                <button v-for="(subReasons, category) in reportCategories" :key="category" @click="selectReportCategory(category)" class="w-full text-left p-3.5 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all flex items-center justify-between group">
+                  <span class="text-sm font-bold text-gray-700 dark:text-gray-300">{{ category }}</span>
+                  <component :is="getBadgeComponent('chevron-right')" class="w-4 h-4 text-gray-300 group-hover:translate-x-1 transition-transform" />
+                </button>
+              </div>
+              <div v-else>
+                <div class="px-4 py-2 text-[10px] font-black text-blue-500 uppercase tracking-widest">{{ selectedReportCategory }}</div>
+                <button v-for="sub in reportCategories[selectedReportCategory]" :key="sub" @click="submitReport(sub)" class="w-full text-left p-3.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 group">
+                  <span class="text-sm font-bold text-gray-700 dark:text-gray-300 group-hover:text-red-600">{{ sub }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
+
+    <!-- BADGE MANAGEMENT MODAL -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="showBadgeModal" class="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md" @click.self="showBadgeModal = false">
+          <div class="bg-white dark:bg-gray-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-gray-100 dark:border-white/10 flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div class="p-6 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
+              <h3 class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tighter">Rozet Yönetimi</h3>
+              <button @click="showBadgeModal = false" class="p-2 hover:bg-slate-100 dark:hover:bg-gray-800 rounded-full text-slate-400">
+                <component :is="getBadgeComponent('x')" class="w-5 h-5" />
+              </button>
+            </div>
+            <div class="p-6 max-h-[60vh] overflow-y-auto no-scrollbar grid grid-cols-2 gap-3">
+              <button v-for="badge in allBadges" :key="badge.id" @click="handleToggleBadge(badge.id)" :class="['relative p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 text-center group', hasBadge(badge.id) ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'border-transparent bg-slate-50 dark:bg-white/5 hover:border-slate-200 dark:hover:border-white/10']">
+                <div class="w-10 h-10 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform" :style="{ backgroundColor: badge.color, color: 'white' }">
+                  <component :is="getBadgeComponent(badge.icon)" class="w-5 h-5" />
+                </div>
+                <span class="text-[10px] font-black uppercase tracking-widest text-gray-700 dark:text-gray-300">{{ badge.name }}</span>
+                <div v-if="hasBadge(badge.id)" class="absolute top-2 right-2 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center shadow-sm">
+                  <component :is="getBadgeComponent('check')" class="w-2.5 h-2.5 text-white" />
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </transition>
+    </Teleport>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch, onUnmounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
@@ -121,6 +245,7 @@ import apiClient from "@/api/client";
 import PostCard from "@/components/PostCard.vue";
 import EditProfileModal from "@/components/EditProfileModal.vue";
 import CommentsModal from "@/components/CommentsModal.vue";
+import FollowListModal from "@/components/FollowListModal.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import * as LucideIcons from "lucide-vue-next";
 
@@ -140,9 +265,33 @@ const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
 const activeTab = ref<"posts" | "replies" | "reposts" | "likes">("posts");
 
+const showFollowModal = ref(false);
+const followModalType = ref<"followers" | "following">("followers");
+
 const showDeleteModal = ref(false);
 const postIdToDelete = ref<number | null>(null);
 const isDeleting = ref(false);
+
+const showAdminDeleteModal = ref(false);
+const isAdminDeleting = ref(false);
+
+const showOptionsMenu = ref(false);
+const showGlobalReport = ref(false);
+const reportStep = ref(1);
+const selectedReportCategory = ref("");
+const showBadgeModal = ref(false);
+const allBadges = ref<any[]>([]);
+
+const reportCategories: Record<string, string[]> = {
+  "Şiddet veya Tehdit": ["Şiddet eğilimi", "Tehdit edici dil", "Zarar verme teşviki"],
+  "Taciz ve Siber Zorbalık": ["Sürekli rahatsız etme", "Özel bilgi ifşası (Doxxing)", "Şantaj"],
+  "Nefret Söylemi": ["Irkçı söylemler", "Ayrımcılık", "Dini/Cinsel yönelim saldırısı"],
+  "Spam ve Yanıltıcı İçerik": ["Bot hesap", "Dolandırıcılık/Oltalama", "Yalan haber yayma"],
+  "Cinsellik ve Çıplaklık": ["Uygunsuz profil fotoğrafı", "Cinsel içerik paylaşımı", "İzinsiz mahrem görüntü"],
+  "Diğer": ["Sahte hesap (Taklit)", "Topluluk kurallarını ihlal", "Yasadışı madde satışı"]
+};
+
+const dropdownStyle = ref({ top: '0px', left: '0px' });
 
 const displayedUser = computed(() => profileStore.profileUser);
 const loading = computed(() => profileStore.loadingProfile);
@@ -157,8 +306,33 @@ const currentTabPosts = computed(() => {
 
 const isMyProfile = computed(() => authStore.user?.id === displayedUser.value?.id);
 const isFollowing = computed(() => displayedUser.value?.isFollowing);
-const canViewContent = computed(() => isMyProfile.value || !displayedUser.value?.isPrivate || isFollowing.value);
+const canViewContent = computed(() => (isMyProfile.value || !displayedUser.value?.isPrivate || isFollowing.value) && !displayedUser.value?.isBanned);
 const userInitials = computed(() => (displayedUser.value?.fullName || displayedUser.value?.username || "?").charAt(0).toUpperCase());
+
+// Dropdown positioning logic
+watch(showOptionsMenu, async (val) => {
+  if (val) {
+    setTimeout(() => {
+      const container = document.getElementById('profile-options-container');
+      if (container) {
+        const rect = container.getBoundingClientRect();
+        dropdownStyle.value = {
+          top: `${rect.bottom + window.scrollY + 8}px`,
+          left: `${rect.right - 224}px` // 224px is w-56
+        };
+      }
+    }, 0);
+  }
+});
+
+const openFollowModal = (type: "followers" | "following") => {
+  if (!canViewContent.value && !isMyProfile.value) {
+    toast.info("Bu listeyi görmek için kullanıcıyı takip etmelisiniz.");
+    return;
+  }
+  followModalType.value = type;
+  showFollowModal.value = true;
+};
 
 const fetchProfile = async () => {
   const username = (route.params.id as string) || authStore.user?.username;
@@ -169,6 +343,9 @@ const fetchProfile = async () => {
     await profileStore.fetchProfileByUsername(username);
     if (displayedUser.value && canViewContent.value) {
       await profileStore.fetchProfileContent(displayedUser.value.id);
+    }
+    if (authStore.user?.role === 'ADMIN') {
+      allBadges.value = await profileStore.fetchAllBadges();
     }
   } catch (err) {
     error.value = "Kullanıcı bulunamadı.";
@@ -188,6 +365,77 @@ const handleFollowToggle = async () => {
   } finally {
     followLoading.value = false;
   }
+};
+
+const handleBlockToggle = async () => {
+  if (!displayedUser.value) return;
+  try {
+    await profileStore.blockUser(displayedUser.value.id);
+    toast.success(displayedUser.value.isBlocked ? "Engellendi." : "Engel kaldırıldı.");
+    showOptionsMenu.value = false;
+  } catch { toast.error("Hata!"); }
+};
+
+const handleBanToggle = async () => {
+  if (!displayedUser.value) return;
+  try {
+    await profileStore.banUser(displayedUser.value.id);
+    toast.success(displayedUser.value.isBanned ? "Kullanıcı yasaklandı." : "Yasak kaldırıldı.");
+    showOptionsMenu.value = false;
+  } catch { toast.error("Yetki hatası!"); }
+};
+
+const handleAdminDeleteUser = () => {
+  showAdminDeleteModal.value = true;
+  showOptionsMenu.value = false;
+};
+
+const executeAdminDelete = async () => {
+  if (!displayedUser.value) return;
+  isAdminDeleting.value = true;
+  try {
+    await profileStore.deleteUser(displayedUser.value.id);
+    toast.success("Kullanıcı silindi.");
+    showAdminDeleteModal.value = false;
+    router.push("/");
+  } catch { 
+    toast.error("İşlem başarısız."); 
+  } finally {
+    isAdminDeleting.value = false;
+  }
+};
+
+const openUserReport = () => {
+  showGlobalReport.value = true;
+  reportStep.value = 1;
+  showOptionsMenu.value = false;
+};
+
+const selectReportCategory = (category: string) => {
+  selectedReportCategory.value = category;
+  reportStep.value = 2;
+};
+
+const submitReport = async (sub: string) => {
+  try {
+    await profileStore.reportUser({
+      reportedUsername: displayedUser.value!.username,
+      reason: selectedReportCategory.value,
+      subReason: sub
+    });
+    toast.success("Şikayet bildirildi.");
+    showGlobalReport.value = false;
+  } catch { toast.error("Hata!"); }
+};
+
+const hasBadge = (badgeId: number) => displayedUser.value?.badges?.some((ub: any) => ub.badgeId === badgeId);
+
+const handleToggleBadge = async (badgeId: number) => {
+  try {
+    await profileStore.toggleBadge(displayedUser.value!.id, badgeId);
+    await fetchProfile(); 
+    toast.success("Rozet güncellendi.");
+  } catch { toast.error("Yetki hatası!"); }
 };
 
 const handleSaveProfile = async (data: any) => {
@@ -229,6 +477,14 @@ const handleShowComments = (id: number) => {
   commentsModalOpen.value = true;
 };
 
+const handleMessageUser = () => {
+  router.push(`/messages?userId=${displayedUser.value?.id}`);
+};
+
+const handleProfileOptions = () => {
+  showOptionsMenu.value = !showOptionsMenu.value;
+};
+
 const getImageUrl = (path: string) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
@@ -249,4 +505,6 @@ watch(() => route.params.id, fetchProfile);
 <style scoped>
 .btn-primary { @apply px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
 </style>

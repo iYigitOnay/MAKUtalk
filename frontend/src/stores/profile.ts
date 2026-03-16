@@ -82,6 +82,45 @@ export const useProfileStore = defineStore("profile", () => {
     }
   };
 
+  // ADMIN & PROFILE ACTIONS
+  const blockUser = async (userId: number) => {
+    const res = await apiClient.post(`/users/${userId}/block`);
+    if (profileUser.value && profileUser.value.id === userId) {
+      profileUser.value.isBlocked = !profileUser.value.isBlocked;
+    }
+    return res.data;
+  };
+
+  const banUser = async (userId: number) => {
+    const res = await apiClient.post(`/users/${userId}/ban`);
+    if (profileUser.value && profileUser.value.id === userId) {
+      profileUser.value.isBanned = !profileUser.value.isBanned;
+    }
+    return res.data;
+  };
+
+  const deleteUser = async (userId: number) => {
+    await apiClient.delete(`/users/${userId}`);
+    if (profileUser.value && profileUser.value.id === userId) {
+      clearProfile();
+    }
+  };
+
+  const fetchAllBadges = async () => {
+    const res = await apiClient.get("/users/badges/all");
+    return res.data;
+  };
+
+  const toggleBadge = async (userId: number, badgeId: number) => {
+    const res = await apiClient.post(`/users/${userId}/badges/${badgeId}`);
+    return res.data; // { assigned: boolean }
+  };
+
+  const reportUser = async (data: { reportedUsername: string, reason: string, subReason: string }) => {
+    const res = await apiClient.post("/users/report", data);
+    return res.data;
+  };
+
   return {
     profileUser,
     userPosts,
@@ -93,6 +132,12 @@ export const useProfileStore = defineStore("profile", () => {
     fetchProfileByUsername,
     fetchProfileContent,
     clearProfile,
-    updateFollowStateLocally
+    updateFollowStateLocally,
+    blockUser,
+    banUser,
+    deleteUser,
+    fetchAllBadges,
+    toggleBadge,
+    reportUser
   };
 });

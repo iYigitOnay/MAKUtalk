@@ -44,7 +44,7 @@
 
       <!-- Forms Container -->
       <div class="relative flex-1 md:w-full min-h-[450px] md:min-h-[600px] flex overflow-hidden">
-        
+
         <!-- Verification Step -->
         <div v-if="showVerification" class="absolute inset-0 z-30 bg-white/98 dark:bg-[#161b27]/98 backdrop-blur-md flex items-center justify-center p-6 transition-all duration-500">
           <div class="w-full max-w-[340px] text-center pb-20 md:pb-0">
@@ -52,7 +52,7 @@
               <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" /></svg>
             </div>
             <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2">E-postanı Doğrula</h2>
-            <p class="text-slate-500 dark:text-gray-400 text-sm mb-8"><span class="font-black text-blue-600">{{ registerForm.email }}</span> adresine gelen kodu gir.</p>
+            <p class="text-slate-500 dark:text-gray-400 text-sm mb-8"><span class="font-black text-blue-600">{{ registerForm.email }}</span> adresine gelen kodu gir.</p>      
             <form @submit.prevent="handleVerify" class="space-y-6">
               <input v-model="verificationCode" type="text" maxlength="6" placeholder="000000" class="w-full text-center text-3xl tracking-[8px] font-mono py-4 rounded-2xl bg-slate-50 dark:bg-[#1a1f2e] border border-slate-200 dark:border-white/[0.07] text-slate-900 dark:text-white outline-none" />
               <button type="submit" :disabled="verifyLoading" class="auth-btn">{{ verifyLoading ? 'Doğrulanıyor...' : 'Onayla' }}</button>
@@ -69,13 +69,13 @@
             </div>
             <h2 class="text-2xl font-black text-slate-900 dark:text-white mb-2 italic tracking-tighter uppercase">Şifre Kurtarma</h2>
             <p class="text-slate-500 dark:text-gray-400 text-sm mb-8">{{ forgotStep === 1 ? 'E-posta adresini gir.' : 'Kodu ve yeni şifreni gir.' }}</p>
-            
+
             <form v-if="forgotStep === 1" @submit.prevent="handleSendResetCode" class="space-y-4">
               <input v-model="forgotForm.email" type="email" placeholder="E-posta" class="auth-input shadow-inner" />
               <button type="submit" :disabled="forgotLoading" class="auth-btn">{{ forgotLoading ? 'Gönderiliyor...' : 'Kod Gönder' }}</button>
               <button type="button" @click="showForgotModal = false" class="text-slate-400 text-sm font-bold block w-full mt-4">Geri Dön</button>
             </form>
-            
+
             <form v-else @submit.prevent="handleResetPassword" class="space-y-4 text-left">
               <input v-model="forgotForm.code" type="text" maxlength="6" placeholder="KOD" class="w-full text-center text-2xl tracking-[8px] font-mono py-3 rounded-xl bg-slate-50 dark:bg-[#1a1f2e] border border-slate-200 dark:border-white/[0.07] text-slate-900 dark:text-white outline-none" />
               <input v-model="forgotForm.newPassword" type="password" placeholder="Yeni Şifre" class="auth-input shadow-inner" />
@@ -93,14 +93,14 @@
         >
           <div class="w-full max-w-[360px] pb-24 md:pb-0">
             <Transition mode="out-in" enter-active-class="transition duration-500 ease-out" enter-from-class="opacity-0 translate-x-12" enter-to-class="opacity-100 translate-x-0" leave-active-class="transition duration-400 ease-in" leave-from-class="opacity-100 translate-x-0" leave-to-class="opacity-0 -translate-x-12">
-              
+
               <!-- STEP 1: Registration Form -->
               <div v-if="!isReviewing" key="inputs" class="space-y-6">
                 <div class="text-center">
                   <h2 class="text-2xl font-black text-gray-900 dark:text-white mb-2 italic tracking-tighter uppercase">Aramıza Katıl</h2>
                   <p class="text-slate-500 dark:text-white/30 text-[10px] font-bold uppercase tracking-widest italic">Dijital kampüs seni bekliyor</p>
                 </div>
-                
+
                 <form @submit.prevent="isReviewing = true" class="space-y-4">
                   <div class="flex p-1 bg-slate-100 dark:bg-[#1a1f2e] rounded-2xl border border-slate-200/50 dark:border-white/[0.05]">
                     <button type="button" @click="registerType = 'student'" class="flex-1 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all" :class="registerType === 'student' ? 'bg-white dark:bg-[#252b3d] text-blue-600 shadow-sm' : 'text-slate-400'">Öğrenci</button>
@@ -108,12 +108,12 @@
                   </div>
 
                   <input v-model="registerForm.fullName" type="text" placeholder="Ad Soyad" class="auth-input shadow-inner" />
-                  
+
                   <div class="space-y-1">
                     <input v-model="registerForm.username" @input="checkUsername" type="text" placeholder="Kullanıcı Adı" class="auth-input shadow-inner" />
                     <p v-if="usernameError" class="text-[9px] font-black text-red-500 uppercase px-1">{{ usernameError }}</p>
                   </div>
-                  
+
                   <div class="relative flex items-center group">
                     <input v-model="emailPrefix" type="text" placeholder="E-Posta" class="auth-input pr-32" />
                     <span class="absolute right-4 text-[9px] font-black text-slate-400 uppercase tracking-tighter pointer-events-none select-none">
@@ -132,15 +132,15 @@
                   <!-- Pass Checks (Simetrik ve Hata Durumlu) -->
                   <div class="grid grid-cols-2 gap-x-2 gap-y-1.5 px-1 py-1">
                     <div class="flex items-center gap-1.5 justify-start text-left">
-                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks['8+ Karakter'] ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks['8+ Karakter'] ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>    
                       <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks['8+ Karakter'] ? 'text-emerald-500' : 'text-gray-400'">8+ Karakter</span>
                     </div>
                     <div class="flex items-center gap-1.5 justify-end text-right">
                       <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks['Büyük Harf'] ? 'text-emerald-500' : 'text-gray-400'">Büyük Harf</span>
-                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks['Büyük Harf'] ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks['Büyük Harf'] ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>   
                     </div>
                     <div class="flex items-center gap-1.5 justify-start text-left">
-                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks['Özel/Rakam'] ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>
+                      <div class="w-1.5 h-1.5 rounded-full transition-colors" :class="passChecks['Özel/Rakam'] ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'"></div>    
                       <span class="text-[8px] font-black uppercase tracking-tighter" :class="passChecks['Özel/Rakam'] ? 'text-emerald-500' : 'text-gray-400'">Özel/Rakam</span>
                     </div>
                     <div class="flex items-center gap-1.5 justify-end text-right">
@@ -157,7 +157,7 @@
               <!-- STEP 2: Milestone Journey -->
               <div v-else key="review" class="space-y-10 py-4 text-left px-2 relative">
                 <div class="space-y-1 mb-8">
-                  <h2 class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic whitespace-nowrap leading-none">Yolculuk Başlıyor</h2>
+                  <h2 class="text-2xl font-black text-gray-900 dark:text-white tracking-tighter uppercase italic whitespace-nowrap leading-none">Yolculuk Başlıyor</h2>      
                   <p class="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em]">Sisteme giriş için son adımlar</p>
                 </div>
 
@@ -168,12 +168,12 @@
                   </div>
 
                   <div class="relative flex items-center gap-6">
-                    <div class="z-10 w-6 h-6 rounded-full bg-emerald-500 border-4 border-white dark:border-[#161b27] shadow-lg flex items-center justify-center"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"/></svg></div>
+                    <div class="z-10 w-6 h-6 rounded-full bg-emerald-500 border-4 border-white dark:border-[#161b27] shadow-lg flex items-center justify-center"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"/></svg></div> 
                     <div><h4 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Profil Hazır</h4><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">@{{ registerForm.username }} Hoş Geldin!</p></div>
                   </div>
 
                   <div class="relative flex items-center gap-6">
-                    <div class="z-10 w-6 h-6 rounded-full bg-emerald-500 border-4 border-white dark:border-[#161b27] shadow-lg flex items-center justify-center"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"/></svg></div>
+                    <div class="z-10 w-6 h-6 rounded-full bg-emerald-500 border-4 border-white dark:border-[#161b27] shadow-lg flex items-center justify-center"><svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="4" d="M5 13l4 4L19 7"/></svg></div> 
                     <div><h4 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-tighter">Güvenlik Katmanı</h4><p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Şifre doğrulandı</p></div>
                   </div>
 
@@ -182,8 +182,8 @@
                     <div class="flex-1">
                       <h4 class="text-sm font-black transition-colors" :class="agreementsAccepted ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400'">Yasal Protokoller</h4>
                       <p class="text-[11px] leading-relaxed font-bold mt-1" :class="agreementsAccepted ? 'text-slate-700 dark:text-white/80' : 'text-slate-400/60'">
-                        <button type="button" @click.stop="openLegal('terms')" class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:underline">Şartlar</button>, 
-                        <button type="button" @click.stop="openLegal('privacy')" class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:underline">Gizlilik</button> ve 
+                        <button type="button" @click.stop="openLegal('terms')" class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:underline">Şartlar</button>,
+                        <button type="button" @click.stop="openLegal('privacy')" class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:underline">Gizlilik</button> ve
                         <button type="button" @click.stop="openLegal('kvkk')" class="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent hover:underline">KVKK</button> onayları.
                       </p>
                     </div>
@@ -225,7 +225,7 @@
               <div class="relative group">
                 <input v-model="loginForm.password" :type="showPassword ? 'text' : 'password'" placeholder="Şifre" class="auth-input shadow-inner" />
                 <button type="button" @click="showPassword = !showPassword" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-blue-500 transition-all">
-                  <svg v-if="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" stroke-width="2" /></svg>
+                  <svg v-if="showPassword" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" stroke-width="2" /></svg>   
                   <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" stroke-width="2" /></svg>
                 </button>
               </div>
@@ -330,7 +330,13 @@ const handleLogin = async () => {
     await authStore.login({ email, password: loginForm.value.password });
     toast.success("Hoş geldin! 👋");
     router.push("/");
-  } catch { toast.error("Giriş başarısız."); }
+  } catch (error: any) { 
+    if (error.type === 'BANNED') {
+      router.push("/banned");
+    } else {
+      toast.error(error.message || "Giriş başarısız."); 
+    }
+  }
   finally { loginLoading.value = false; }
 };
 
@@ -338,12 +344,12 @@ const handleRegister = async () => {
   registerLoading.value = true;
   try {
     await apiClient.post("/auth/register", registerForm.value);
-    toast.success("Kayıt başarılı! Mailini kontrol et. 🎉");
+    toast.success("Kayıt başarılı! Mailini kontrol et. 📬");
     showVerification.value = true;
   } catch (error: any) {
     const errorData = error.response?.data;
-    const message = Array.isArray(errorData?.message) 
-      ? errorData.message[0] 
+    const message = Array.isArray(errorData?.message)
+      ? errorData.message[0]
       : (errorData?.message || "Kayıt başarısız.");
     toast.error(message);
   }

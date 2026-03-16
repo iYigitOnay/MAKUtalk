@@ -8,6 +8,7 @@ import { useAuthStore } from "./auth";
 export const usePostsStore = defineStore("posts", () => {
   const posts = ref<Post[]>([]);
   const myPosts = ref<Post[]>([]);
+  const searchResults = ref<Post[]>([]); // YENİ: Arama sonuçları için global state
   const currentCategory = ref<number | null>(null);
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -165,7 +166,7 @@ export const usePostsStore = defineStore("posts", () => {
     const updateTarget = (p: Post) => {
       let updated = false;
 
-      // Kendi eşleşirse
+      // DURUM A: Postun kendisi aranan ID ise
       if (p.id === postId) {
         if (updates.isLiked !== undefined) p.isLiked = updates.isLiked;
         if (updates.isReposted !== undefined) p.isReposted = updates.isReposted;
@@ -177,14 +178,22 @@ export const usePostsStore = defineStore("posts", () => {
         updated = true;
       }
       
-      // Repost ettiği orijinal post eşleşirse
+      // DURUM B: Bu post bir repost wrapper'ı ve içindeki orijinal post aranan ID ise
       if (p.repostOf && p.repostId === postId) {
         const r = p.repostOf;
-        if (updates.isLiked !== undefined) r.isLiked = updates.isLiked;
-        if (updates.isReposted !== undefined) r.isReposted = updates.isReposted;
+        if (updates.isLiked !== undefined) {
+          r.isLiked = updates.isLiked;
+          p.isLiked = updates.isLiked; // Wrapper'ı da senkron et
+        }
+        if (updates.isReposted !== undefined) {
+          r.isReposted = updates.isReposted;
+          p.isReposted = updates.isReposted; // Wrapper'ı da senkron et
+        }
         if (updates.sentiment !== undefined) r.sentiment = updates.sentiment;
+        
         if (updates._count) {
           r._count = { ...r._count, ...updates._count };
+          p._count = { ...p._count, ...updates._count }; // Sayaçları eşitle
         }
         updated = true;
       }
@@ -195,6 +204,7 @@ export const usePostsStore = defineStore("posts", () => {
     // Tüm ana listelerde tara ve güncelle
     posts.value.forEach(updateTarget);
     myPosts.value.forEach(updateTarget);
+    searchResults.value.forEach(updateTarget); // YENİ: Arama sonuçlarını da senkronize et
     
     const profileStore = getProfileStore();
     if (profileStore) {

@@ -54,6 +54,7 @@ export class SearchService {
       this.prisma.post.findMany({
         where: {
           published: true,
+          isDeleted: false,
           content: { contains: query, mode: 'insensitive' },
           author: {
             OR: [
@@ -69,13 +70,27 @@ export class SearchService {
               username: true,
               fullName: true,
               avatarUrl: true,
+              badges: { include: { badge: true } }
             },
           },
           category: true,
-          _count: { select: { likes: true, comments: true } },
+          repostOf: {
+            include: {
+              author: { select: { id: true, username: true, fullName: true, avatarUrl: true, badges: { include: { badge: true } } } },
+              category: true,
+              _count: { select: { likes: true, replies: true, reposts: true } }
+            }
+          },
+          _count: { 
+            select: { 
+              likes: true, 
+              replies: { where: { isDeleted: false } }, 
+              reposts: { where: { isDeleted: false } } 
+            } 
+          },
         },
         orderBy: { createdAt: 'desc' },
-        take: 20,
+        take: 30, // Sonuç sayısını biraz artırdık
       }),
       this.prisma.user.findMany({
         where: {
@@ -91,11 +106,39 @@ export class SearchService {
           fullName: true,
           avatarUrl: true,
           isPrivate: true,
+          badges: { include: { badge: true } },
           _count: { select: { followers: true, posts: true } },
         },
         take: 10,
       }),
     ]);
+
+    // Etkileşim durumlarını ekle (LIKE & REPOST)
+    if (currentUserId && posts.length > 0) {
+      const [userLikes, userReposts] = await Promise.all([
+        this.prisma.like.findMany({
+          where: { userId: currentUserId, postId: { in: posts.map(p => p.repostId || p.id) } },
+          select: { postId: true }
+        }),
+        this.prisma.post.findMany({
+          where: { authorId: currentUserId, repostId: { in: posts.map(p => p.repostId || p.id) }, isDeleted: false },
+          select: { repostId: true }
+        })
+      ]);
+
+      const likedIds = new Set(userLikes.map(l => l.postId));
+      const repostedIds = new Set(userReposts.map(r => r.repostId));
+
+      posts.forEach((p: any) => {
+        const targetId = p.repostId || p.id;
+        p.isLiked = likedIds.has(targetId);
+        p.isReposted = repostedIds.has(targetId);
+        if (p.repostOf) {
+          p.repostOf.isLiked = p.isLiked;
+          p.repostOf.isReposted = p.isReposted;
+        }
+      });
+    }
 
     return { posts, users };
   }
@@ -104,9 +147,10 @@ export class SearchService {
   async searchByHashtag(hashtag: string, currentUserId?: number) {
     const tag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
 
-    return this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       where: {
         published: true,
+        isDeleted: false,
         content: { contains: tag, mode: 'insensitive' },
         author: {
           OR: [
@@ -117,13 +161,49 @@ export class SearchService {
       },
       include: {
         author: {
-          select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true },
+          select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } },
         },
         category: true,
-        _count: { select: { likes: true, comments: true } },
+        repostOf: {
+          include: {
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, badges: { include: { badge: true } } } },
+            category: true,
+            _count: { select: { likes: true, replies: true, reposts: true } }
+          }
+        },
+        _count: { select: { likes: true, replies: true, reposts: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
+
+    // Etkileşim durumlarını ekle (LIKE & REPOST)
+    if (currentUserId && posts.length > 0) {
+      const [userLikes, userReposts] = await Promise.all([
+        this.prisma.like.findMany({
+          where: { userId: currentUserId, postId: { in: posts.map(p => p.repostId || p.id) } },
+          select: { postId: true }
+        }),
+        this.prisma.post.findMany({
+          where: { authorId: currentUserId, repostId: { in: posts.map(p => p.repostId || p.id) }, isDeleted: false },
+          select: { repostId: true }
+        })
+      ]);
+
+      const likedIds = new Set(userLikes.map(l => l.postId));
+      const repostedIds = new Set(userReposts.map(r => r.repostId));
+
+      posts.forEach((p: any) => {
+        const targetId = p.repostId || p.id;
+        p.isLiked = likedIds.has(targetId);
+        p.isReposted = repostedIds.has(targetId);
+        if (p.repostOf) {
+          p.repostOf.isLiked = p.isLiked;
+          p.repostOf.isReposted = p.isReposted;
+        }
+      });
+    }
+
+    return posts;
   }
 }

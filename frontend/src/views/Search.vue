@@ -316,7 +316,7 @@
           </div>
         </div>
 
-        <div v-if="results.posts?.length">
+        <div v-if="postsStore.searchResults?.length">
           <div
             class="px-4 py-3 font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-950/30 border-b border-gray-200 dark:border-primary-900/30"
           >
@@ -324,7 +324,7 @@
           </div>
           <div class="divide-y divide-gray-200 dark:divide-primary-900/20">
             <PostCard
-              v-for="post in results.posts"
+              v-for="post in postsStore.searchResults"
               :key="post.id"
               :post="post"
             />
@@ -374,10 +374,10 @@
 
       <!-- Posts Tab -->
       <div
-        v-else-if="activeTab === 'posts' && results.posts?.length"
+        v-else-if="activeTab === 'posts' && postsStore.searchResults?.length"
         class="divide-y divide-gray-200 dark:divide-primary-900/20"
       >
-        <PostCard v-for="post in results.posts" :key="post.id" :post="post" />
+        <PostCard v-for="post in postsStore.searchResults" :key="post.id" :post="post" />
       </div>
     </div>
   </div>
@@ -387,6 +387,8 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { usePostsStore } from "@/stores/posts";
+import { useProfileStore } from "@/stores/profile";
 import { useToast } from "vue-toastification";
 import apiClient from "@/api/client";
 import PostCard from "@/components/PostCard.vue";
@@ -394,6 +396,8 @@ import type { Post, User } from "@/types";
 
 const route = useRoute();
 const authStore = useAuthStore();
+const postsStore = usePostsStore();
+const profileStore = useProfileStore();
 const toast = useToast();
 
 const getImageUrl = (path: string | undefined) => {
@@ -407,7 +411,36 @@ const getImageUrl = (path: string | undefined) => {
 const searchQuery = ref("");
 const activeTab = ref<"all" | "users" | "posts">("all");
 const loading = ref(false);
-const results = ref<{ users: User[]; posts: Post[] }>({ users: [], posts: [] });
+const results = ref<{ users: User[] }>({ users: [] });
+
+// CANLI SENKRONİZASYON: Global post değişimlerini izle ve arama sonuçlarına yansıt
+watch(
+  [() => postsStore.posts, () => profileStore.userPosts, () => profileStore.userLikedPosts],
+  () => {
+    if (!postsStore.searchResults.length) return;
+
+    // Tüm global kaynakları birleştirip bir "gerçeklik haritası" oluştur
+    const globalPosts = [...postsStore.posts, ...profileStore.userPosts, ...profileStore.userLikedPosts];
+    
+    postsStore.searchResults = postsStore.searchResults.map(searchPost => {
+      // Bu postun (veya eğer bu bir repost ise orijinalinin) global bir kopyasını bul
+      const targetId = searchPost.repostId || searchPost.id;
+      
+      const match = globalPosts.find(p => (p.repostId || p.id) === targetId);
+      
+      if (match) {
+        return {
+          ...searchPost,
+          isLiked: match.isLiked,
+          isReposted: match.isReposted,
+          _count: { ...match._count }
+        };
+      }
+      return searchPost;
+    });
+  },
+  { deep: true }
+);
 
 // Trends data
 const trendingCategories = ref<any[]>([]);
@@ -438,7 +471,7 @@ let searchTimeout: ReturnType<typeof setTimeout>;
 const hasResults = computed(() => {
   return (
     (results.value.users?.length || 0) > 0 ||
-    (results.value.posts?.length || 0) > 0
+    (postsStore.searchResults?.length || 0) > 0
   );
 });
 
@@ -446,7 +479,8 @@ const handleSearch = () => {
   clearTimeout(searchTimeout);
 
   if (searchQuery.value.trim().length < 2) {
-    results.value = { users: [], posts: [] };
+    results.value.users = [];
+    postsStore.searchResults = [];
     return;
   }
 
@@ -459,7 +493,8 @@ const handleSearch = () => {
       }
 
       const response = await apiClient.get("/search", { params });
-      results.value = response.data;
+      results.value.users = response.data.users || [];
+      postsStore.searchResults = response.data.posts || [];
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Arama sırasında bir hata oluştu.");
@@ -506,8 +541,8 @@ watch(
     }
 
     // 2. Postlardaki yazar bilgilerimizi güncelle
-    if (results.value.posts) {
-      results.value.posts = results.value.posts.map((p) => {
+    if (postsStore.searchResults) {
+      postsStore.searchResults = postsStore.searchResults.map((p) => {
         if (Number(p.authorId) === userId) {
           return { ...p, author: { ...p.author, ...newUser } };
         }

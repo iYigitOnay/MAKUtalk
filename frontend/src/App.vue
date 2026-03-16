@@ -52,12 +52,23 @@ import Navbar from "@/components/Navbar.vue";
 import MobileBottomNav from "@/components/MobileBottomNav.vue";
 import { useDarkMode } from "@/composables/useDarkMode";
 import { useChatStore } from "@/stores/chat";
+import { useAuthStore } from "@/stores/auth";
+import { useRouter } from "vue-router";
 
 useDarkMode();
 
 const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 const chatStore = useChatStore();
 const mainContent = ref<HTMLElement | null>(null);
+
+// BAN KONTROLU
+watch(() => authStore.user?.isBanned, (isBanned) => {
+  if (isBanned && route.name !== 'Banned') {
+    router.push('/banned');
+  }
+}, { immediate: true });
 
 // Sohbet sayfasında aktif konuşma varken Navbar'ı gizle
 const hideNavbar = computed(() => {

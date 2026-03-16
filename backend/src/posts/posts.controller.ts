@@ -37,6 +37,7 @@ export class PostsController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll(@Query('currentUserId') currentUserId?: string) {
     return this.postsService.findAll(
       currentUserId ? +currentUserId : undefined,

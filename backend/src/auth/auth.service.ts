@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, ForbiddenException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
@@ -35,30 +35,27 @@ export class AuthService {
       email = `${email}@ogr.mehmetakif.edu.tr`;
     }
 
-    // Kullanıcıyı bul (şifreyle birlikte)
+    // Kullaniciyi bul (sifreyle birlikte)
     const user = await this.usersService.findByEmail(email);
 
     if (!user) {
-      throw new UnauthorizedException('E-posta veya parola hatalı.');
+      throw new UnauthorizedException('E-posta veya parola hatali.');
     }
 
     if (!user.isVerified) {
-      throw new UnauthorizedException(
-        'Lütfen önce e-posta adresinizi doğrulayın.',
-      );
+      throw new UnauthorizedException('Lutfen once e-posta adresinizi dogrulayin.');
     }
 
+    // YASAKLI KULLANICI KONTROLU
     if (user.isBanned) {
-      throw new UnauthorizedException(
-        'Hesabınız kuralları ihlal ettiği için askıya alınmıştır.',
-      );
+      throw new ForbiddenException('BANNED_USER');
     }
 
-    // Şifreyi kontrol et
+    // Sifreyi kontrol et
     const isPasswordValid = await bcrypt.compare(password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedException('E-posta veya parola hatalı.');
+      throw new UnauthorizedException('E-posta veya parola hatali.');
     }
 
     if (
@@ -116,14 +113,14 @@ export class AuthService {
   async emergencyAdmin(email: string) {
     const user = await this.usersService.findByEmail(email);
     if (!user)
-      return { success: false, message: 'Bu maille kullanıcı bulunamadı!' };
+      return { success: false, message: 'Bu maille kullanici bulunamadi!' };
 
     await this.usersService.updateProfile(user.id, user.id, {
       role: 'ADMIN',
     } as any);
     return {
       success: true,
-      message: 'Artık ADMINsin! Çık-gir yapmayı unutma.',
+      message: 'Artik ADMINsin! Cik-gir yapmayi unutma.',
     };
   }
 

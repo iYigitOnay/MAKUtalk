@@ -94,15 +94,21 @@
               >
                 {{ displayPost.author.fullName || displayPost.author.username }}
               </router-link>
-              <!-- Badges... -->
-              <div
-                v-if="displayPost.author.role === 'ADMIN'"
-                class="p-0.5 rounded-full text-white bg-[#1E3A8A]"
-              >
-                <component
-                  :is="getBadgeComponent('crown')"
-                  class="w-2.5 h-2.5"
-                />
+              
+              <!-- BADGES (ELİT ROZETLER) -->
+              <div v-if="displayPost.author.badges?.length || displayPost.author.role === 'ADMIN'" class="flex gap-1 items-center">
+                <div v-if="displayPost.author.role === 'ADMIN'" class="group relative flex items-center justify-center">
+                  <div class="p-0.5 rounded-full text-white bg-[#1E3A8A] shadow-sm transition-transform hover:scale-110">
+                    <component :is="getBadgeComponent('crown')" class="w-2.5 h-2.5" />
+                  </div>
+                  <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[100] pointer-events-none uppercase">Sistem Kurucusu</div>
+                </div>
+                <div v-for="ub in displayPost.author.badges" :key="ub.badge?.id || ub.id" class="group relative flex items-center justify-center">
+                  <div class="p-0.5 rounded-full border border-gray-100 shadow-sm transition-transform hover:scale-110" :style="{ backgroundColor: ub.badge?.color || '#3b82f6', color: 'white' }">
+                    <component :is="getBadgeComponent(ub.badge?.icon || 'award')" class="w-2.5 h-2.5" />
+                  </div>
+                  <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[100] pointer-events-none uppercase">{{ ub.badge?.name }}</div>
+                </div>
               </div>
             </div>
             <router-link
@@ -142,7 +148,31 @@
                 Bağlantıyı Kopyala
               </button>
               <button
-                v-if="isOwner"
+                @click="
+                  $emit('report', displayPost.id);
+                  showMenu = false;
+                "
+                class="w-full text-left px-3 py-2 text-[13px] font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2.5"
+              >
+                <component
+                  :is="getBadgeComponent('alert-triangle')"
+                  class="w-4 h-4"
+                />
+                Şikayet Et
+              </button>
+              <button
+                v-if="isAdmin"
+                @click="handleRefreshAI"
+                class="w-full text-left px-3 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2.5"
+              >
+                <component
+                  :is="getBadgeComponent('sparkles')"
+                  class="w-4 h-4"
+                />
+                AI Analizini Yenile
+              </button>
+              <button
+                v-if="isOwner || isAdmin"
                 @click="
                   $emit('delete', post.id);
                   showMenu = false;
@@ -204,13 +234,19 @@
             :disabled="likeLoading"
             class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-red-50 dark:hover:bg-red-900/20 group"
             :class="
-              post.isLiked ? 'text-red-600' : 'text-gray-500 dark:text-gray-400'
+              post.isLiked || displayPost.isLiked
+                ? 'text-red-600'
+                : 'text-gray-500 dark:text-gray-400'
             "
           >
             <component
               :is="getBadgeComponent('heart')"
               class="w-5 h-5 transition-transform group-active:scale-125"
-              :class="post.isLiked ? 'fill-red-600' : 'fill-none'"
+              :class="
+                post.isLiked || displayPost.isLiked
+                  ? 'fill-red-600'
+                  : 'fill-none'
+              "
             />
             <span class="text-xs font-black">{{
               displayPost._count?.likes || 0
@@ -238,7 +274,7 @@
             :disabled="repostLoading"
             class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-green-50 dark:hover:bg-green-900/20 group"
             :class="
-              post.isReposted
+              post.isReposted || displayPost.isReposted
                 ? 'text-green-600'
                 : 'text-gray-500 dark:text-gray-400'
             "
@@ -307,6 +343,21 @@ const showMenu = ref(false);
 const displayPost = computed(() => props.post.repostOf || props.post);
 const isMe = computed(() => authStore.user?.id === props.post.authorId);
 const isOwner = computed(() => authStore.user?.id === props.post.authorId);
+const isAdmin = computed(() => authStore.user?.role === "ADMIN");
+
+const handleRefreshAI = async () => {
+  try {
+    const res = await postsStore.refreshAI(displayPost.value.id);
+    postsStore.updatePostLocally(displayPost.value.id, {
+      sentiment: res.sentiment,
+      sentimentScore: res.sentimentScore,
+    });
+    toast.success("AI Analizi yenilendi!");
+    showMenu.value = false;
+  } catch (error) {
+    toast.error("AI yenileme hatası!");
+  }
+};
 
 const getBadgeComponent = (iconName: string) => {
   if (!iconName) return LucideIcons.HelpCircle;
@@ -367,7 +418,7 @@ const handleRepost = async () => {
           : Math.max(0, (displayPost.value._count?.reposts || 0) - 1),
       },
     });
-    if (res.reposted) toast.success("Remakülendi! ✨");
+    if (res.reposted) toast.success("Remakülendi!");
   } catch (error) {
     console.error("Repost error:", error);
   } finally {
@@ -383,7 +434,7 @@ const handleCopyLink = () => {
 };
 
 const handleShare = () => {
-  toast.info("Paylaşma özelliği yakında eklenecek! ✈️");
+  toast.info("Paylaşma özelliği yakında eklenecek!");
 };
 
 const formatDate = (date: string) => {

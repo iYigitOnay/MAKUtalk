@@ -23,12 +23,37 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Token geçersiz, logout yap
+    const status = error.response?.status;
+    const errorData = error.response?.data;
+    
+    // NestJS hata yapisinda message bazen array bazen string olabilir
+    const message = Array.isArray(errorData?.message) 
+      ? errorData.message[0] 
+      : errorData?.message;
+
+    if (status === 401) {
       localStorage.removeItem("access_token");
       localStorage.removeItem("user");
-      window.location.href = "/login";
+      // Sadece auth sayfasinda degilsek yonlendir
+      if (!window.location.pathname.startsWith('/auth')) {
+        window.location.href = "/auth";
+      }
+    } 
+    else if (status === 403 && (message === 'BANNED_USER' || errorData?.error === 'BANNED_USER')) {
+      // YASAKLI KULLANICI YAKALANDI
+      console.error("⛔ YASAKLI KULLANICI TESPIT EDILDI, SISTEMDEN ATILIYOR...");
+      
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user");
+      
+      if (window.socket) {
+        window.socket.disconnect();
+      }
+      
+      // ANINDA BANNED SAYFASINA
+      window.location.href = "/banned";
     }
+
     return Promise.reject(error);
   },
 );

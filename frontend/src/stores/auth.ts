@@ -64,7 +64,16 @@ export const useAuthStore = defineStore("auth", () => {
       return user.value;
     } catch (error: any) {
       console.error("Login error:", error);
-      throw error.response?.data || error;
+      const errorData = error.response?.data;
+      
+      // YASAKLI KULLANICI KONTROLÜ
+      if (errorData?.message === 'BANNED_USER' || error.response?.status === 403) {
+        // Geçici bir "yasaklı" bilgisi tutabiliriz veya direkt router ile yönlendirebiliriz
+        // Ama store içinde yönlendirme yapmak yerine hatayı yukarı fırlatıp Auth.vue'da yakalamak daha temiz
+        throw { type: 'BANNED', message: 'BANNED_USER' };
+      }
+      
+      throw errorData || error;
     } finally {
       loading.value = false;
     }
