@@ -188,7 +188,7 @@
 
         <div class="flex flex-wrap gap-1.5 mb-2">
           <span
-            v-if="displayPost.category"
+            v-if="displayPost.category && !displayPost.parentId"
             class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider text-white"
             :style="{
               backgroundColor: displayPost.category.color || '#3b82f6',
@@ -408,16 +408,8 @@ const handleRepost = async () => {
 
   repostLoading.value = true;
   try {
+    // toggleRepost artik kendi icinde updatePostLocally cagirdigi icin burada tekrar cagirmaya gerek yok!
     const res = await postsStore.toggleRepost(targetId);
-    // Merkezi Store Güncellemesi (Tüm kopyaları etkiler)
-    postsStore.updatePostLocally(targetId, {
-      isReposted: res.reposted,
-      _count: {
-        reposts: res.reposted
-          ? (displayPost.value._count?.reposts || 0) + 1
-          : Math.max(0, (displayPost.value._count?.reposts || 0) - 1),
-      },
-    });
     if (res.reposted) toast.success("Remakülendi!");
   } catch (error) {
     console.error("Repost error:", error);

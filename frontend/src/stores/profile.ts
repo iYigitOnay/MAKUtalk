@@ -116,7 +116,7 @@ export const useProfileStore = defineStore("profile", () => {
     return res.data; // { assigned: boolean }
   };
 
-  const reportUser = async (data: { reportedUsername: string, reason: string, subReason: string }) => {
+  const reportUser = async (data: { reportedUserId?: number, reportedPostId?: number, reportedCommentId?: number, reason: string, subReason?: string }) => {
     const res = await apiClient.post("/users/report", data);
     return res.data;
   };

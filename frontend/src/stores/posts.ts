@@ -8,16 +8,16 @@ import { useAuthStore } from "./auth";
 export const usePostsStore = defineStore("posts", () => {
   const posts = ref<Post[]>([]);
   const myPosts = ref<Post[]>([]);
-  const searchResults = ref<Post[]>([]); // YENİ: Arama sonuçları için global state
+  const searchResults = ref<Post[]>([]);
   const currentCategory = ref<number | null>(null);
+  const currentThread = ref<{ parents: Post[], post: Post | null, replies: Post[] }>({ parents: [], post: null, replies: [] });
   const loading = ref(false);
   const error = ref<string | null>(null);
-  
+
   const authStore = useAuthStore();
   const getProfileStore = () => useProfileStore();
 
-  const fetchPosts = async (currentUserId?: number) => {
-    loading.value = true;
+  const fetchPosts = async (currentUserId?: number) => {    loading.value = true;
     try {
       const params = currentUserId ? { currentUserId } : {};
       const response = await apiClient.get<Post[]>("/posts", { params });
@@ -55,22 +55,25 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const fetchUserReposts = async (userId: number, currentUserId?: number) => {
-    try {
-      const params = currentUserId ? { currentUserId } : {};
-      const response = await apiClient.get<Post[]>(`/posts/user/${userId}/reposts`, { params });
-      return response.data;
-    } catch (error) {
-      return [];
-    }
-  };
-
   const toggleRepost = async (postId: number) => {
     const response = await apiClient.post(`/posts/${postId}/repost`);
+    const isRepostedNow = response.data.reposted;
+    
+    // MEVCUT POSTU BUL VE SAYACI TUM LISTELERDE GUNCELLE
+    const existingPost = [...posts.value, ...searchResults.value, ...myPosts.value].find(p => p.id === postId || (p.repostId === postId));
+    const currentCount = existingPost?.repostOf ? existingPost.repostOf._count?.reposts : existingPost?._count?.reposts;
+    
+    updatePostLocally(postId, {
+      isReposted: isRepostedNow,
+      _count: {
+        reposts: isRepostedNow 
+          ? (currentCount || 0) + 1 
+          : Math.max(0, (currentCount || 0) - 1)
+      }
+    });
     return response.data;
   };
 
-  // Post oluştur (veya Cevap ver)
   const createPost = async (
     content: string,
     published = true,
@@ -88,13 +91,19 @@ export const usePostsStore = defineStore("posts", () => {
       if (image) formData.append("image", image);
 
       const response = await apiClient.post<Post>("/posts", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
+        headers: { "Content-Type": "multipart/form-data" },
       });
       
       if (!parentId) {
         posts.value.unshift(response.data);
+      } else {
+        // Eger bu bir yanitsa, parent postun reply sayacini her yerde artir
+        const parent = [...posts.value, ...searchResults.value].find(p => p.id === parentId);
+        updatePostLocally(parentId, {
+          _count: {
+            replies: (parent?._count?.replies || 0) + 1
+          }
+        });
       }
       
       notifyPostCreated();
@@ -106,7 +115,6 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  // Twitter Tarzı Thread Getir
   const fetchThread = async (postId: number, currentUserId?: number) => {
     loading.value = true;
     try {
@@ -115,6 +123,7 @@ export const usePostsStore = defineStore("posts", () => {
         `/posts/${postId}/thread`,
         { params }
       );
+      currentThread.value = response.data;
       return response.data;
     } catch (error) {
       console.error("Thread fetch error:", error);
@@ -124,26 +133,30 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  // Post sil
   const deletePost = async (postId: number) => {
     loading.value = true;
     try {
       await apiClient.delete(`/posts/${postId}`);
       
-      // 1. Yerel listelerden kaldır
-      posts.value = posts.value.filter((p) => p.id !== postId && p.repostId !== postId);
-      myPosts.value = myPosts.value.filter((p) => p.id !== postId);
+      const filterFn = (p: Post) => p.id !== postId && p.repostId !== postId;
+      posts.value = posts.value.filter(filterFn);
+      myPosts.value = myPosts.value.filter(filterFn);
+      searchResults.value = searchResults.value.filter(filterFn);
       
-      // 2. ProfileStore listelerinden kaldır (Küresel Senkronizasyon)
+      // Update currentThread if we are deleting from it
+      currentThread.value.replies = currentThread.value.replies.filter(filterFn);
+      currentThread.value.parents = currentThread.value.parents.filter(filterFn);
+      
       const profileStore = getProfileStore();
-      profileStore.userPosts = profileStore.userPosts.filter((p) => p.id !== postId);
-      profileStore.userReplies = profileStore.userReplies.filter((p) => p.id !== postId);
-      profileStore.userReposts = profileStore.userReposts.filter((p) => p.id !== postId && p.repostId !== postId);
-      profileStore.userLikedPosts = profileStore.userLikedPosts.filter((p) => p.id !== postId);
-      
-      // 3. Profil sayacı güncelle
-      if (profileStore.profileUser?._count && profileStore.profileUser.id === authStore.user?.id) {
-        profileStore.profileUser._count.posts--;
+      if (profileStore) {
+        profileStore.userPosts = profileStore.userPosts.filter(filterFn);
+        profileStore.userReplies = profileStore.userReplies.filter(filterFn);
+        profileStore.userReposts = profileStore.userReposts.filter(filterFn);
+        profileStore.userLikedPosts = profileStore.userLikedPosts.filter(filterFn);
+        
+        if (profileStore.profileUser?._count && profileStore.profileUser.id === authStore.user?.id) {
+          profileStore.profileUser._count.posts = Math.max(0, profileStore.profileUser._count.posts - 1);
+        }
       }
 
       return true;
@@ -154,87 +167,68 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const updatePost = async (postId: number, content: string) => {
-    const response = await apiClient.patch(`/posts/${postId}`, { content });
-    updatePostLocally(postId, response.data);
-    return response.data;
-  };
-
-  // Post'u veya Yanıtı local state'te güncelle
   const updatePostLocally = (postId: number, updates: any) => {
-    // 1. Array içindeki nesneyi doğrudan bulup güncelleme fonksiyonu
     const updateTarget = (p: Post) => {
-      let updated = false;
-
-      // DURUM A: Postun kendisi aranan ID ise
+      // 1. ASIL POST GUNCELLEME
       if (p.id === postId) {
         if (updates.isLiked !== undefined) p.isLiked = updates.isLiked;
         if (updates.isReposted !== undefined) p.isReposted = updates.isReposted;
         if (updates.sentiment !== undefined) p.sentiment = updates.sentiment;
         if (updates.sentimentScore !== undefined) p.sentimentScore = updates.sentimentScore;
-        if (updates._count) {
-          p._count = { ...p._count, ...updates._count };
-        }
-        updated = true;
+        if (updates._count) p._count = { ...p._count, ...updates._count };
       }
       
-      // DURUM B: Bu post bir repost wrapper'ı ve içindeki orijinal post aranan ID ise
+      // 2. REPOST WRAPPER'I GUNCELLEME (İçindeki post orijinalse)
       if (p.repostOf && p.repostId === postId) {
         const r = p.repostOf;
-        if (updates.isLiked !== undefined) {
-          r.isLiked = updates.isLiked;
-          p.isLiked = updates.isLiked; // Wrapper'ı da senkron et
-        }
-        if (updates.isReposted !== undefined) {
-          r.isReposted = updates.isReposted;
-          p.isReposted = updates.isReposted; // Wrapper'ı da senkron et
-        }
+        if (updates.isLiked !== undefined) { r.isLiked = updates.isLiked; p.isLiked = updates.isLiked; }
+        if (updates.isReposted !== undefined) { r.isReposted = updates.isReposted; p.isReposted = updates.isReposted; }
         if (updates.sentiment !== undefined) r.sentiment = updates.sentiment;
-        
-        if (updates._count) {
-          r._count = { ...r._count, ...updates._count };
-          p._count = { ...p._count, ...updates._count }; // Sayaçları eşitle
-        }
-        updated = true;
+        if (updates._count) { r._count = { ...r._count, ...updates._count }; p._count = { ...p._count, ...updates._count }; }
       }
 
-      return updated;
+      // 3. PARENT (Reply) GUNCELLEME
+      if (p.parent && p.parentId === postId) {
+        if (updates.isLiked !== undefined) p.parent.isLiked = updates.isLiked;
+        if (updates.isReposted !== undefined) p.parent.isReposted = updates.isReposted;
+        if (updates._count) p.parent._count = { ...p.parent._count, ...updates._count };
+      }
     };
 
-    // Tüm ana listelerde tara ve güncelle
-    posts.value.forEach(updateTarget);
-    myPosts.value.forEach(updateTarget);
-    searchResults.value.forEach(updateTarget); // YENİ: Arama sonuçlarını da senkronize et
+    [posts.value, myPosts.value, searchResults.value].forEach(list => list.forEach(updateTarget));
     
+    // GUNCELLEMEYI CURRENT THREAD'E DE UYGULA
+    if (currentThread.value.post) updateTarget(currentThread.value.post);
+    currentThread.value.parents.forEach(updateTarget);
+    currentThread.value.replies.forEach(updateTarget);
+
     const profileStore = getProfileStore();
     if (profileStore) {
-      profileStore.userPosts.forEach(updateTarget);
-      profileStore.userReplies.forEach(updateTarget);
-      profileStore.userReposts.forEach(updateTarget);
-      profileStore.userLikedPosts.forEach(updateTarget);
+      [profileStore.userPosts, profileStore.userReplies, profileStore.userReposts, profileStore.userLikedPosts].forEach(list => list.forEach(updateTarget));
     }
   };
 
   const updateUserInPosts = (userId: number, updates: any) => {
-    const updateAuthor = (post: Post) => {
-      if (post.authorId === userId) {
-        post.author = { ...post.author, ...updates };
-      }
-      if (post.repostOf && post.repostOf.authorId === userId) {
-        post.repostOf.author = { ...post.repostOf.author, ...updates };
-      }
-      return post;
+    const updateAuthor = (p: Post) => {
+      // Direkt yazar ise
+      if (p.authorId === userId) { p.author = { ...p.author, ...updates }; }
+      // Repost edilen orijinal postun yazarı ise
+      if (p.repostOf && p.repostOf.authorId === userId) { p.repostOf.author = { ...p.repostOf.author, ...updates }; }
+      // Thread'deki üst postun yazarı ise
+      if (p.parent && p.parent.authorId === userId) { p.parent.author = { ...p.parent.author, ...updates }; }
+      return p;
     };
 
-    posts.value = posts.value.map(updateAuthor);
-    myPosts.value = myPosts.value.map(updateAuthor);
+    [posts.value, myPosts.value, searchResults.value].forEach(list => list.forEach(updateAuthor));
     
+    // GUNCELLEMEYI CURRENT THREAD'E DE UYGULA
+    if (currentThread.value.post) updateAuthor(currentThread.value.post);
+    currentThread.value.parents.forEach(updateAuthor);
+    currentThread.value.replies.forEach(updateAuthor);
+
     const profileStore = getProfileStore();
     if (profileStore) {
-      profileStore.userPosts = profileStore.userPosts.map(updateAuthor);
-      profileStore.userReplies = profileStore.userReplies.map(updateAuthor);
-      profileStore.userReposts = profileStore.userReposts.map(updateAuthor);
-      profileStore.userLikedPosts = profileStore.userLikedPosts.map(updateAuthor);
+      [profileStore.userPosts, profileStore.userReplies, profileStore.userReposts, profileStore.userLikedPosts].forEach(list => list.forEach(updateAuthor));
     }
   };
 
@@ -249,33 +243,13 @@ export const usePostsStore = defineStore("posts", () => {
   };
 
   const postCreatedCallbacks: Array<() => void> = [];
-  const onPostCreated = (cb: () => void) => {
-    postCreatedCallbacks.push(cb);
-  };
-  const notifyPostCreated = () => {
-    postCreatedCallbacks.forEach((cb) => cb());
-  };
+  const onPostCreated = (cb: () => void) => postCreatedCallbacks.push(cb);
+  const notifyPostCreated = () => postCreatedCallbacks.forEach((cb) => cb());
 
   return {
-    posts,
-    myPosts,
-    currentCategory,
-    loading,
-    error,
-    fetchPosts,
-    fetchPostsByCategory,
-    fetchMyPosts,
-    fetchUserReposts,
-    toggleRepost,
-    createPost,
-    fetchThread,
-    deletePost,
-    updatePost,
-    updatePostLocally,
-    updateUserInPosts,
-    refreshSentiment,
-    resetCategory,
-    onPostCreated,
-    notifyPostCreated,
+    posts, myPosts, searchResults, currentCategory, currentThread, loading, error,
+    fetchPosts, fetchPostsByCategory, fetchMyPosts, toggleRepost, createPost,
+    fetchThread, deletePost, updatePostLocally, updateUserInPosts, refreshSentiment,
+    resetCategory, onPostCreated
   };
 });

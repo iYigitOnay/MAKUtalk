@@ -27,7 +27,7 @@ export class PostsController {
   @Post()
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('image'))
-  @Throttle({ medium: { limit: 2, ttl: 60000 } }) // Dakikada max 2 post
+  @Throttle({ medium: { limit: 2, ttl: 60000 } })
   create(
     @CurrentUser() user,
     @Body() createPostDto: CreatePostDto,

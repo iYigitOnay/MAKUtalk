@@ -419,7 +419,7 @@ const selectReportCategory = (category: string) => {
 const submitReport = async (sub: string) => {
   try {
     await profileStore.reportUser({
-      reportedUsername: displayedUser.value!.username,
+      reportedUserId: displayedUser.value!.id,
       reason: selectedReportCategory.value,
       subReason: sub
     });
@@ -434,6 +434,15 @@ const handleToggleBadge = async (badgeId: number) => {
   try {
     await profileStore.toggleBadge(displayedUser.value!.id, badgeId);
     await fetchProfile(); 
+    
+    // YENİ: Rozetleri postlarda da anında güncelle
+    if (displayedUser.value) {
+      postsStore.updateUserInPosts(displayedUser.value.id, {
+        badges: displayedUser.value.badges,
+        role: displayedUser.value.role
+      });
+    }
+    
     toast.success("Rozet güncellendi.");
   } catch { toast.error("Yetki hatası!"); }
 };
@@ -445,6 +454,14 @@ const handleSaveProfile = async (data: any) => {
     });
     profileStore.profileUser = { ...profileStore.profileUser, ...res.data };
     if (isMyProfile.value) authStore.updateUser(res.data);
+    
+    // YENİ: Profil bilgilerini (avatar, isim vb.) tüm postlarda anında güncelle
+    postsStore.updateUserInPosts(res.data.id, {
+      fullName: res.data.fullName,
+      avatarUrl: res.data.avatarUrl,
+      coverUrl: res.data.coverUrl
+    });
+    
     showEditModal.value = false;
     toast.success("Profil güncellendi.");
   } catch {

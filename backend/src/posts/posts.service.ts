@@ -28,12 +28,13 @@ export class PostsService {
       this.myLogger.warn(`Kullanıcı ID: ${userId} küfürlü içerik paylaştı (${count} kelime).`, 'Security');
     }
 
-    const shouldIdentifyCategory = !createPostDto.categoryId;
+    const isReply = !!createPostDto.parentId;
+    const shouldIdentifyCategory = !createPostDto.categoryId && !isReply;
     const aiAnalysis = await this.aiService.analyzePost(cleanText, shouldIdentifyCategory);
 
     let categoryId = createPostDto.categoryId;
 
-    if (!categoryId && aiAnalysis.suggestedCategorySlug) {
+    if (shouldIdentifyCategory && !categoryId && aiAnalysis.suggestedCategorySlug) {
       const suggestedCategory = await this.prisma.category.findUnique({ 
         where: { slug: aiAnalysis.suggestedCategorySlug.toLowerCase().trim() } 
       });
@@ -463,7 +464,7 @@ export class PostsService {
           },
           _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
         },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
       });
 
       const mappedReplies = await this.mapInteractionStatus(replies, currentUserId);
