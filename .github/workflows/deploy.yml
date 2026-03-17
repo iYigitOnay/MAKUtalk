@@ -22,7 +22,6 @@ jobs:
             mkdir -p ~/makutalk
             cd ~/makutalk
 
-            # Repo yoksa clone, varsa pull
             if [ ! -d ".git" ]; then
               git clone https://github.com/${{ github.repository }}.git .
             else
@@ -30,8 +29,7 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # .env dosyasını güvenli şekilde oluştur
-            cat > .env << EOF
+            cat > .env << ENVEOF
             DB_USERNAME=admin
             DB_PASSWORD=${DB_PASSWORD}
             DB_NAME=makutalk_db
@@ -42,9 +40,8 @@ jobs:
             SMTP_FROM=${SMTP_FROM}
             FRONTEND_URL=${FRONTEND_URL}
             VITE_API_URL=${VITE_API_URL}
-            EOF
+            ENVEOF
 
-            # Build ve başlat (SIRALI BUILD - 1GB RAM Optimizasyonu)
             docker compose down --remove-orphans
 
             echo "🐘 Veritabanı başlatılıyor..."
@@ -54,7 +51,10 @@ jobs:
             docker compose build backend
             docker compose up -d backend
 
-            echo "🎨 Frontend build ediliyor (RAM yoğun işlem)..."
+            echo "🗄️ Prisma schema güncelleniyor..."
+            docker compose exec -T backend npx prisma db push --accept-data-loss
+
+            echo "🎨 Frontend build ediliyor..."
             docker compose build frontend
             docker compose up -d frontend
 
