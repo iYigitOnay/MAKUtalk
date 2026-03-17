@@ -125,13 +125,24 @@
               <p class="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                 {{ getNotificationText(notification.type) }}
               </p>
-              <p
-                v-if="notification.post"
-                class="text-sm text-gray-500 dark:text-gray-500 mt-1 truncate"
-              >
-                "{{ notification.post.content }}"
-              </p>
-              <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              
+              <!-- Post & Comment Preview (Simplified) -->
+              <div v-if="notification.post || notification.comment" class="mt-1">
+                <p
+                  v-if="notification.post"
+                  class="text-[11px] text-gray-500 dark:text-gray-500 italic line-clamp-1"
+                >
+                  "{{ notification.post.content }}"
+                </p>
+                <p
+                  v-if="notification.type === 'COMMENT' && notification.comment"
+                  class="text-xs font-bold text-primary-600 dark:text-primary-400 mt-0.5"
+                >
+                  {{ notification.comment.content }}
+                </p>
+              </div>
+
+              <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-1 uppercase">
                 {{ formatDate(notification.createdAt) }}
               </p>
             </div>

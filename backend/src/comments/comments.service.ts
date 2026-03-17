@@ -52,12 +52,19 @@ export class CommentsService {
       },
     });
 
-    await this.notificationsService.createNotification(
+    const notification = await this.notificationsService.createNotification(
       NotificationType.COMMENT,
       post.authorId,
       userId,
       postId,
+      comment.id, // Yeni alan: Yorum ID'si
     );
+    
+    if (notification) {
+      this.myLogger.log(`✅ [Comments] Bildirim oluşturuldu: ID=${notification.id}, Alıcı=${post.authorId}`, 'Notifications');
+    } else {
+      this.myLogger.warn(`⚠️ [Comments] Bildirim oluşturulmadı (Muhtemelen kendi postu veya hata). Alıcı=${post.authorId}, Gönderen=${userId}`, 'Notifications');
+    }
 
     // ETİKETLEME (MENTION) SİSTEMİ
     const mentionRegex = /@(\w+)/g;

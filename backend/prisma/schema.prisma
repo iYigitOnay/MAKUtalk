@@ -269,6 +269,7 @@ model Comment {
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   reports Report[]
+  notifications Notification[]
 
   @@index([postId])
   @@index([userId])
@@ -294,12 +295,14 @@ model Notification {
   recipientId Int
   senderId   Int?
   postId     Int?
+  commentId  Int?
   read       Boolean          @default(false)
   createdAt  DateTime         @default(now())
 
   recipient User @relation("NotificationRecipient", fields: [recipientId], references: [id], onDelete: Cascade)
   sender    User? @relation("NotificationSender", fields: [senderId], references: [id], onDelete: Cascade)
   post      Post? @relation(fields: [postId], references: [id], onDelete: Cascade)
+  comment   Comment? @relation(fields: [commentId], references: [id], onDelete: Cascade)
 
   @@index([recipientId])
   @@index([read])
@@ -406,6 +409,7 @@ enum NotificationType {
   COMMENT 
   FOLLOW  
   MENTION
+  REPOST
 }
 
 model SpotListing {

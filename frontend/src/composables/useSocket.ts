@@ -1,164 +1,158 @@
-import { ref, onMounted, onUnmounted, watch } from "vue";
+import { ref, watch } from "vue";
 import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "@/stores/auth";
 import { useChatStore } from "@/stores/chat";
+import { useNotificationsStore } from "@/stores/notifications";
 
+// GLOBAL STATE - Fonksiyon dışında tanımlıyoruz ki her yerde AYNI kalsın
 let socket: Socket | null = null;
+const isConnected = ref(false);
+let listenersAttached = false;
 
 export function useSocket() {
   const authStore = useAuthStore();
   const chatStore = useChatStore();
-  const isConnected = ref(false);
+  const notificationsStore = useNotificationsStore();
 
   const connect = () => {
-    // Zaten bağlı mı?
-    if (socket && socket.connected) {
-      console.log("✅ Socket already connected, resetting listeners");
-      setupListeners();
-      return;
-    }
+    if (socket?.connected) return;
 
-    // Token var mı?
     if (!authStore.token) {
-      console.warn("⚠️ No token, skipping socket connection");
+      console.warn("⚠️ Soket bağlantısı için token eksik.");
       return;
     }
 
-    console.log("🔌 Connecting socket...");
-
-    // VITE_API_URL yerine localhost:3000 fallback'i de ekliyoruz
     const socketUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
-
+    
     socket = io(socketUrl, {
-      auth: {
-        token: `Bearer ${authStore.token}`,
-      },
+      auth: { token: `Bearer ${authStore.token}` },
       transports: ["websocket", "polling"],
+      reconnection: true,
+      reconnectionAttempts: 5,
     });
 
     setupListeners();
   };
 
   const setupListeners = () => {
-    if (!socket) return;
+    if (!socket || listenersAttached) return;
 
-    // Eskileri temizle (Duplicate engellemek için)
-    socket.off("connect");
-    socket.off("disconnect");
-    socket.off("connect_error");
-    socket.off("new_message");
-    socket.off("user_typing");
+    console.log("🔌 Soket dinleyicileri kuruluyor (Sadece 1 kez)...");
 
     socket.on("connect", () => {
       isConnected.value = true;
-      console.log(`✅ Socket connected: ${socket?.id}`);
+      console.log(`✅ Soket bağlandı: ${socket?.id}`);
     });
 
     socket.on("disconnect", (reason) => {
       isConnected.value = false;
-      console.log(`❌ Socket disconnected: ${reason}`);
+      console.log(`❌ Soket koptu: ${reason}`);
+      if (reason === "io server disconnect") {
+        socket?.connect();
+      }
     });
 
-    socket.on("connect_error", (error) => {
-      console.error("🔴 Socket connection error:", error);
-    });
-
-    // Yeni mesaj geldiğinde
     socket.on("new_message", (message: any) => {
-      console.log("📩 New message received via socket:", message.content.substring(0, 20));
-      
+      console.log("📥 Yeni mesaj geldi, liste güncelleniyor...");
       const normalizedMessage = {
         ...message,
         senderId: Number(message.senderId),
         conversationId: Number(message.conversationId),
       };
 
+      // 1. Eğer mesajlaştığımız kişi ise mesaj listesine ekle
       const activeConvId = chatStore.activeConversation?.id;
       if (activeConvId && Number(activeConvId) === Number(normalizedMessage.conversationId)) {
         chatStore.addMessage(normalizedMessage);
       }
 
-      chatStore.fetchConversations();
+      // 2. Bildirim kartını göster (Benim göndermediğim mesajlar için)
+      if (Number(normalizedMessage.senderId) !== Number(authStore.userId)) {
+        notificationsStore.pushLiveNotification({
+          liveId: `msg-${message.id}-${Date.now()}`, // ID bazlı tekillik
+          displayType: "MESSAGE",
+          type: "MESSAGE",
+          sender: message.sender,
+          content: message.content,
+          conversationId: normalizedMessage.conversationId,
+        });
+      }
+
+      // 3. Konuşma listesini güncelle (Sadece 1 kez çağrılmasını garanti et)
+      debounceFetchConversations();
+    });
+
+    socket.on("new_notification", (notification: any) => {
+      console.log(`🔔 Yeni bildirim: ${notification.type}`);
+      // Çiftleme Kontrolü (Store içindeki listeye göre)
+      const exists = notificationsStore.notifications.some(n => n.id === notification.id);
+      if (exists) return;
+
+      notificationsStore.unreadCount++;
+      notificationsStore.notifications.unshift(notification);
+
+      // CANLI KART GÖSTERİMİ
+      notificationsStore.pushLiveNotification({
+        liveId: `notif-${notification.id}`,
+        displayType: "SYSTEM",
+        type: notification.type,
+        sender: notification.sender,
+        postId: notification.postId,
+        comment: notification.comment, // Eksik olan bu kısımdı
+        content: notification.type === 'COMMENT' ? notification.comment?.content : notification.post?.content,
+      });
     });
 
     socket.on("user_typing", (data: any) => {
-      console.log("⌨️ User typing received:", data);
       if (data.conversationId) {
         chatStore.setTypingStatus(Number(data.conversationId), data.isTyping);
       }
     });
 
+    listenersAttached = true;
     (window as any).socket = socket;
+  };
+
+  // 429 hatasını engellemek için istekleri limitleyen (debounce) mekanizma
+  let fetchTimeout: any = null;
+  const debounceFetchConversations = () => {
+    if (fetchTimeout) clearTimeout(fetchTimeout);
+    fetchTimeout = setTimeout(() => {
+      console.log("🔄 API Tazeleniyor (Debounced fetchConversations)");
+      chatStore.fetchConversations();
+    }, 1500); // 1.5 saniye debounce (429 riskine karşı)
   };
 
   const disconnect = () => {
     if (socket) {
-      console.log("🔌 Disconnecting socket...");
-      socket.removeAllListeners();
       socket.disconnect();
       socket = null;
-      (window as any).socket = null;
+      listenersAttached = false;
       isConnected.value = false;
     }
   };
 
   const sendMessage = (conversationId: number, content: string, receiverId: number) => {
-    if (!socket || !socket.connected) {
-      console.error("❌ Socket not connected");
+    if (!socket?.connected) {
+      console.error("❌ Mesaj gönderilemedi: Soket bağlı değil.");
       return;
     }
-
-    console.log("📤 Sending message:", { conversationId, content: content.substring(0, 20), receiverId });
-
-    socket.emit("send_message", {
-      conversationId,
-      content,
-      receiverId,
-    });
+    socket.emit("send_message", { conversationId, content, receiverId });
   };
 
   const sendTyping = (conversationId: number, receiverId: number, isTyping: boolean) => {
-    if (!socket || !socket.connected) return;
-
-    socket.emit("typing", {
-      conversationId,
-      receiverId,
-      isTyping,
-    });
+    if (!socket?.connected) return;
+    socket.emit("typing", { conversationId, receiverId, isTyping });
   };
 
-  // Auth state değiştiğinde socket'i yeniden bağla
-  watch(() => authStore.isAuthenticated, (newValue) => {
-    if (newValue) {
-      connect();
-    } else {
-      disconnect();
-    }
-  });
-
-  onMounted(() => {
-    if (authStore.isAuthenticated) {
-      connect();
-    }
-  });
-
-  onUnmounted(() => {
-    // Component unmount olduğunda listener'ları temizle
-    socket?.removeAllListeners();
-  });
-
-  return {
-    isConnected,
-    connect,
-    disconnect,
-    sendMessage,
-    sendTyping,
-  };
-}
-
-// Global type definition
-declare global {
-  interface Window {
-    socket: Socket | null;
+  // GLOBAL WATCHER: Auth durumu değiştikçe bağlan/kop
+  // Bu watcher useSocket her çağrıldığında değil, uygulama ömrü boyunca sadece 1 kez kurulmalı
+  if (!(window as any).__socket_watcher_installed) {
+    watch(() => authStore.isAuthenticated, (val) => {
+      val ? connect() : disconnect();
+    }, { immediate: true });
+    (window as any).__socket_watcher_installed = true;
   }
+
+  return { isConnected, connect, disconnect, sendMessage, sendTyping };
 }

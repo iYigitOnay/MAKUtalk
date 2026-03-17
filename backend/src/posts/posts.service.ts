@@ -13,6 +13,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { censorContent } from '../common/utils/content-filter.util';
 import { MyLogger } from '../common/logger/logger.service';
+import { NotificationsService, NotificationType } from '../notifications/notifications.service';
 
 @Injectable()
 export class PostsService {
@@ -20,6 +21,7 @@ export class PostsService {
     private prisma: PrismaService,
     private aiService: AiService,
     private myLogger: MyLogger,
+    private notificationsService: NotificationsService,
   ) {}
 
   async create(userId: number, createPostDto: CreatePostDto, file?: Express.Multer.File) {
@@ -65,7 +67,7 @@ export class PostsService {
       }
     }
 
-    return this.prisma.post.create({
+    const post = await this.prisma.post.create({
       data: {
         content: cleanText,
         imageUrl: imageUrl,
@@ -89,6 +91,30 @@ export class PostsService {
         _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
     });
+
+    // BİLDİRİM: Eğer bu bir yanıtsa, ana postun sahibine haber ver
+    if (createPostDto.parentId) {
+      const parentPost = await this.prisma.post.findUnique({
+        where: { id: createPostDto.parentId },
+        select: { authorId: true },
+      });
+
+      if (parentPost && parentPost.authorId !== userId) {
+        await this.notificationsService.createNotification(
+          NotificationType.COMMENT,
+          parentPost.authorId,
+          userId,
+          createPostDto.parentId,
+          // Not: Post tablosu yorum olarak da kullanıldığı için post.id'yi commentId olarak paslıyoruz
+          // Ancak Prisma şeması Notification modelinde commentId'yi Comment tablosuna bağladığı için 
+          // burada bir tip/ilişki uyuşmazlığı olabilir. Şimdilik sadece postId üzerinden gidelim 
+          // veya şemayı POST tablosuyla uyumlu hale getirelim.
+        );
+        this.myLogger.log(`🚀 [Posts] Yanıt bildirimi gönderildi: Alıcı=${parentPost.authorId}`, 'Notifications');
+      }
+    }
+
+    return post;
   }
 
   async toggleRepost(userId: number, postId: number) {
@@ -117,6 +143,17 @@ export class PostsService {
         _count: { select: { likes: true, reposts: { where: { isDeleted: false } }, replies: { where: { isDeleted: false } } } },
       },
     });
+
+    // BİLDİRİM: Repost edilen postun sahibine haber ver
+    if (newRepost.repostOf && newRepost.repostOf.authorId !== userId) {
+      await this.notificationsService.createNotification(
+        NotificationType.REPOST,
+        newRepost.repostOf.authorId,
+        userId,
+        postId
+      );
+    }
+
     return { reposted: true, post: newRepost, message: 'Remakülendi!' };
   }
 

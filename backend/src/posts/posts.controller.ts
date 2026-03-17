@@ -63,7 +63,7 @@ export class PostsController {
 
   @Post(':id/repost')
   @UseGuards(JwtAuthGuard)
-  @Throttle({ medium: { limit: 5, ttl: 60000 } }) // Dakikada max 5 remakü
+  @Throttle({ medium: { limit: 5, ttl: 60000 } })
   toggleRepost(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
     return this.postsService.toggleRepost(user.id, id);
   }

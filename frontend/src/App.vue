@@ -3,6 +3,9 @@
   <div
     class="min-h-screen bg-white dark:bg-gray-950 transition-colors duration-300"
   >
+    <!-- Premium DM Bildirim Kartı (Global) -->
+    <GlobalNotification />
+
     <!-- Main Layout (Sidebar + Content + RightSidebar) -->
     <div v-if="showMainLayout" class="flex flex-col sm:flex-row justify-start sm:justify-center min-h-screen bg-[#f8fafc] dark:bg-gray-950 relative">
       
@@ -50,12 +53,17 @@ import Sidebar from "@/components/Sidebar.vue";
 import RightSidebar from "@/components/RightSidebar.vue";
 import Navbar from "@/components/Navbar.vue";
 import MobileBottomNav from "@/components/MobileBottomNav.vue";
+import GlobalNotification from "@/components/GlobalNotification.vue";
 import { useDarkMode } from "@/composables/useDarkMode";
+import { useSocket } from "@/composables/useSocket";
 import { useChatStore } from "@/stores/chat";
 import { useAuthStore } from "@/stores/auth";
 import { useRouter } from "vue-router";
 
 useDarkMode();
+
+// Socket'i global olarak başlat
+useSocket();
 
 const route = useRoute();
 const router = useRouter();

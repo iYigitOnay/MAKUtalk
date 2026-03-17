@@ -10,6 +10,7 @@ export const useChatStore = defineStore("chat", () => {
   const messages = ref<any[]>([]);
   const loading = ref(false);
   const typingUsers = ref<Record<number, boolean>>({});
+  const latestIncomingMessage = ref<any | null>(null); // Bildirim kartı için eklendi
 
   const setTypingStatus = (conversationId: number, isTyping: boolean) => {
     typingUsers.value[conversationId] = isTyping;
@@ -28,6 +29,7 @@ export const useChatStore = defineStore("chat", () => {
     activeConversation.value = null;
     messages.value = [];
     loading.value = false;
+    latestIncomingMessage.value = null;
   };
 
   const fetchConversations = async () => {
@@ -121,5 +123,20 @@ export const useChatStore = defineStore("chat", () => {
     });
   };
 
-  return { conversations, activeConversation, messages, loading, unreadCount, resetStore, fetchConversations, selectConversation, addMessage, deleteConversation, updateUserInChat, typingUsers, setTypingStatus };
+  return { 
+    conversations, 
+    activeConversation, 
+    messages, 
+    loading, 
+    unreadCount, 
+    latestIncomingMessage,
+    resetStore, 
+    fetchConversations, 
+    selectConversation, 
+    addMessage, 
+    deleteConversation, 
+    updateUserInChat, 
+    typingUsers, 
+    setTypingStatus 
+  };
 });

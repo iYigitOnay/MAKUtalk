@@ -39,17 +39,17 @@ import { LoggerModule } from './common/logger/logger.module';
       {
         name: 'short',
         ttl: 1000, 
-        limit: 3,
+        limit: 10, // 3 -> 10 yapıldı
       },
       {
         name: 'medium',
         ttl: 60000, 
-        limit: 100,
+        limit: 150, // 100 -> 150 yapıldı
       },
       {
         name: 'long',
         ttl: 3600000, 
-        limit: 1000,
+        limit: 2000, // 1000 -> 2000 yapıldı
       },
     ]),
     ScheduleModule.forRoot(),

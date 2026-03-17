@@ -1,44 +1,54 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { ChatGateway } from '../chat/chat.gateway';
 
 export enum NotificationType {
   LIKE = 'LIKE',
   COMMENT = 'COMMENT',
   FOLLOW = 'FOLLOW',
   MENTION = 'MENTION',
+  REPOST = 'REPOST',
 }
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private chatGateway: ChatGateway,
+  ) {}
 
   async createNotification(
     type: NotificationType,
     recipientId: number,
     senderId: number,
     postId?: number,
+    commentId?: number,
   ) {
     if (recipientId === senderId) return null;
 
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    const existing = await this.prisma.notification.findFirst({
-      where: {
-        type,
-        recipientId,
-        senderId,
-        postId,
-        createdAt: { gte: fiveMinutesAgo },
-      },
-    });
+    // Sadece LIKE ve FOLLOW için 5 dakikalık spam korumasını uygula.
+    if (type === NotificationType.LIKE || type === NotificationType.FOLLOW) {
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+      const existing = await this.prisma.notification.findFirst({
+        where: {
+          type,
+          recipientId,
+          senderId,
+          postId,
+          createdAt: { gte: fiveMinutesAgo },
+        },
+      });
 
-    if (existing) return existing;
+      if (existing) return existing;
+    }
 
-    return this.prisma.notification.create({
+    const newNotification = await this.prisma.notification.create({
       data: {
         type,
         recipientId,
         senderId,
         postId,
+        commentId,
       },
       include: {
         sender: {
@@ -55,8 +65,25 @@ export class NotificationsService {
             content: true,
           },
         },
+        comment: {
+          select: {
+            id: true,
+            content: true,
+          },
+        },
       },
     });
+
+    // SOCKET.IO ILE ANLIK BILDIRIM GONDER
+    if (this.chatGateway.server) {
+      const room = `user_${recipientId}`;
+      this.chatGateway.server.to(room).emit('new_notification', newNotification);
+      console.log(`🚀 [Notifications] Bildirim gönderildi: Tip=${type}, AlıcıRoom=${room}, GönderenID=${senderId}`);
+    } else {
+      console.error('❌ [Notifications] Hata: ChatGateway server hazır değil!');
+    }
+
+    return newNotification;
   }
 
   async getUserNotifications(userId: number, limit = 20) {
@@ -72,6 +99,12 @@ export class NotificationsService {
           },
         },
         post: {
+          select: {
+            id: true,
+            content: true,
+          },
+        },
+        comment: {
           select: {
             id: true,
             content: true,
