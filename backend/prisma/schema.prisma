@@ -115,15 +115,18 @@ model Message {
   conversationId Int
   senderId       Int
   content        String   @db.Text
+  postId         Int?     // Paylaşılan postun ID'si
   isRead         Boolean  @default(false)
   isDeleted      Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  sharedPost   Post?        @relation("SharedPost", fields: [postId], references: [id], onDelete: SetNull)
 
   @@index([conversationId])
   @@index([senderId])
+  @@index([postId])
 }
 
 enum BadgeType {
@@ -235,6 +238,7 @@ model Post {
   comments      Comment[]
   notifications Notification[]
   reports       Report[]
+  sharedInMessages Message[] @relation("SharedPost")
 
   @@index([authorId])
   @@index([categoryId])

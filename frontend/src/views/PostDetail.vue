@@ -378,7 +378,11 @@ const handleCopyLink = () => {
   showPostMenu.value = false;
 };
 
-const handleShare = () => { toast.info("Paylaşım yakında..."); };
+const handleShare = () => {
+  if (post.value) {
+    postsStore.openShareModal(post.value);
+  }
+};
 
 // REPORT LOGIC
 const showReportModal = ref(false);

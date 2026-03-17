@@ -132,12 +132,12 @@ export function useSocket() {
     }
   };
 
-  const sendMessage = (conversationId: number, content: string, receiverId: number) => {
+  const sendMessage = (conversationId: number, content: string, receiverId: number, postId?: number) => {
     if (!socket?.connected) {
       console.error("❌ Mesaj gönderilemedi: Soket bağlı değil.");
       return;
     }
-    socket.emit("send_message", { conversationId, content, receiverId });
+    socket.emit("send_message", { conversationId, content, receiverId, postId });
   };
 
   const sendTyping = (conversationId: number, receiverId: number, isTyping: boolean) => {

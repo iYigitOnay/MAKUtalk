@@ -68,7 +68,7 @@ export class ChatService {
     };
   }
 
-  async sendMessage(senderId: number, conversationId: number, content: string) {
+  async sendMessage(senderId: number, conversationId: number, content: string, postId?: number) {
     const conversation = await this.prisma.conversation.findUnique({ where: { id: conversationId }, include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'asc' } } } });
     if (!conversation) throw new NotFoundException();
     
@@ -94,7 +94,17 @@ export class ChatService {
       this.myLogger.warn(`Chat İhlali: Kullanıcı ID ${senderId}, Konuşma ID ${conversationId} içinde küfür kullandı.`, 'Security');
     }
 
-    return this.prisma.message.create({ data: { content: cleanText, senderId, conversationId }, include: { sender: { select: { id: true, username: true, avatarUrl: true } } } });
+    return this.prisma.message.create({ 
+      data: { content: cleanText, senderId, conversationId, postId }, 
+      include: { 
+        sender: { select: { id: true, username: true, avatarUrl: true } },
+        sharedPost: {
+          include: {
+            author: { select: { id: true, username: true, avatarUrl: true, fullName: true, badges: { include: { badge: true } } } }
+          }
+        }
+      } 
+    });
   }
 
   async getUserConversations(userId: number) {
@@ -122,7 +132,21 @@ export class ChatService {
 
   async acceptRequest(userId: number, conversationId: number) { return this.prisma.conversation.update({ where: { id: conversationId }, data: { isAccepted: true, isRejected: false } }); }
   async rejectRequest(userId: number, conversationId: number) { return this.prisma.conversation.update({ where: { id: conversationId }, data: { isAccepted: false, isRejected: true } }); }
-  async getMessages(conversationId: number) { return this.prisma.message.findMany({ where: { conversationId, isDeleted: false }, orderBy: { createdAt: 'asc' }, include: { sender: { select: { id: true, username: true, avatarUrl: true } } } }); }
+  
+  async getMessages(conversationId: number) { 
+    return this.prisma.message.findMany({ 
+      where: { conversationId, isDeleted: false }, 
+      orderBy: { createdAt: 'asc' }, 
+      include: { 
+        sender: { select: { id: true, username: true, avatarUrl: true } },
+        sharedPost: {
+          include: {
+            author: { select: { id: true, username: true, avatarUrl: true, fullName: true, badges: { include: { badge: true } } } }
+          }
+        }
+      } 
+    }); 
+  }
   async markAsRead(userId: number, conversationId: number) { return this.prisma.message.updateMany({ where: { conversationId, senderId: { not: userId }, isRead: false }, data: { isRead: true } }); }
   
   async removeMessage(messageId: number, userId: number) {

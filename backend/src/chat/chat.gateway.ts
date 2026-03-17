@@ -100,6 +100,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         senderId,
         data.conversationId,
         data.content,
+        data.postId,
       );
 
       // 3. Mesajı gönderene onayla

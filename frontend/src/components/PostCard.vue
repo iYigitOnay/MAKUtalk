@@ -2,306 +2,123 @@
 <template>
   <div
     v-if="displayPost"
-    @click="$router.push(`/post/${displayPost.id}`)"
-    class="p-4 bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-900/70 transition-colors cursor-pointer"
-    :class="
-      !isThreadParent
-        ? 'border-b border-gray-200 dark:border-primary-900/20'
-        : ''
-    "
+    class="bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-900/70 transition-colors cursor-default border-b border-gray-200 dark:border-primary-900/20"
+    :class="isThreadParent ? 'border-none' : ''"
   >
-    <!-- Reply Header (TWITTER MANTIĞI) -->
-    <div
-      v-if="displayPost.parentId"
-      class="flex items-center gap-1.5 mb-2 ml-14 sm:ml-16 text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-bold"
-      @click.stop
-    >
-      <component
-        :is="getBadgeComponent('corner-down-right')"
-        class="w-4 h-4 text-blue-500"
-      />
-      <span v-if="displayPost.parent?.author">
-        <router-link
-          :to="`/profile/${displayPost.parent.author.username}`"
-          class="text-blue-500 hover:underline"
-        >
-          @{{ displayPost.parent.author.username }}
-        </router-link>
-        yanıtlanıyor
-      </span>
-      <span v-else class="text-blue-500">Bir gönderiye yanıt</span>
-    </div>
-
-    <!-- Repost Header -->
-    <div
-      v-if="post.repostOf"
-      class="flex items-center gap-2 mb-2 ml-14 sm:ml-16 text-gray-500 dark:text-gray-400 text-sm font-semibold"
-      @click.stop
-    >
-      <component :is="getBadgeComponent('repeat')" class="w-4 h-4" />
-      <router-link
-        :to="`/profile/${post.author?.username}`"
-        class="hover:underline"
-        >{{
-          isMe ? "Sen" : post.author?.fullName || post.author?.username
-        }}</router-link
+    <!-- Tıklanabilir İçerik Alanı -->
+    <div @click="$router.push(`/post/${displayPost.id}`)" class="p-4 pb-0 cursor-pointer">
+      <!-- Reply Header -->
+      <div
+        v-if="displayPost.parentId"
+        class="flex items-center gap-1.5 mb-2 ml-14 sm:ml-16 text-gray-500 dark:text-gray-400 text-xs sm:text-sm font-bold"
+        @click.stop
       >
-      remaküledi
-    </div>
-
-    <!-- Main Post Content -->
-    <div class="flex gap-3 sm:gap-4 items-stretch">
-      <!-- Avatar & Thread Line -->
-      <div class="flex flex-col items-center">
-        <router-link
-          v-if="displayPost.author"
-          :to="`/profile/${displayPost.author.username}`"
-          @click.stop
-          class="flex-shrink-0 relative z-10"
-        >
-          <img
-            v-if="displayPost.author.avatarUrl"
-            :src="getImageUrl(displayPost.author.avatarUrl)"
-            :alt="displayPost.author.username"
-            class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm"
-          />
-          <div
-            v-else
-            class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold shadow-sm text-sm sm:text-base"
-          >
-            {{ displayPost.author.username?.charAt(0).toUpperCase() }}
-          </div>
-        </router-link>
-
-        <!-- Thread Line -->
-        <div
-          v-if="isThreadParent"
-          class="w-0.5 flex-1 bg-gray-200 dark:bg-gray-800 mt-2 mb-[-1rem] rounded-full"
-        ></div>
+        <component :is="getBadgeComponent('corner-down-right')" class="w-4 h-4 text-blue-500" />
+        <span v-if="displayPost.parent?.author">
+          <router-link :to="`/profile/${displayPost.parent.author.username}`" class="text-blue-500 hover:underline">@{{ displayPost.parent.author.username }}</router-link> yanitlanıyor
+        </span>
       </div>
 
-      <!-- Main Content -->
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center justify-between gap-2 mb-1">
-          <div class="flex items-center gap-1.5 min-w-0">
-            <div
-              class="font-black text-gray-900 dark:text-white truncate flex items-center gap-1.5"
-            >
-              <router-link
-                :to="`/profile/${displayPost.author.username}`"
-                class="hover:underline"
-                @click.stop
-              >
-                {{ displayPost.author.fullName || displayPost.author.username }}
-              </router-link>
-              
-              <!-- BADGES (ELİT ROZETLER) -->
-              <div v-if="displayPost.author.badges?.length || displayPost.author.role === 'ADMIN'" class="flex gap-1 items-center">
-                <div v-if="displayPost.author.role === 'ADMIN'" class="group relative flex items-center justify-center">
-                  <div class="p-0.5 rounded-full text-white bg-[#1E3A8A] shadow-sm transition-transform hover:scale-110">
-                    <component :is="getBadgeComponent('crown')" class="w-2.5 h-2.5" />
-                  </div>
-                  <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[100] pointer-events-none uppercase">Sistem Kurucusu</div>
-                </div>
-                <div v-for="ub in displayPost.author.badges" :key="ub.badge?.id || ub.id" class="group relative flex items-center justify-center">
-                  <div class="p-0.5 rounded-full border border-gray-100 shadow-sm transition-transform hover:scale-110" :style="{ backgroundColor: ub.badge?.color || '#3b82f6', color: 'white' }">
-                    <component :is="getBadgeComponent(ub.badge?.icon || 'award')" class="w-2.5 h-2.5" />
-                  </div>
-                  <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[100] pointer-events-none uppercase">{{ ub.badge?.name }}</div>
-                </div>
+      <!-- Repost Header -->
+      <div
+        v-if="post.repostOf"
+        class="flex items-center gap-2 mb-2 ml-14 sm:ml-16 text-gray-500 dark:text-gray-400 text-sm font-semibold"
+        @click.stop
+      >
+        <component :is="getBadgeComponent('repeat')" class="w-4 h-4" />
+        <router-link :to="`/profile/${post.author?.username}`" class="hover:underline">{{ isMe ? "Sen" : post.author?.fullName || post.author?.username }}</router-link> remaküledi
+      </div>
+
+      <div class="flex gap-3 sm:gap-4 items-stretch">
+        <!-- Avatar -->
+        <div class="flex flex-col items-center">
+          <router-link v-if="displayPost.author" :to="`/profile/${displayPost.author.username}`" @click.stop class="flex-shrink-0 relative z-10">
+            <img v-if="displayPost.author.avatarUrl" :src="getImageUrl(displayPost.author.avatarUrl)" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm" />
+            <div v-else class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold shadow-sm text-sm">
+              {{ displayPost.author.username?.charAt(0).toUpperCase() }}
+            </div>
+          </router-link>
+          <div v-if="isThreadParent" class="w-0.5 flex-1 bg-gray-200 dark:bg-gray-800 mt-2 mb-[-1rem] rounded-full"></div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <div class="flex items-center gap-1.5 min-w-0 font-black text-gray-900 dark:text-white truncate">
+              <router-link :to="`/profile/${displayPost.author.username}`" class="hover:underline" @click.stop>{{ displayPost.author.fullName || displayPost.author.username }}</router-link>
+              <router-link :to="`/profile/${displayPost.author.username}`" class="text-gray-500 dark:text-gray-400 truncate text-sm font-normal" @click.stop>@{{ displayPost.author.username }}</router-link>
+              <p class="text-gray-500 dark:text-gray-400 text-xs flex-shrink-0 font-normal">· {{ formatDate(displayPost.createdAt) }}</p>
+            </div>
+            
+            <!-- Menü Butonu -->
+            <div class="relative flex-shrink-0" @click.stop>
+              <button @click="showMenu = !showMenu" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-all">
+                <component :is="getBadgeComponent('more-vertical')" class="w-5 h-5" />
+              </button>
+              <div v-if="showMenu" class="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl z-[100] py-1.5 overflow-hidden">
+                <button @click="handleCopyLink" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('link')" class="w-4 h-4 text-gray-400" />Bağlantıyı Kopyala</button>
+                <button v-if="isOwner || isAdmin" @click="$emit('delete', post.id); showMenu = false;" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('trash-2')" class="w-4 h-4" />Gönderiyi Sil</button>
               </div>
             </div>
-            <router-link
-              :to="`/profile/${displayPost.author.username}`"
-              class="text-gray-500 dark:text-gray-400 truncate text-sm"
-              @click.stop
-            >
-              @{{ displayPost.author.username }}
-            </router-link>
-            <p class="text-gray-500 dark:text-gray-400 text-xs flex-shrink-0">
-              · {{ formatDate(displayPost.createdAt) }}
-            </p>
           </div>
 
-          <div class="relative flex-shrink-0" @click.stop>
-            <button
-              @click="showMenu = !showMenu"
-              class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-all"
+          <div class="flex flex-wrap gap-1.5 mb-2">
+            <span
+              v-if="displayPost.category && !displayPost.parentId"
+              class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider text-white"
+              :style="{
+                backgroundColor: displayPost.category.color || '#3b82f6',
+              }"
             >
-              <component
-                :is="getBadgeComponent('more-vertical')"
-                class="w-5 h-5"
-              />
-            </button>
-            <div
-              v-if="showMenu"
-              class="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl z-[100] py-1.5 overflow-hidden"
+              {{ displayPost.category.name }}
+            </span>
+            <span
+              v-if="displayPost.sentiment"
+              class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border"
+              :class="getSentimentStyles(displayPost.sentiment).class"
             >
-              <button
-                @click="handleCopyLink"
-                class="w-full text-left px-3 py-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2.5"
-              >
-                <component
-                  :is="getBadgeComponent('link')"
-                  class="w-4 h-4 text-gray-400"
-                />
-                Bağlantıyı Kopyala
-              </button>
-              <button
-                @click="
-                  $emit('report', displayPost.id);
-                  showMenu = false;
-                "
-                class="w-full text-left px-3 py-2 text-[13px] font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2.5"
-              >
-                <component
-                  :is="getBadgeComponent('alert-triangle')"
-                  class="w-4 h-4"
-                />
-                Şikayet Et
-              </button>
-              <button
-                v-if="isAdmin"
-                @click="handleRefreshAI"
-                class="w-full text-left px-3 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2.5"
-              >
-                <component
-                  :is="getBadgeComponent('sparkles')"
-                  class="w-4 h-4"
-                />
-                AI Analizini Yenile
-              </button>
-              <button
-                v-if="isOwner || isAdmin"
-                @click="
-                  $emit('delete', post.id);
-                  showMenu = false;
-                "
-                class="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5"
-              >
-                <component :is="getBadgeComponent('trash-2')" class="w-4 h-4" />
-                Gönderiyi Sil
-              </button>
-            </div>
+              {{ translateSentiment(displayPost.sentiment) }}
+            </span>
           </div>
-        </div>
 
-        <div class="flex flex-wrap gap-1.5 mb-2">
-          <span
-            v-if="displayPost.category && !displayPost.parentId"
-            class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider text-white"
-            :style="{
-              backgroundColor: displayPost.category.color || '#3b82f6',
-            }"
-          >
-            {{ displayPost.category.name }}
-          </span>
-          <span
-            v-if="displayPost.sentiment"
-            class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border"
-            :class="getSentimentStyles(displayPost.sentiment).class"
-          >
-            {{ translateSentiment(displayPost.sentiment) }}
-          </span>
-        </div>
+          <p class="text-gray-900 dark:text-white text-[15px] leading-normal whitespace-pre-wrap mb-3">
+            <HashtagText :text="displayPost.content || ''" />
+          </p>
 
-        <p
-          class="text-gray-900 dark:text-white text-[15px] leading-normal whitespace-pre-wrap mb-3"
-        >
-          <HashtagText :text="displayPost.content || ''" />
-        </p>
-
-        <div
-          v-if="displayPost.imageUrl"
-          class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 bg-slate-50 dark:bg-gray-800"
-        >
-          <img
-            :src="getImageUrl(displayPost.imageUrl)"
-            class="w-full h-auto max-h-[512px] object-cover"
-            alt="Post content"
-            loading="lazy"
-          />
-        </div>
-
-        <!-- Action Buttons (REVISED) -->
-        <div
-          class="flex justify-between items-center text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-50 dark:border-primary-900/10"
-        >
-          <!-- LIKE -->
-          <button
-            v-if="authStore.isAuthenticated"
-            @click.stop="handleLikeToggle"
-            :disabled="likeLoading"
-            class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-red-50 dark:hover:bg-red-900/20 group"
-            :class="
-              post.isLiked || displayPost.isLiked
-                ? 'text-red-600'
-                : 'text-gray-500 dark:text-gray-400'
-            "
-          >
-            <component
-              :is="getBadgeComponent('heart')"
-              class="w-5 h-5 transition-transform group-active:scale-125"
-              :class="
-                post.isLiked || displayPost.isLiked
-                  ? 'fill-red-600'
-                  : 'fill-none'
-              "
-            />
-            <span class="text-xs font-black">{{
-              displayPost._count?.likes || 0
-            }}</span>
-          </button>
-
-          <!-- REPLY / COMMENT -->
-          <button
-            @click.stop="handleCommentsClick"
-            class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 group text-gray-500 dark:text-gray-400"
-          >
-            <component
-              :is="getBadgeComponent('message-square')"
-              class="w-5 h-5 transition-transform group-active:scale-125"
-            />
-            <span class="text-xs font-black">{{
-              displayPost._count?.replies || 0
-            }}</span>
-          </button>
-
-          <!-- REPOST (REMAKÜ) -->
-          <button
-            v-if="authStore.isAuthenticated"
-            @click.stop="handleRepost"
-            :disabled="repostLoading"
-            class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-green-50 dark:hover:bg-green-900/20 group"
-            :class="
-              post.isReposted || displayPost.isReposted
-                ? 'text-green-600'
-                : 'text-gray-500 dark:text-gray-400'
-            "
-          >
-            <component
-              :is="getBadgeComponent('repeat')"
-              class="w-5 h-5 transition-transform group-active:scale-125"
-            />
-            <span class="text-xs font-black">{{
-              displayPost._count?.reposts || 0
-            }}</span>
-          </button>
-
-          <!-- SHARE / SEND (YENİ!) -->
-          <button
-            @click.stop="handleShare"
-            class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white group"
-          >
-            <component
-              :is="getBadgeComponent('send')"
-              class="w-5 h-5 transition-transform group-active:scale-125"
-            />
-          </button>
+          <div v-if="displayPost.imageUrl" class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 bg-slate-50 dark:bg-gray-800">
+            <img :src="getImageUrl(displayPost.imageUrl)" class="w-full h-auto max-h-[512px] object-cover" loading="lazy" />
+          </div>
         </div>
       </div>
     </div>
-  </div>
+
+    <!-- Aksiyon Butonları Alanı (Tıklama Alanının Dışında!) -->
+    <div class="px-4 pb-4 ml-14 sm:ml-16">
+      <div class="flex justify-between items-center text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-50 dark:border-primary-900/10">
+        <!-- LIKE -->
+        <button @click.stop="handleLikeToggle" :disabled="likeLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-red-50 dark:hover:bg-red-900/20 group" :class="post.isLiked || displayPost.isLiked ? 'text-red-600' : ''">
+          <component :is="getBadgeComponent('heart')" class="w-5 h-5" :class="post.isLiked || displayPost.isLiked ? 'fill-red-600' : 'fill-none'" />
+          <span class="text-xs font-black">{{ displayPost._count?.likes || 0 }}</span>
+        </button>
+
+        <!-- COMMENT -->
+        <button @click.stop="handleCommentsClick" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 group">
+          <component :is="getBadgeComponent('message-square')" class="w-5 h-5" />
+          <span class="text-xs font-black">{{ displayPost._count?.replies || 0 }}</span>
+        </button>
+
+        <!-- REPOST -->
+        <button @click.stop="handleRepost" :disabled="repostLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-green-50 dark:hover:bg-green-900/20 group" :class="post.isReposted || displayPost.isReposted ? 'text-green-600' : ''">
+          <component :is="getBadgeComponent('repeat')" class="w-5 h-5" />
+          <span class="text-xs font-black">{{ displayPost._count?.reposts || 0 }}</span>
+        </button>
+<!-- SHARE -->
+<button @click.stop="handleShare" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white group">
+  <component :is="getBadgeComponent('send')" class="w-5 h-5" />
+</button>
+</div>
+</div>
+</div>
 </template>
 
 <script setup lang="ts">
@@ -426,7 +243,7 @@ const handleCopyLink = () => {
 };
 
 const handleShare = () => {
-  toast.info("Paylaşma özelliği yakında eklenecek!");
+  postsStore.openShareModal(displayPost.value);
 };
 
 const formatDate = (date: string) => {

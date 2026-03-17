@@ -13,6 +13,18 @@ export const usePostsStore = defineStore("posts", () => {
   const currentThread = ref<{ parents: Post[], post: Post | null, replies: Post[] }>({ parents: [], post: null, replies: [] });
   const loading = ref(false);
   const error = ref<string | null>(null);
+  const sharePost = ref<Post | null>(null);
+  const isShareModalOpen = ref(false);
+
+  const openShareModal = (post: Post) => {
+    sharePost.value = post;
+    isShareModalOpen.value = true;
+  };
+
+  const closeShareModal = () => {
+    isShareModalOpen.value = false;
+    setTimeout(() => { sharePost.value = null; }, 300);
+  };
 
   const authStore = useAuthStore();
   const getProfileStore = () => useProfileStore();
@@ -250,6 +262,6 @@ export const usePostsStore = defineStore("posts", () => {
     posts, myPosts, searchResults, currentCategory, currentThread, loading, error,
     fetchPosts, fetchPostsByCategory, fetchMyPosts, toggleRepost, createPost,
     fetchThread, deletePost, updatePostLocally, updateUserInPosts, refreshSentiment,
-    resetCategory, onPostCreated
+    resetCategory, onPostCreated, sharePost, isShareModalOpen, openShareModal, closeShareModal
   };
 });

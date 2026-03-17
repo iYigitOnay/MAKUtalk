@@ -153,7 +153,13 @@
           <!-- Mesaj Balonları -->
           <div v-for="(msg, index) in chatStore.messages" :key="msg.id || index" class="flex flex-col" :class="isMyMessage(msg.senderId) ? 'items-end' : 'items-start'">
             <div class="max-w-[85%] md:max-w-[70%] px-5 py-3.5 text-sm font-medium rounded-3xl shadow-sm transition-all" :class="isMyMessage(msg.senderId) ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-[#1e293b] text-slate-900 dark:text-slate-100 rounded-tl-none border border-slate-100 dark:border-white/5'" :style="isMyMessage(msg.senderId) ? { backgroundColor: currentThemeColor } : {}">
-              {{ decrypt(msg.content) }}
+              
+              <!-- Paylaşılan Post Kartı (Premium) -->
+              <SharedPostCard v-if="msg.sharedPost" :post="msg.sharedPost" />
+
+              <div :class="{ 'mt-2 pt-2 border-t border-white/20': msg.sharedPost && decrypt(msg.content) }">
+                {{ decrypt(msg.content) }}
+              </div>
             </div>
           </div>
         </div>
@@ -215,6 +221,7 @@ import CryptoJS from "crypto-js";
 import apiClient from "@/api/client";
 import EmojiPicker from "@/components/EmojiPicker.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
+import SharedPostCard from "@/components/SharedPostCard.vue";
 
 const authStore = useAuthStore();
 const chatStore = useChatStore();
