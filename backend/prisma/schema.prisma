@@ -29,6 +29,7 @@ model User {
   posts                Post[]
   likes                Like[]
   comments             Comment[]
+  bookmarks            Bookmark[]
   following            Follow[]       @relation("UserFollowing")
   followers            Follow[]       @relation("UserFollowers")
   notifications        Notification[] @relation("NotificationRecipient")
@@ -213,6 +214,8 @@ model Post {
   id         Int      @id @default(autoincrement())
   content    String?  @db.Text
   imageUrl   String?  
+  documentUrl String?
+  isAcademic Boolean  @default(false)
   published  Boolean  @default(true)
   authorId   Int
   categoryId Int?
@@ -238,6 +241,7 @@ model Post {
   comments      Comment[]
   notifications Notification[]
   reports       Report[]
+  bookmarks     Bookmark[]
   sharedInMessages Message[] @relation("SharedPost")
 
   @@index([authorId])
@@ -245,6 +249,7 @@ model Post {
   @@index([createdAt])
   @@index([repostId])
   @@index([parentId])
+  @@index([isAcademic])
 }
 
 model Like {
@@ -449,3 +454,18 @@ enum ListingStatus {
   SOLD          
   CLOSED        
 }
+
+model Bookmark {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  postId    Int
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+}
+

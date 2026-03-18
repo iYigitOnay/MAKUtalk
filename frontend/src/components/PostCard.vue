@@ -2,11 +2,19 @@
 <template>
   <div
     v-if="displayPost"
-    class="bg-white dark:bg-gray-900/40 hover:bg-gray-50 dark:hover:bg-gray-900/70 transition-colors cursor-default border-b border-gray-200 dark:border-primary-900/20"
-    :class="isThreadParent ? 'border-none' : ''"
+    class="bg-white dark:bg-gray-950/40 hover:bg-gray-50 dark:hover:bg-gray-900/70 transition-all duration-500 cursor-default border-b border-gray-200 dark:border-primary-900/20 relative overflow-hidden"
+    :class="[
+      isThreadParent ? 'border-none' : '', 
+      (displayPost.isAcademic && !displayPost.isLiked) 
+        ? 'academic-unread shadow-sm z-10' 
+        : ''
+    ]"
   >
+    <!-- Academic Decorative Pattern - Removed pulse for premium feel -->
+    <div v-if="displayPost.isAcademic && !displayPost.isLiked" class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 blur-3xl pointer-events-none"></div>
+
     <!-- Tıklanabilir İçerik Alanı -->
-    <div @click="$router.push(`/post/${displayPost.id}`)" class="p-4 pb-0 cursor-pointer">
+    <div @click="$router.push(`/post/${displayPost.id}`)" class="p-4 pb-0 cursor-pointer relative z-10">
       <!-- Reply Header -->
       <div
         v-if="displayPost.parentId"
@@ -46,6 +54,9 @@
           <div class="flex items-center justify-between gap-2 mb-1">
             <div class="flex items-center gap-1.5 min-w-0 font-black text-gray-900 dark:text-white truncate">
               <router-link :to="`/profile/${displayPost.author.username}`" class="hover:underline" @click.stop>{{ displayPost.author.fullName || displayPost.author.username }}</router-link>
+              <div v-if="displayPost.isAcademic" class="flex-shrink-0 flex items-center gap-1.5">
+                <div class="px-1.5 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[7px] font-black rounded border border-emerald-200 dark:border-emerald-800 uppercase tracking-tighter">AKADEMİK</div>
+              </div>
               <router-link :to="`/profile/${displayPost.author.username}`" class="text-gray-500 dark:text-gray-400 truncate text-sm font-normal" @click.stop>@{{ displayPost.author.username }}</router-link>
               <p class="text-gray-500 dark:text-gray-400 text-xs flex-shrink-0 font-normal">· {{ formatDate(displayPost.createdAt) }}</p>
             </div>
@@ -88,6 +99,48 @@
           <div v-if="displayPost.imageUrl" class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 bg-slate-50 dark:bg-gray-800">
             <img :src="getImageUrl(displayPost.imageUrl)" class="w-full h-auto max-h-[512px] object-cover" loading="lazy" />
           </div>
+
+          <!-- Document Attachment (Academic) -->
+          <div v-if="displayPost.documentUrl" class="mb-3">
+            <a 
+              :href="getImageUrl(displayPost.documentUrl)" 
+              target="_blank" 
+              download 
+              class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group overflow-hidden relative"
+            >
+              <!-- Extension-based Background Accent -->
+              <div 
+                class="absolute left-0 top-0 w-1 h-full"
+                :class="{
+                  'bg-red-500': getFileExt(displayPost.documentUrl) === 'pdf',
+                  'bg-blue-500': ['doc', 'docx'].includes(getFileExt(displayPost.documentUrl)),
+                  'bg-green-500': ['xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl)),
+                  'bg-orange-500': !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl))
+                }"
+              ></div>
+
+              <div 
+                class="p-2 rounded-lg group-hover:scale-110 transition-transform"
+                :class="{
+                  'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400': getFileExt(displayPost.documentUrl) === 'pdf',
+                  'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400': ['doc', 'docx'].includes(getFileExt(displayPost.documentUrl)),
+                  'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400': ['xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl)),
+                  'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400': !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl))
+                }"
+              >
+                <component :is="getBadgeComponent(getFileExt(displayPost.documentUrl) === 'pdf' ? 'file-text' : 'file')" class="w-6 h-6" />
+              </div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-bold text-gray-900 dark:text-white truncate">
+                  {{ getFileName(displayPost.documentUrl) }}
+                </p>
+                <p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">
+                  {{ getFileExt(displayPost.documentUrl) }} Dökümanı · İndirmek için tıklayın
+                </p>
+              </div>
+              <component :is="getBadgeComponent('download')" class="w-5 h-5 text-gray-400 group-hover:text-primary-500" />
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -95,30 +148,35 @@
     <!-- Aksiyon Butonları Alanı (Tıklama Alanının Dışında!) -->
     <div class="px-4 pb-4 ml-14 sm:ml-16">
       <div class="flex justify-between items-center text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-50 dark:border-primary-900/10">
-        <!-- LIKE -->
-        <button @click.stop="handleLikeToggle" :disabled="likeLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-red-50 dark:hover:bg-red-900/20 group" :class="post.isLiked || displayPost.isLiked ? 'text-red-600' : ''">
-          <component :is="getBadgeComponent('heart')" class="w-5 h-5" :class="post.isLiked || displayPost.isLiked ? 'fill-red-600' : 'fill-none'" />
+        <!-- LIKE / OKUDUM -->
+        <button @click.stop="handleLikeToggle" :disabled="likeLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all group" :class="[displayPost.isAcademic ? 'hover:bg-green-50 dark:hover:bg-green-900/20' : 'hover:bg-red-50 dark:hover:bg-red-900/20', (post.isLiked || displayPost.isLiked) ? (displayPost.isAcademic ? 'text-green-600' : 'text-red-600') : '']">
+          <component v-if="displayPost.isAcademic" :is="getBadgeComponent('check-circle')" class="w-5 h-5" :class="(post.isLiked || displayPost.isLiked) ? 'text-green-600' : ''" />
+          <component v-else :is="getBadgeComponent('heart')" class="w-5 h-5" :class="(post.isLiked || displayPost.isLiked) ? 'fill-red-600 text-red-600' : 'fill-none'" />
           <span class="text-xs font-black">{{ displayPost._count?.likes || 0 }}</span>
         </button>
 
-        <!-- COMMENT -->
+        <!-- COMMENT / SORU SOR -->
         <button @click.stop="handleCommentsClick" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 group">
           <component :is="getBadgeComponent('message-square')" class="w-5 h-5" />
           <span class="text-xs font-black">{{ displayPost._count?.replies || 0 }}</span>
         </button>
 
-        <!-- REPOST -->
-        <button @click.stop="handleRepost" :disabled="repostLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-green-50 dark:hover:bg-green-900/20 group" :class="post.isReposted || displayPost.isReposted ? 'text-green-600' : ''">
+        <!-- REPOST / KAYDET -->
+        <button v-if="displayPost.isAcademic" @click.stop="handleBookmark" :disabled="bookmarkLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-yellow-50 dark:hover:bg-yellow-900/20 group" :class="(post.isBookmarked || displayPost.isBookmarked) ? 'text-yellow-600' : ''">
+          <component :is="getBadgeComponent('bookmark')" class="w-5 h-5" :class="(post.isBookmarked || displayPost.isBookmarked) ? 'fill-yellow-600 text-yellow-600' : 'fill-none'" />
+        </button>
+        <button v-else @click.stop="handleRepost" :disabled="repostLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-green-50 dark:hover:bg-green-900/20 group" :class="(post.isReposted || displayPost.isReposted) ? 'text-green-600' : ''">
           <component :is="getBadgeComponent('repeat')" class="w-5 h-5" />
           <span class="text-xs font-black">{{ displayPost._count?.reposts || 0 }}</span>
         </button>
-<!-- SHARE -->
-<button @click.stop="handleShare" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white group">
-  <component :is="getBadgeComponent('send')" class="w-5 h-5" />
-</button>
-</div>
-</div>
-</div>
+
+        <!-- SHARE -->
+        <button @click.stop="handleShare" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-gray-100 dark:hover:bg-white/10 hover:text-gray-900 dark:hover:text-white group">
+          <component :is="getBadgeComponent('send')" class="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -155,7 +213,24 @@ const toast = useToast();
 
 const likeLoading = ref(false);
 const repostLoading = ref(false);
+const bookmarkLoading = ref(false);
 const showMenu = ref(false);
+
+const handleBookmark = async () => {
+  if (!displayPost.value) return;
+  const targetId = displayPost.value.id;
+  if (bookmarkLoading.value) return;
+
+  bookmarkLoading.value = true;
+  try {
+    const res = await postsStore.toggleBookmark(targetId);
+    if (res.bookmarked) toast.success("Kaydedilenlere eklendi!");
+  } catch (error) {
+    console.error("Bookmark error:", error);
+  } finally {
+    bookmarkLoading.value = false;
+  }
+};
 
 const displayPost = computed(() => props.post.repostOf || props.post);
 const isMe = computed(() => authStore.user?.id === props.post.authorId);
@@ -266,6 +341,17 @@ const getImageUrl = (path: string) => {
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
+const getFileExt = (path: string) => {
+  if (!path) return "";
+  return path.split(".").pop()?.toLowerCase() || "";
+};
+
+const getFileName = (path: string) => {
+  if (!path) return "Döküman";
+  const parts = path.split("-");
+  return parts.length > 2 ? parts.slice(2).join("-") : "Ekli Döküman";
+};
+
 const translateSentiment = (sentiment: string) => {
   const translations: Record<string, string> = {
     positive: "Neşeli",
@@ -330,3 +416,44 @@ const getSentimentStyles = (sentiment: string) => {
   );
 };
 </script>
+
+<style scoped>
+.academic-unread {
+  position: relative;
+  background-color: rgba(16, 185, 129, 0.03);
+}
+
+.dark .academic-unread {
+  background-color: rgba(16, 185, 129, 0.02);
+}
+
+.academic-unread::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background-color: #059669;
+  z-index: 20;
+  animation: emerald-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.dark .academic-unread::before {
+  background-color: #10b981;
+}
+
+@keyframes emerald-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 2px 0 10px rgba(16, 185, 129, 0.3);
+    width: 4px;
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 4px 0 20px rgba(16, 185, 129, 0.5);
+    width: 5px;
+  }
+}
+</style>

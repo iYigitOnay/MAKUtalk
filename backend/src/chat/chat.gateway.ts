@@ -143,4 +143,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       }
     }
   }
+
+  // YENİ: Gönderi Paylaşıldığında Tüm Kullanıcılara Duyur (Gerçek Zamanlı Akış)
+  broadcastNewPost(post: any) {
+    this.server.emit('new_post', post);
+  }
 }

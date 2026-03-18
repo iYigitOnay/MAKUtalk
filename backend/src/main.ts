@@ -31,7 +31,7 @@ async function bootstrap() {
   );
 
   // --- KATMAN 5: API KALKANI VE GÜVENLIK ---
-  
+
   // 1. JSON Limitleri (Dosya şişirme saldırılarına karşı)
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
@@ -44,14 +44,22 @@ async function bootstrap() {
         directives: {
           defaultSrc: ["'self'"],
           scriptSrc: ["'self'", "'unsafe-inline'"],
-          styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-          fontSrc: ["'self'", "https://fonts.gstatic.com"],
-          imgSrc: ["'self'", "data:", "http://localhost:3000", "https://*"],
-          connectSrc: ["'self'", "http://localhost:3000", "ws://localhost:3000"],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            'https://fonts.googleapis.com',
+          ],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+          imgSrc: ["'self'", 'data:', 'http://localhost:3000', 'https://*'],
+          connectSrc: [
+            "'self'",
+            'http://localhost:3000',
+            'ws://localhost:3000',
+          ],
         },
       },
       xssFilter: true, // XSS Koruması
-      noSniff: true,   // MIME sniffing engeli
+      noSniff: true, // MIME sniffing engeli
       hidePoweredBy: true, // "X-Powered-By: Express" başlığını gizle
     }),
   );
@@ -63,7 +71,10 @@ async function bootstrap() {
       'http://localhost:5174',
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5174',
-      'https://makutalk.com', // Canlı domain (varsa)
+      'https://makutalk.com',
+      'https://www.makutalk.com',
+      'https://makutalk.dev',
+      'https://www.makutalk.dev',
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -73,9 +84,9 @@ async function bootstrap() {
   // 4. Strict Veri Denetimi (Validation)
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,               // Sadece DTO'da tanımlı alanları kabul et
-      forbidNonWhitelisted: true,    // Beklenmeyen alan gelirse isteği REDDET
-      transform: true,               // Gelen veriyi otomatik tipe çevir (string -> number vb.)
+      whitelist: true, // Sadece DTO'da tanımlı alanları kabul et
+      forbidNonWhitelisted: true, // Beklenmeyen alan gelirse isteği REDDET
+      transform: true, // Gelen veriyi otomatik tipe çevir (string -> number vb.)
       transformOptions: {
         enableImplicitConversion: true,
       },
@@ -95,7 +106,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
-  
+
   logger.log(
     `🚀 MAKUtalk Shield Active. Running on http://localhost:${port}/api`,
     'Bootstrap',

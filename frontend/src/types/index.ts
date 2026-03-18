@@ -8,7 +8,7 @@ export interface User {
   coverUrl?: string;
   department?: string;
   class?: string;
-  role: 'USER' | 'ADMIN';
+  role: 'USER' | 'ADMIN' | 'ACADEMIC';
   isBanned: boolean;
   isPrivate: boolean;
   createdAt: string;
@@ -40,6 +40,8 @@ export interface Post {
   repostOf?: Post;
   parentId?: number; // TWITTER MANTIĞI: Yanıt verilen postun ID'si
   parent?: Post;     // TWITTER MANTIĞI: Yanıt verilen ana post verisi
+  isAcademic: boolean;
+  documentUrl?: string;
   sentiment?: string;
   sentimentScore?: number;
   createdAt: string;
@@ -62,6 +64,7 @@ export interface Post {
   };
   isLiked?: boolean; // Frontend için
   isReposted?: boolean; // Frontend için
+  isBookmarked?: boolean; // Frontend için
 }
 
 export interface Like {

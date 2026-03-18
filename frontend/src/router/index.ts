@@ -66,6 +66,12 @@ const router = createRouter({
       meta: { requiresAuth: true, layout: "main" },
     },
     {
+      path: "/bookmarks",
+      name: "Bookmarks",
+      component: () => import("@/views/Bookmarks.vue"),
+      meta: { requiresAuth: true, layout: "main" },
+    },
+    {
       path: "/profile/:id?",
       name: "Profile",
       component: () => import("@/views/Profile.vue"),

@@ -10,14 +10,14 @@ import {
   ParseIntPipe,
   Query,
   UseInterceptors,
-  UploadedFile,
+  UploadedFiles,
 } from '@nestjs/common';
 import { PostsService } from './posts.service';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 
 @Controller('posts')
@@ -26,14 +26,17 @@ export class PostsController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('image'))
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'image', maxCount: 1 },
+    { name: 'document', maxCount: 1 }
+  ]))
   @Throttle({ medium: { limit: 2, ttl: 60000 } })
   create(
     @CurrentUser() user,
     @Body() createPostDto: CreatePostDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @UploadedFiles() files?: { image?: Express.Multer.File[], document?: Express.Multer.File[] },
   ) {
-    return this.postsService.create(user.id, createPostDto, file);
+    return this.postsService.create(user.id, createPostDto, files);
   }
 
   @Get()
@@ -42,6 +45,26 @@ export class PostsController {
     return this.postsService.findAll(
       currentUserId ? +currentUserId : undefined,
     );
+  }
+
+  @Get('academic')
+  @UseGuards(JwtAuthGuard)
+  findAcademicFeed(@Query('currentUserId') currentUserId?: string) {
+    return this.postsService.findAcademicFeed(
+      currentUserId ? +currentUserId : undefined,
+    );
+  }
+
+  @Get('bookmarks')
+  @UseGuards(JwtAuthGuard)
+  findBookmarks(@CurrentUser() user) {
+    return this.postsService.findBookmarks(user.id);
+  }
+
+  @Post(':id/bookmark')
+  @UseGuards(JwtAuthGuard)
+  toggleBookmark(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
+    return this.postsService.toggleBookmark(user.id, id);
   }
 
   @Get('category/:categoryId')

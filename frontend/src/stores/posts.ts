@@ -15,6 +15,7 @@ export const usePostsStore = defineStore("posts", () => {
   const error = ref<string | null>(null);
   const sharePost = ref<Post | null>(null);
   const isShareModalOpen = ref(false);
+  const activeFeedTab = ref<'main' | 'academic'>('main');
 
   const openShareModal = (post: Post) => {
     sharePost.value = post;
@@ -29,13 +30,39 @@ export const usePostsStore = defineStore("posts", () => {
   const authStore = useAuthStore();
   const getProfileStore = () => useProfileStore();
 
-  const fetchPosts = async (currentUserId?: number) => {    loading.value = true;
+  const fetchPosts = async (currentUserId?: number) => {
+    loading.value = true;
     try {
       const params = currentUserId ? { currentUserId } : {};
       const response = await apiClient.get<Post[]>("/posts", { params });
       posts.value = response.data;
     } catch (err) {
       error.value = "Gönderiler yüklenemedi.";
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchAcademicPosts = async (currentUserId?: number) => {
+    loading.value = true;
+    try {
+      const params = currentUserId ? { currentUserId } : {};
+      const response = await apiClient.get<Post[]>("/posts/academic", { params });
+      posts.value = response.data;
+    } catch (err) {
+      error.value = "Akademik gönderiler yüklenemedi.";
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const fetchBookmarks = async () => {
+    loading.value = true;
+    try {
+      const response = await apiClient.get<Post[]>("/posts/bookmarks");
+      posts.value = response.data;
+    } catch (err) {
+      error.value = "Kaydedilenler yüklenemedi.";
     } finally {
       loading.value = false;
     }
@@ -86,12 +113,21 @@ export const usePostsStore = defineStore("posts", () => {
     return response.data;
   };
 
+  const toggleBookmark = async (postId: number) => {
+    const response = await apiClient.post(`/posts/${postId}/bookmark`);
+    const isBookmarkedNow = response.data.bookmarked;
+    updatePostLocally(postId, { isBookmarked: isBookmarkedNow });
+    return response.data;
+  };
+
   const createPost = async (
     content: string,
     published = true,
     categoryId?: number,
     image?: File,
     parentId?: number,
+    isAcademic: boolean = false,
+    document?: File,
   ) => {
     loading.value = true;
     try {
@@ -100,7 +136,9 @@ export const usePostsStore = defineStore("posts", () => {
       formData.append("published", String(published));
       if (categoryId) formData.append("categoryId", String(categoryId));
       if (parentId) formData.append("parentId", String(parentId));
+      if (isAcademic) formData.append("isAcademic", String(isAcademic));
       if (image) formData.append("image", image);
+      if (document) formData.append("document", document);
 
       const response = await apiClient.post<Post>("/posts", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -185,6 +223,7 @@ export const usePostsStore = defineStore("posts", () => {
       if (p.id === postId) {
         if (updates.isLiked !== undefined) p.isLiked = updates.isLiked;
         if (updates.isReposted !== undefined) p.isReposted = updates.isReposted;
+        if (updates.isBookmarked !== undefined) p.isBookmarked = updates.isBookmarked;
         if (updates.sentiment !== undefined) p.sentiment = updates.sentiment;
         if (updates.sentimentScore !== undefined) p.sentimentScore = updates.sentimentScore;
         if (updates._count) p._count = { ...p._count, ...updates._count };
@@ -195,6 +234,7 @@ export const usePostsStore = defineStore("posts", () => {
         const r = p.repostOf;
         if (updates.isLiked !== undefined) { r.isLiked = updates.isLiked; p.isLiked = updates.isLiked; }
         if (updates.isReposted !== undefined) { r.isReposted = updates.isReposted; p.isReposted = updates.isReposted; }
+        if (updates.isBookmarked !== undefined) { r.isBookmarked = updates.isBookmarked; p.isBookmarked = updates.isBookmarked; }
         if (updates.sentiment !== undefined) r.sentiment = updates.sentiment;
         if (updates._count) { r._count = { ...r._count, ...updates._count }; p._count = { ...p._count, ...updates._count }; }
       }
@@ -203,6 +243,7 @@ export const usePostsStore = defineStore("posts", () => {
       if (p.parent && p.parentId === postId) {
         if (updates.isLiked !== undefined) p.parent.isLiked = updates.isLiked;
         if (updates.isReposted !== undefined) p.parent.isReposted = updates.isReposted;
+        if (updates.isBookmarked !== undefined) p.parent.isBookmarked = updates.isBookmarked;
         if (updates._count) p.parent._count = { ...p.parent._count, ...updates._count };
       }
     };
@@ -259,8 +300,8 @@ export const usePostsStore = defineStore("posts", () => {
   const notifyPostCreated = () => postCreatedCallbacks.forEach((cb) => cb());
 
   return {
-    posts, myPosts, searchResults, currentCategory, currentThread, loading, error,
-    fetchPosts, fetchPostsByCategory, fetchMyPosts, toggleRepost, createPost,
+    posts, myPosts, searchResults, currentCategory, currentThread, loading, error, activeFeedTab,
+    fetchPosts, fetchAcademicPosts, fetchBookmarks, fetchPostsByCategory, fetchMyPosts, toggleRepost, toggleBookmark, createPost,
     fetchThread, deletePost, updatePostLocally, updateUserInPosts, refreshSentiment,
     resetCategory, onPostCreated, sharePost, isShareModalOpen, openShareModal, closeShareModal
   };

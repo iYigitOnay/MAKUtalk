@@ -1,8 +1,46 @@
 <!-- src/views/Home.vue -->
 <template>
   <div
-    class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen font-sans"
+    class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen font-sans relative"
   >
+    <!-- TOP TABS (Main Feed vs Academic Feed) -->
+    <div
+      class="sticky top-0 z-50 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-b border-gray-200 dark:border-primary-900/30"
+    >
+      <div class="flex">
+        <button
+          @click="switchTab('main')"
+          class="flex-1 py-4 text-sm font-black transition-all relative outline-none"
+          :class="
+            activeFeedTab === 'main'
+              ? 'text-gray-900 dark:text-white'
+              : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'
+          "
+        >
+          ANA AKIŞ
+          <div
+            v-if="activeFeedTab === 'main'"
+            class="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-blue-600 rounded-t-full"
+          ></div>
+        </button>
+        <button
+          @click="switchTab('academic')"
+          class="flex-1 py-4 text-sm font-black transition-all relative outline-none flex items-center justify-center gap-2"
+          :class="
+            activeFeedTab === 'academic'
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'
+          "
+        >
+          AKADEMİK
+          <div
+            v-if="activeFeedTab === 'academic'"
+            class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-1 bg-emerald-600 rounded-t-full"
+          ></div>
+        </button>
+      </div>
+    </div>
+
     <!-- MODERATION OVERLAYS -->
     <transition name="fade">
       <div
@@ -99,10 +137,13 @@
       </div>
     </transition>
 
-    <!-- Post Composer Section (Sticky Özelliği Kaldırıldı) -->
+    <!-- Post Composer Section -->
     <div
-      v-if="authStore.isAuthenticated"
-      class="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-primary-900/30 p-4"
+      v-if="
+        authStore.isAuthenticated &&
+        (activeFeedTab === 'main' || canPostToAcademic)
+      "
+      class="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-primary-900/30 p-4 transition-all duration-500"
     >
       <div class="flex gap-4">
         <div class="relative group flex-shrink-0">
@@ -128,12 +169,17 @@
             ref="textareaRef"
             v-model="newPostContent"
             @input="handleInput"
-            placeholder="Ne Düşünüyorsun?"
+            :placeholder="
+              activeFeedTab === 'academic'
+                ? 'Duyuru, ders notu veya bilgilendirme paylaşın...'
+                : 'Ne Düşünüyorsun?'
+            "
             class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium min-h-[100px] overflow-hidden pt-2.5 pr-12"
             :disabled="postsStore.loading"
             maxlength="280"
           />
 
+          <!-- ... Mentions Modal ... -->
           <div
             v-if="showMentions"
             :style="{ top: mentionPos.y + 'px', left: mentionPos.x + 'px' }"
@@ -194,9 +240,55 @@
             </button>
           </div>
 
+          <div
+            v-if="selectedDocument"
+            class="relative mt-4 p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-between"
+          >
+            <div class="flex items-center gap-3 truncate">
+              <svg
+                class="w-8 h-8 text-blue-500 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span
+                class="font-semibold text-sm truncate text-gray-700 dark:text-gray-300"
+                >{{ selectedDocument.name }}</span
+              >
+            </div>
+            <button
+              @click="removeSelectedDocument"
+              class="p-1.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors flex-shrink-0"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
           <transition name="fade">
             <div
-              v-if="newPostContent.trim() || selectedImage"
+              v-if="
+                (newPostContent.trim() || selectedImage || selectedDocument) &&
+                activeFeedTab === 'main'
+              "
               class="relative mt-2 h-24 flex items-center justify-center overflow-hidden -ml-16"
             >
               <div
@@ -204,6 +296,7 @@
                 class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth"
                 @scroll="handleComposerScroll"
               >
+                <!-- Kategori Seçici Sadece Ana Akışta Görünür -->
                 <div
                   v-for="(item, index) in allItems"
                   :key="index"
@@ -294,6 +387,7 @@
               <button
                 @click="imageInputRef?.click()"
                 class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all"
+                title="Görsel Ekle"
               >
                 <svg
                   class="w-5 h-5"
@@ -309,6 +403,37 @@
                   />
                 </svg>
               </button>
+
+              <!-- Döküman Yükleme Butonu (Sadece Akademik Akışta) -->
+              <template v-if="activeFeedTab === 'academic'">
+                <input
+                  type="file"
+                  ref="docInputRef"
+                  class="hidden"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx"
+                  @change="handleDocSelect"
+                />
+                <button
+                  @click="docInputRef?.click()"
+                  class="p-2.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all"
+                  title="Döküman Ekle (PDF, Word, vs.)"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </button>
+              </template>
+
               <EmojiPicker
                 :modelValue="newPostContent"
                 @update:modelValue="(e) => (newPostContent += e)"
@@ -316,7 +441,7 @@
             </div>
 
             <div class="flex items-center gap-4">
-              <!-- Animated Character Counter (Next to Button) -->
+              <!-- Animated Character Counter -->
               <transition name="scale-fade">
                 <div
                   v-if="newPostContent.length > 0"
@@ -394,6 +519,7 @@
 
     <!-- ANA KATEGORİ ÇARKI (Artık en üstte sticky: top-0) -->
     <div
+      v-if="activeFeedTab === 'main'"
       class="sticky top-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden"
     >
       <div
@@ -527,9 +653,53 @@ const selectedImagePreview = ref<string | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
+const activeFeedTab = computed({
+  get: () => postsStore.activeFeedTab,
+  set: (val) => (postsStore.activeFeedTab = val),
+});
+
+const switchTab = (tab: 'main' | 'academic') => {
+  activeFeedTab.value = tab;
+  postsStore.posts = []; // Geçiş yaparken listeyi temizle
+  postsStore.resetCategory(); // Kategori filtresini temizle
+
+  if (tab === 'main') {
+    postsStore.fetchPosts(authStore.user?.id);
+    // Kategori çarkını "Akış"a (ortaya) geri çek
+    nextTick(() => {
+      const idx = allItems.value.findIndex((i) => i.id === null);
+      if (idx !== -1) centerCarouselItem(idx);
+    });
+  } else {
+    postsStore.fetchAcademicPosts(authStore.user?.id);
+  }
+};
+
+
+const canPostToAcademic = computed(() => {
+  return (
+    authStore.user?.role === "ADMIN" || authStore.user?.role === "ACADEMIC"
+  );
+});
+
 const mentionUsers = ref<any[]>([]);
 const showMentions = ref(false);
 const mentionPos = ref({ x: 0, y: 0 });
+
+const selectedDocument = ref<File | null>(null);
+const docInputRef = ref<HTMLInputElement | null>(null);
+
+const handleDocSelect = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (file) {
+    selectedDocument.value = file;
+  }
+};
+
+const removeSelectedDocument = () => {
+  selectedDocument.value = null;
+  if (docInputRef.value) docInputRef.value.value = "";
+};
 
 const adjustTextareaHeight = () => {
   const el = textareaRef.value;
@@ -692,23 +862,36 @@ const removeSelectedImage = () => {
   if (imageInputRef.value) imageInputRef.value.value = "";
 };
 const handleCreatePost = async () => {
-  if (!newPostContent.value.trim() && !selectedImage.value) return;
+  if (
+    !newPostContent.value.trim() &&
+    !selectedImage.value &&
+    !selectedDocument.value
+  )
+    return;
   try {
+    const isAcademicPost =
+      activeFeedTab.value === "academic" && canPostToAcademic.value;
+
     await postsStore.createPost(
       newPostContent.value,
       true,
-      selectedCategoryId.value || undefined,
+      isAcademicPost ? undefined : selectedCategoryId.value || undefined,
       selectedImage.value || undefined,
+      undefined, // parentId
+      isAcademicPost,
+      selectedDocument.value || undefined,
     );
+
     newPostContent.value = "";
     selectedCategoryId.value = null;
     removeSelectedImage();
+    removeSelectedDocument();
     nextTick(adjustTextareaHeight);
     toast.success("Paylaşıldı!");
   } catch (err: any) {
     // Store zaten error.response.data'yı fırlattığı için direkt içindeki message'a bakıyoruz
-    const msg = err.message || (err.response?.data?.message);
-    toast.error(Array.isArray(msg) ? msg[0] : (msg || "Hata!"));
+    const msg = err.message || err.response?.data?.message;
+    toast.error(Array.isArray(msg) ? msg[0] : msg || "Hata!");
   }
 };
 
@@ -785,7 +968,7 @@ const submitReport = async (sub: string) => {
     toast.warning("Bildirildi.");
   } catch (err: any) {
     const msg = err.response?.data?.message;
-    toast.error(Array.isArray(msg) ? msg[0] : (msg || "Hata!"));
+    toast.error(Array.isArray(msg) ? msg[0] : msg || "Hata!");
   } finally {
     closeReport();
   }
@@ -803,7 +986,14 @@ const handleShowComments = (id: number) => {
 
 onMounted(() => {
   postsStore.resetCategory();
-  postsStore.fetchPosts(authStore.user?.id);
+
+  // Persist tab logic
+  if (activeFeedTab.value === "academic") {
+    postsStore.fetchAcademicPosts(authStore.user?.id);
+  } else {
+    postsStore.fetchPosts(authStore.user?.id);
+  }
+
   categoriesStore.fetchCategories().then(() => {
     setTimeout(() => {
       const idx = allItems.value.findIndex((i) => i.id === null);

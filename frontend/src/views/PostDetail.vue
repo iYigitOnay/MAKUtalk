@@ -26,7 +26,14 @@
       </div>
 
       <!-- 2. MAIN POST -->
-      <article class="p-4 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-white/[0.05]">
+      <article 
+        class="p-4 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-white/[0.05] relative overflow-hidden" 
+        :class="{
+          'academic-unread shadow-sm z-10': post.isAcademic && !post.isLiked
+        }"
+      >
+        <!-- Academic Decorative Pattern - Subtle watermark style -->
+        <div v-if="post.isAcademic && !post.isLiked" class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full -mr-32 -mt-32 blur-[100px] pointer-events-none"></div>
         <!-- Author Info -->
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-3">
@@ -59,23 +66,26 @@
             </div>
           </div>
 
-          <div class="relative">
-            <button @click="showPostMenu = !showPostMenu" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-all">
-              <component :is="getBadgeComponent('more-vertical')" class="w-5 h-5" />
-            </button>
-            <div v-if="showPostMenu" class="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl z-[100] py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              <button @click="handleCopyLink" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2.5">
-                <component :is="getBadgeComponent('link')" class="w-4 h-4 text-gray-400" /> Bağlantıyı Kopyala
+          <div class="flex items-center gap-2">
+            <span v-if="post.isAcademic" class="px-2 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 text-[9px] font-black rounded-lg uppercase tracking-wider border border-emerald-200 dark:border-emerald-800">AKADEMİK DUYURU</span>
+            <div class="relative">
+              <button @click="showPostMenu = !showPostMenu" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-all">
+                <component :is="getBadgeComponent('more-vertical')" class="w-5 h-5" />
               </button>
-              <button @click="openReportModal(post.id)" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2.5">
-                <component :is="getBadgeComponent('alert-triangle')" class="w-4 h-4" /> Şikayet Et
-              </button>
-              <button v-if="isAdmin" @click="handleRefreshAI" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2.5">
-                <component :is="getBadgeComponent('sparkles')" class="w-4 h-4" /> AI Yenile
-              </button>
-              <button v-if="isOwner || isAdmin" @click="openDeletePost(post.id)" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5">
-                <component :is="getBadgeComponent('trash-2')" class="w-4 h-4" /> Gönderiyi Sil
-              </button>
+              <div v-if="showPostMenu" class="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl z-[100] py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                <button @click="handleCopyLink" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2.5">
+                  <component :is="getBadgeComponent('link')" class="w-4 h-4 text-gray-400" /> Bağlantıyı Kopyala
+                </button>
+                <button @click="openReportModal(post.id)" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2.5">
+                  <component :is="getBadgeComponent('alert-triangle')" class="w-4 h-4" /> Şikayet Et
+                </button>
+                <button v-if="isAdmin" @click="handleRefreshAI" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2.5">
+                  <component :is="getBadgeComponent('sparkles')" class="w-4 h-4" /> AI Yenile
+                </button>
+                <button v-if="isOwner || isAdmin" @click="openDeletePost(post.id)" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5">
+                  <component :is="getBadgeComponent('trash-2')" class="w-4 h-4" /> Gönderiyi Sil
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -95,20 +105,65 @@
           <img :src="getImageUrl(post.imageUrl)" class="w-full h-auto max-h-[550px] object-cover" />
         </div>
 
+        <!-- Document Attachment (Academic) -->
+        <div v-if="post.documentUrl" class="mb-4">
+          <a 
+            :href="getImageUrl(post.documentUrl)" 
+            target="_blank" 
+            download 
+            class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group overflow-hidden relative"
+          >
+            <!-- Extension-based Background Accent -->
+            <div 
+              class="absolute left-0 top-0 w-1 h-full"
+              :class="{
+                'bg-red-500': getFileExt(post.documentUrl) === 'pdf',
+                'bg-blue-500': ['doc', 'docx'].includes(getFileExt(post.documentUrl)),
+                'bg-green-500': ['xls', 'xlsx'].includes(getFileExt(post.documentUrl)),
+                'bg-orange-500': !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(getFileExt(post.documentUrl))
+              }"
+            ></div>
+
+            <div 
+              class="p-2 rounded-lg group-hover:scale-110 transition-transform"
+              :class="{
+                'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400': getFileExt(post.documentUrl) === 'pdf',
+                'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400': ['doc', 'docx'].includes(getFileExt(post.documentUrl)),
+                'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400': ['xls', 'xlsx'].includes(getFileExt(post.documentUrl)),
+                'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400': !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(getFileExt(post.documentUrl))
+              }"
+            >
+              <component :is="getBadgeComponent(getFileExt(post.documentUrl) === 'pdf' ? 'file-text' : 'file')" class="w-6 h-6" />
+            </div>
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-black text-gray-900 dark:text-white truncate">
+                {{ getFileName(post.documentUrl) }}
+              </p>
+              <p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">
+                {{ getFileExt(post.documentUrl) }} Dökümanı · İndirmek için tıklayın
+              </p>
+            </div>
+            <component :is="getBadgeComponent('download')" class="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors" />
+          </a>
+        </div>
+
         <div class="flex items-center gap-2 text-[11px] font-bold text-gray-400 border-b border-gray-50 dark:border-white/[0.03] pb-4 mb-4 px-1">
           <span>{{ formatDate(post.createdAt, true) }}</span>
           <span class="opacity-30">·</span>
-          <span class="text-blue-600 font-black">MAKU Talk</span>
+          <span :class="post.isAcademic ? 'text-emerald-600' : 'text-blue-600'" class="font-black">{{ post.isAcademic ? 'MAKU Akademik' : 'MAKU Talk' }}</span>
         </div>
 
         <div class="flex items-center justify-between px-2">
-          <button @click="handleLike" class="flex items-center gap-2 group" :class="post.isLiked ? 'text-red-600' : 'text-gray-500'">
-            <div class="p-2 rounded-full group-hover:bg-red-50 dark:group-hover:bg-red-900/20 transition-all">
-              <component :is="getBadgeComponent('heart')" class="w-5 h-5 transition-transform group-active:scale-125" :class="post.isLiked ? 'fill-red-600' : 'fill-none'" />
+          <!-- LIKE / OKUDUM -->
+          <button @click="handleLike" class="flex items-center gap-2 group transition-all" :class="[post.isLiked ? (post.isAcademic ? 'text-emerald-600' : 'text-red-600') : 'text-gray-500']">
+            <div class="p-2 rounded-full transition-all" :class="post.isAcademic ? 'group-hover:bg-emerald-50 dark:group-hover:bg-emerald-900/20' : 'group-hover:bg-red-50 dark:group-hover:bg-red-900/20'">
+              <component v-if="post.isAcademic" :is="getBadgeComponent('check-circle')" class="w-5 h-5 transition-transform group-active:scale-125" :class="post.isLiked ? 'text-emerald-600' : ''" />
+              <component v-else :is="getBadgeComponent('heart')" class="w-5 h-5 transition-transform group-active:scale-125" :class="post.isLiked ? 'fill-red-600' : 'fill-none'" />
             </div>
             <span class="text-xs font-black">{{ post._count?.likes || 0 }}</span>
           </button>
 
+          <!-- COMMENT -->
           <button @click="focusCommentInput" class="flex items-center gap-2 group text-gray-500 hover:text-blue-600 transition-all">
             <div class="p-2 rounded-full group-hover:bg-blue-50 dark:group-hover:bg-blue-900/20 transition-all">
               <component :is="getBadgeComponent('message-square')" class="w-5 h-5 transition-transform group-active:scale-125" />
@@ -116,7 +171,13 @@
             <span class="text-xs font-black">{{ post._count?.replies || 0 }}</span>
           </button>
 
-          <button @click="handleRepost" class="flex items-center gap-2 group" :class="post.isReposted ? 'text-green-600' : 'text-gray-500'">
+          <!-- REPOST / KAYDET -->
+          <button v-if="post.isAcademic" @click="handleBookmark" class="flex items-center gap-2 group transition-all" :class="post.isBookmarked ? 'text-yellow-600' : 'text-gray-500'">
+            <div class="p-2 rounded-full group-hover:bg-yellow-50 dark:group-hover:bg-yellow-900/20 transition-all">
+              <component :is="getBadgeComponent('bookmark')" class="w-5 h-5 transition-transform group-active:scale-125" :class="post.isBookmarked ? 'fill-yellow-600' : 'fill-none'" />
+            </div>
+          </button>
+          <button v-else @click="handleRepost" class="flex items-center gap-2 group" :class="post.isReposted ? 'text-green-600' : 'text-gray-500'">
             <div class="p-2 rounded-full group-hover:bg-green-50 dark:group-hover:bg-green-900/20 transition-all">
               <component :is="getBadgeComponent('repeat')" class="w-5 h-5 transition-transform group-active:scale-125" />
             </div>
@@ -361,6 +422,14 @@ const handleRepost = async () => {
   } catch { toast.error("Hata!"); }
 };
 
+const handleBookmark = async () => {
+  if (!post.value || !authStore.isAuthenticated) return;
+  try {
+    const res = await postsStore.toggleBookmark(post.value.id);
+    if (res.bookmarked) toast.success("Kaydedildi! 🔖");
+  } catch { toast.error("Hata!"); }
+};
+
 const handleRefreshAI = async () => {
   if (!post.value) return;
   try {
@@ -459,6 +528,17 @@ const getImageUrl = (path: string) => {
   return `${apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
+const getFileExt = (path: string) => {
+  if (!path) return "";
+  return path.split(".").pop()?.toLowerCase() || "";
+};
+
+const getFileName = (path: string) => {
+  if (!path) return "Döküman";
+  const parts = path.split("-");
+  return parts.length > 2 ? parts.slice(2).join("-") : "Ekli Döküman";
+};
+
 // DELETE LOGIC
 const deleteTarget = ref<number | null>(null);
 const showDeleteConfirm = ref(false);
@@ -500,4 +580,43 @@ watch(() => route.params.id, fetchThread);
 .scale-fade-enter-from, .scale-fade-leave-to { opacity: 0; transform: scale(0.8); }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.2s; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+.academic-unread {
+  position: relative;
+  background-color: rgba(16, 185, 129, 0.03);
+}
+
+.dark .academic-unread {
+  background-color: rgba(16, 185, 129, 0.02);
+}
+
+.academic-unread::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background-color: #059669;
+  z-index: 20;
+  animation: emerald-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.dark .academic-unread::before {
+  background-color: #10b981;
+}
+
+@keyframes emerald-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 2px 0 10px rgba(16, 185, 129, 0.3);
+    width: 4px;
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 4px 0 20px rgba(16, 185, 129, 0.5);
+    width: 5px;
+  }
+}
 </style>

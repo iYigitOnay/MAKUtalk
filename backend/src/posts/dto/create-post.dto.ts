@@ -25,4 +25,9 @@ export class CreatePostDto {
   @IsOptional()
   @Type(() => Number)
   parentId?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  @Transform(({ value }) => value === 'true' || value === true)
+  isAcademic?: boolean;
 }
