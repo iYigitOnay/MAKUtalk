@@ -192,6 +192,7 @@ export class PostsService {
         categoryId, 
         published: true,
         isDeleted: false,
+        parentId: null, // Sadece ana postlar
         OR: [
           { author: { isPrivate: false } },
           { authorId: userId },

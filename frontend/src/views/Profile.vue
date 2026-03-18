@@ -16,15 +16,15 @@
     <template v-else-if="displayedUser">
       <!-- Profile Header -->
       <div class="relative">
-        <div class="h-32 sm:h-48 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-primary-700 dark:to-primary-800 rounded-t-xl overflow-hidden shadow-lg">
-          <img v-if="displayedUser.coverUrl" :src="getImageUrl(displayedUser.coverUrl)" alt="Cover" class="w-full h-full object-cover" />
+        <div class="h-32 sm:h-48 bg-gradient-to-r from-blue-500 to-indigo-600 dark:from-primary-700 dark:to-primary-800 rounded-t-xl overflow-hidden shadow-lg group">
+          <img v-if="displayedUser.coverUrl" :src="getImageUrl(displayedUser.coverUrl)" alt="Cover" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
         </div>
         <button v-if="isMyProfile" @click="showEditModal = true" class="absolute top-3 right-3 px-3 py-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full text-[10px] sm:text-sm font-bold backdrop-blur-sm transition-all z-10">
           Profili Düzenle
         </button>
         <div class="absolute -bottom-10 sm:-bottom-16 left-4 sm:left-6">
-          <div @click="displayedUser.avatarUrl ? (showAvatarZoom = true) : null" class="relative group p-1 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 shadow-xl overflow-hidden" :class="[displayedUser.avatarUrl ? 'cursor-pointer' : '']">
-            <img v-if="displayedUser.avatarUrl" :src="getImageUrl(displayedUser.avatarUrl)" alt="Avatar" class="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-950 object-cover" :class="{'grayscale opacity-50': displayedUser.isBanned}"/>
+          <div @click="displayedUser.avatarUrl ? (showAvatarZoom = true) : null" class="relative group p-1 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 shadow-xl overflow-hidden transition-transform duration-300 hover:scale-105 active:scale-95" :class="[displayedUser.avatarUrl ? 'cursor-pointer' : '']">
+            <img v-if="displayedUser.avatarUrl" :src="getImageUrl(displayedUser.avatarUrl)" alt="Avatar" class="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-950 object-cover transition-all duration-300 group-hover:brightness-110" :class="{'grayscale opacity-50': displayedUser.isBanned}"/>
             <div v-else class="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-950 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
               <span class="text-white font-bold text-2xl sm:text-4xl">{{ userInitials }}</span>
             </div>
@@ -169,6 +169,27 @@
     <FollowListModal :is-open="showFollowModal" :user-id="displayedUser?.id || 0" :type="followModalType" @close="showFollowModal = false" />
     <DeleteConfirmModal :is-open="showDeleteModal" :loading="isDeleting" title="Gönderiyi Sil?" message="Bu işlem geri alınamaz. İçerik tamamen kaldırılacaktır." confirm-text="SİL" variant="danger" @confirm="handleConfirmDelete" @cancel="showDeleteModal = false" />
     <DeleteConfirmModal :is-open="showAdminDeleteModal" :loading="isAdminDeleting" title="Kullanıcıyı Sil?" message="DİKKAT: Bu işlem geri alınamaz! Kullanıcı ve tüm verileri kalıcı olarak silinecektir." confirm-text="KALICI OLARAK SİL" variant="danger" @confirm="executeAdminDelete" @cancel="showAdminDeleteModal = false" />
+
+    <!-- AVATAR ZOOM MODAL -->
+    <Teleport to="body">
+      <transition name="fade">
+        <div v-if="showAvatarZoom && displayedUser?.avatarUrl" 
+             class="fixed inset-0 z-[1000] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 cursor-zoom-out"
+             @click="showAvatarZoom = false">
+          
+          <!-- Close Button - Fixed to Screen Corner -->
+          <button @click="showAvatarZoom = false" 
+                  class="fixed top-6 right-6 p-3 bg-white/10 hover:bg-white/20 text-white rounded-full transition-all backdrop-blur-md border border-white/10 z-[1010] shadow-2xl active:scale-90">
+            <component :is="getBadgeComponent('x')" class="w-6 h-6" />
+          </button>
+
+          <div class="relative max-w-2xl w-full flex items-center justify-center animate-in zoom-in-95 duration-300" @click.stop>
+            <img :src="getImageUrl(displayedUser.avatarUrl)" 
+                 class="max-w-full max-h-[85vh] rounded-2xl shadow-2xl border border-white/10 object-contain shadow-black/50" />
+          </div>
+        </div>
+      </transition>
+    </Teleport>
 
     <!-- GLOBAL REPORT MODAL -->
     <Teleport to="body">
