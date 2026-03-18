@@ -37,7 +37,7 @@
       </div>
 
       <!-- Profile Info Section -->
-      <div class="bg-white dark:bg-gray-900/40 rounded-b-xl border-x border-b border-slate-200 dark:border-primary-900/30 pt-12 sm:pt-20 px-4 sm:px-6 pb-6 shadow-sm">
+      <div class="bg-white dark:bg-gray-950/40 rounded-b-xl border-x border-b border-slate-200 dark:border-primary-900/30 pt-12 sm:pt-20 px-4 sm:px-6 pb-6 shadow-sm">
         <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
           <div class="min-w-0">
             <div class="flex flex-wrap items-center gap-2 mb-1">

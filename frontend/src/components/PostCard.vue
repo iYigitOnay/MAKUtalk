@@ -2,7 +2,7 @@
 <template>
   <div
     v-if="displayPost"
-    class="bg-white dark:bg-gray-950/40 hover:bg-gray-50 dark:hover:bg-gray-900/70 transition-all duration-500 cursor-default border-b border-gray-200 dark:border-primary-900/20 relative overflow-hidden"
+    class="bg-white dark:bg-gray-950/40 hover:bg-gray-50 dark:hover:bg-gray-900/60 transition-all duration-500 cursor-default border-b border-gray-200 dark:border-primary-900/20 relative overflow-hidden"
     :class="[
       isThreadParent ? 'border-none' : '', 
       (displayPost.isAcademic && !displayPost.isLiked) 
