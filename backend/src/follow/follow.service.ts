@@ -16,7 +16,6 @@ export class FollowService {
     private notificationsService: NotificationsService,
   ) {}
 
-  // YARDIMCI: Takipleşme sonrası sohbet kilitlerini aç
   private async autoAcceptConversations(userA: number, userB: number) {
     await this.prisma.conversation.updateMany({
       where: {

@@ -1,69 +1,40 @@
+<!-- src/views/CampusAnalysis.vue -->
 <template>
-  <div
-    class="min-h-screen bg-[#050505] text-slate-400 font-sans selection:bg-blue-500/30 antialiased overflow-x-hidden flex flex-col relative text-left"
-  >
+  <div class="min-h-screen bg-[#050505] text-slate-400 font-sans selection:bg-blue-500/30 antialiased overflow-x-hidden flex flex-col relative text-left">
     <!-- ZEMİN DOKUSU -->
-    <div
-      class="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"
-    ></div>
+    <div class="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"></div>
 
-    <!-- YÜZEN DOCK MENÜ (Global Zaman Kontrolüyle) -->
-    <header
-      class="fixed top-4 md:top-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-50 transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] w-full md:max-w-fit px-4"
-    >
-      <nav
-        class="bg-[#0A0A0C]/90 backdrop-blur-2xl border border-white/[0.04] rounded-2xl md:rounded-full p-1.5 flex flex-col md:flex-row items-center shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden"
-      >
+    <!-- YÜZEN DOCK MENÜ -->
+    <header class="fixed top-4 md:top-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-50 transition-all duration-700 w-full md:max-w-fit px-4">
+      <nav class="bg-[#0A0A0C]/90 backdrop-blur-2xl border border-white/[0.04] rounded-2xl md:rounded-full p-1.5 flex flex-col md:flex-row items-center shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden">
         <div class="flex items-center w-full md:w-auto">
-          <!-- Logo & İkon -->
-          <div
-            class="flex items-center px-3 md:px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mr-2 md:mr-3 ml-1 group cursor-default hover:bg-white/[0.06] transition-all duration-500 text-left flex-shrink-0"
-          >
-            <div
-              class="w-6 h-6 md:w-7 md:h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20 mr-2 md:mr-3 group-hover:rotate-[15deg] transition-transform duration-500"
-            >
-              <svg class="w-3.5 h-3.5 md:w-4 md:h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
+          <!-- Logo -->
+          <div class="flex items-center px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mr-3 group cursor-default ml-1">
+            <div class="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3 group-hover:rotate-[15deg] transition-transform">
+              <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
             </div>
             <div class="flex flex-col items-start leading-none text-left">
-              <span class="text-[9px] md:text-[10px] font-black text-white tracking-[0.2em] uppercase opacity-90 leading-none">MAKÜ</span>
-              <span class="text-[6px] md:text-[7px] font-black text-blue-400 tracking-widest uppercase mt-1 opacity-60 leading-none">ANALİZ MERKEZİ</span>
+              <span class="text-[10px] font-black text-white tracking-[0.2em] uppercase">MAKÜ</span>
+              <span class="text-[7px] font-black text-blue-400 tracking-widest uppercase mt-1 opacity-60">ANALİZ</span>
             </div>
           </div>
 
-          <!-- Menü Butonları (Kaydırılabilir Konteyner) -->
-          <div class="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar px-2 md:px-0">
-            <button
-              v-for="m in menuItems"
-              :key="m.id"
-              @click="activeTab = m.id"
-              :class="[
-                'h-9 md:h-10 rounded-full flex items-center justify-center transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative group flex-shrink-0',
-                activeTab === m.id ? 'px-4 md:px-5 text-white bg-white/[0.02]' : 'w-9 md:w-10 text-slate-500 hover:text-slate-200',
-              ]"
-            >
-              <component :is="m.icon" :class="['w-3.5 h-3.5 md:w-4 md:h-4 transition-all duration-500 relative z-10', activeTab === m.id ? 'text-blue-400' : '']" />
-              <span :class="['font-black uppercase tracking-[0.2em] text-[8px] md:text-[9px] overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] relative z-10', activeTab === m.id ? 'max-w-[120px] ml-2 opacity-100' : 'max-w-0 ml-0 opacity-0']">{{ m.label }}</span>
+          <!-- Menü Butonları -->
+          <div class="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar">
+            <button v-for="m in menuItems" :key="m.id" @click="activeTab = m.id" :class="['h-10 rounded-full flex items-center justify-center transition-all duration-500 relative group flex-shrink-0', activeTab === m.id ? 'px-5 text-white bg-white/[0.02]' : 'w-10 text-slate-500 hover:text-slate-200']">
+              <component :is="m.icon" :class="['w-4 h-4 transition-all', activeTab === m.id ? 'text-blue-400' : '']" />
+              <span :class="['font-black uppercase tracking-[0.2em] text-[9px] overflow-hidden transition-all duration-500', activeTab === m.id ? 'max-w-[120px] ml-2 opacity-100' : 'max-w-0 ml-0 opacity-0']">{{ m.label }}</span>
             </button>
           </div>
 
           <div class="hidden md:block w-px h-6 bg-white/[0.04] mx-3"></div>
-
-          <button @click="$router.push('/campus')" class="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center text-slate-500 flex-shrink-0">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-          </button>
+          <button @click="$router.push('/campus')" class="w-10 h-10 flex items-center justify-center text-slate-500"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg></button>
         </div>
 
-        <!-- GLOBAL ZAMAN SEÇİCİ (Mobilde Alt Satır) -->
+        <!-- ZAMAN SEÇİCİ -->
         <div class="flex md:contents">
           <div class="w-full md:w-auto mt-1 md:mt-0 flex bg-white/[0.02] p-1 rounded-full border border-white/[0.05] md:mr-2">
-            <button
-              v-for="t in timeOptions"
-              :key="t.id"
-              @click="interval = t.id; fetchAnalytics();"
-              :class="['flex-1 md:flex-none px-3 md:px-4 py-1.5 rounded-full text-[7px] md:text-[8px] font-black uppercase tracking-widest transition-all', interval === t.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300']"
-            >
+            <button v-for="t in timeOptions" :key="t.id" @click="interval = t.id; fetchAnalytics();" :class="['flex-1 px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all', interval === t.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300']">
               {{ t.label }}
             </button>
           </div>
@@ -71,665 +42,427 @@
       </nav>
     </header>
 
-    <main
-      class="flex-1 w-full max-w-[1400px] mx-auto px-8 pt-36 pb-24 relative z-10 text-left"
-    >
-      <!-- LOADING -->
-      <div
-        v-if="loading"
-        class="h-[60vh] flex flex-col items-center justify-center text-left text-left"
-      >
-        <div
-          class="w-10 h-10 rounded-full border-[2px] border-white/5 border-t-blue-500 animate-spin mb-6 text-left"
-        ></div>
-        <p
-          class="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse"
-        >
-          Sinyaller İşleniyor
-        </p>
+    <main class="flex-1 w-full max-w-[1400px] mx-auto px-8 pt-36 pb-24 relative z-10 text-left">
+      <div v-if="loading" class="h-[60vh] flex flex-col items-center justify-center">
+        <div class="w-10 h-10 rounded-full border-2 border-white/5 border-t-blue-500 animate-spin mb-6"></div>
+        <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">Sinyaller İşleniyor</p>
       </div>
 
-      <div
-        v-else
-        class="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000 text-left"
-      >
-        <!-- ÜST PANEL -->
-        <section class="flex items-end justify-between px-2 text-left">
-          <div class="space-y-1 text-left text-left">
-            <h2
-              class="text-3xl font-black text-white uppercase italic tracking-tighter leading-none text-left"
-            >
-              {{ activeTabLabel }}
-              <span
-                class="text-blue-600 text-sm tracking-[0.2em] ml-4 font-black not-italic opacity-60"
-                >/ {{ currentIntervalLabel }} ANALİZİ</span
-              >
-            </h2>
-            <p
-              class="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]"
-            >
-              Kampüs verileri anlık olarak işlenmektedir
-            </p>
-          </div>
-        </section>
+      <div v-else class="space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <header class="px-2">
+          <h2 class="text-3xl font-black text-white uppercase italic tracking-tighter leading-none">
+            {{ activeTabLabel }} <span class="text-blue-600 text-sm tracking-[0.2em] ml-4 font-black not-italic opacity-60">/ {{ currentIntervalLabel }}</span>
+          </h2>
+          <p class="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em] mt-1">MAKÜ Kampüs Dinamikleri</p>
+        </header>
 
-        <!-- 1. MODÜL: ÖZET -->
-        <div v-if="activeTab === 'GENEL'" class="space-y-12 text-left">
-          <section
-            class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5 text-left text-left"
-          >
-            <div
-              v-for="(stat, i) in extendedStats"
-              :key="i"
-              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[1.5rem] p-6 hover:border-white/[0.08] transition-all duration-500 flex flex-col justify-between h-[135px] group relative overflow-hidden text-left text-left"
-            >
-              <div
-                class="absolute -right-4 -top-4 w-16 h-16 bg-blue-500/5 rounded-full blur-xl group-hover:scale-150 transition-transform duration-700 text-left text-left"
-              ></div>
-              <div
-                class="flex items-center justify-between relative z-10 text-left text-left"
-              >
-                <p
-                  class="text-[9px] font-black text-slate-500 uppercase tracking-widest opacity-60 group-hover:opacity-100 transition-opacity text-left text-left text-left text-left text-left"
-                >
-                  {{ stat.label }}
-                </p>
-                <component
-                  :is="stat.icon"
-                  class="w-3.5 h-3.5 text-slate-600 group-hover:text-blue-400 transition-colors"
-                />
-              </div>
-              <h4
-                class="text-3xl font-medium text-white tracking-tighter tabular-nums relative z-10 text-left text-left"
-              >
-                {{ stat.value }}
-              </h4>
+        <!-- GENEL -->
+        <div v-if="activeTab === 'GENEL'" class="space-y-12">
+          <section class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-5">
+            <div v-for="(stat, i) in summaryStats" :key="i" class="bg-[#0A0A0C] border border-white/[0.03] rounded-[1.5rem] p-6 h-[130px] flex flex-col justify-between group relative overflow-hidden">
+              <div class="absolute -right-4 -top-4 w-16 h-16 bg-blue-500/5 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+              <p class="text-[9px] font-black text-slate-500 uppercase tracking-widest relative z-10">{{ stat.label }}</p>
+              <h4 class="text-3xl font-medium text-white tracking-tighter relative z-10 tabular-nums">{{ stat.value }}</h4>
             </div>
           </section>
 
-          <div
-            class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] p-10 lg:p-14 relative overflow-hidden group shadow-2xl text-left text-left"
-          >
-            <div
-              class="absolute -top-32 -right-32 w-[500px] h-[500px] bg-blue-600/[0.04] rounded-full blur-[120px] animate-pulse text-left text-left text-left"
-            ></div>
-            <div
-              class="relative z-10 flex flex-col md:flex-row items-center gap-12 text-left text-left text-left text-left"
-            >
-              <div
-                class="w-20 h-20 bg-white/[0.02] border border-white/[0.05] rounded-3xl flex items-center justify-center text-blue-500 shadow-inner text-4xl text-left text-left text-left text-left"
-              >
-                🤖
-              </div>
-              <div
-                class="space-y-5 flex-1 text-left text-left text-left text-left"
-              >
-                <span
-                  class="px-3 py-1 bg-blue-500 text-white text-[8px] font-black rounded-md uppercase tracking-widest text-left text-left"
-                  >YAPAY ZEKA YORUMU</span
-                >
-                <h2
-                  class="text-xl sm:text-2xl font-medium text-slate-200 italic tracking-tight leading-snug max-w-3xl text-left text-left"
-                >
-                  "{{ data?.aiSummary || "Analiz motoru veri bekliyor..." }}"
-                </h2>
+          <!-- AI Özet -->
+          <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] p-10 relative overflow-hidden group shadow-2xl">
+            <div class="absolute -top-32 -right-32 w-[500px] h-[500px] bg-blue-600/[0.04] rounded-full blur-[120px]"></div>
+            <div class="relative z-10 flex flex-col md:flex-row items-center gap-12 text-left">
+              <div class="w-20 h-20 bg-white/[0.02] border border-white/[0.05] rounded-3xl flex items-center justify-center text-4xl text-blue-500">🤖</div>
+              <div class="space-y-4 flex-1">
+                <span class="px-3 py-1 bg-blue-500 text-white text-[8px] font-black rounded-md uppercase tracking-widest">AI KAMPÜS ÖZETİ</span>
+                <h2 class="text-xl sm:text-2xl font-medium text-slate-200 italic tracking-tight leading-snug">"{{ campusStore.analytics?.aiSummary || 'Analiz motoru veri bekliyor...' }}"</h2>
               </div>
             </div>
           </div>
 
-          <section
-            class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] overflow-hidden text-left shadow-2xl text-left text-left text-left text-left"
-          >
-            <div
-              class="p-8 border-b border-white/[0.02] flex justify-between items-center bg-white/[0.01] text-left text-left text-left text-left text-left text-left"
-            >
-              <h3
-                class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-left text-left text-left text-left"
-              >
-                Haftanın En Aktif Öğrencileri
-              </h3>
-            </div>
-            <div
-              class="overflow-x-auto text-left text-left text-left text-left text-left"
-            >
-              <table
-                v-if="data?.topUsers?.length"
-                class="w-full text-left text-left text-left text-left"
-              >
-                <thead>
-                  <tr
-                    class="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] border-b border-white/[0.02] text-left text-left text-left text-left text-left"
-                  >
-                    <th
-                      class="py-6 px-10 text-left text-left text-left text-left text-left"
-                    >
-                      Öğrenci Profili
-                    </th>
-                    <th
-                      class="py-6 px-10 text-center text-left text-left text-left text-left text-left text-left"
-                    >
-                      Paylaşım Sayısı
-                    </th>
-                    <th
-                      class="py-6 px-10 text-right text-left text-left text-left text-left text-left text-left text-left text-left"
-                    >
-                      Durum
-                    </th>
-                  </tr>
-                </thead>
-                <tbody
-                  class="divide-y divide-white/[0.02] text-left text-left text-left text-left text-left"
-                >
-                  <tr
-                    v-for="u in data.topUsers"
-                    :key="u.username"
-                    class="hover:bg-white/[0.01] transition-colors duration-500 group text-left text-left text-left text-left text-left text-left"
-                  >
-                    <td
-                      class="py-6 px-10 text-left text-left text-left text-left text-left"
-                    >
-                      <div
-                        class="flex items-center gap-5 text-left text-left text-left text-left text-left text-left"
-                      >
-                        <div
-                          class="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.05] overflow-hidden group-hover:scale-110 transition-all duration-500 text-left text-left text-left text-left text-left text-left"
-                        >
-                          <img
-                            v-if="u.avatarUrl"
-                            :src="getAvatarUrl(u.avatarUrl)"
-                            class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-all duration-700"
-                          />
-                          <div
-                            v-else
-                            class="w-full h-full flex items-center justify-center text-xs font-black text-slate-600 uppercase"
-                          >
-                            {{ u.username.charAt(0) }}
-                          </div>
-                        </div>
-                        <div
-                          class="flex flex-col text-left text-left text-left text-left text-left text-left"
-                        >
-                          <span
-                            class="text-sm font-medium text-white tracking-tight leading-none mb-1.5 text-left text-left"
-                            >@{{ u.username }}</span
-                          >
-                          <span
-                            class="text-[9px] font-black text-slate-600 uppercase tracking-widest text-left text-left text-left text-left text-left"
-                            >{{ u.fullName || "Öğrenci" }}</span
-                          >
-                        </div>
-                      </div>
-                    </td>
-                    <td class="py-6 px-10 text-center">
-                      <span
-                        class="text-xl font-medium text-slate-200 tabular-nums"
-                        >{{ u._count.posts }}</span
-                      >
-                    </td>
-                    <td class="py-6 px-10 text-right">
-                      <div
-                        class="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-500/5 text-blue-400 text-[8px] font-black rounded-full uppercase border border-blue-500/10 tracking-[0.1em]"
-                      >
-                        <div
-                          class="w-1 h-1 rounded-full bg-blue-500 animate-ping"
-                        ></div>
-                        Aktif
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <div
-                v-else
-                class="py-24 text-center text-slate-700 text-[10px] font-black uppercase tracking-[0.2em] italic opacity-40 text-left text-left text-left"
-              >
-                Veri bulunamadı.
+          <!-- En Aktif Öğrenciler -->
+          <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] p-10 shadow-2xl space-y-8">
+            <div class="flex items-center justify-between border-b border-white/[0.02] pb-6">
+              <div>
+                <h3 class="text-white font-medium text-2xl tracking-tight uppercase italic leading-none">Yıldız Üyeler</h3>
+                <p class="text-[10px] text-slate-600 uppercase font-black tracking-[0.2em] mt-2">Dönemin En Aktif Paylaşımcıları</p>
               </div>
+              <span class="px-4 py-2 bg-white/[0.02] border border-white/[0.05] rounded-xl text-[9px] font-black text-blue-500 uppercase tracking-widest italic">{{ currentIntervalLabel }}</span>
             </div>
-          </section>
-        </div>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+              <div v-for="(user, idx) in campusStore.analytics?.social?.topUsers" :key="user.username" 
+                   class="flex flex-col items-center text-center p-6 bg-white/[0.01] border border-white/[0.03] rounded-[2rem] hover:bg-white/[0.03] hover:border-blue-500/20 transition-all group relative overflow-hidden">
+                <div class="absolute top-4 right-4 text-[20px] font-black text-white/5 italic select-none">#{{ idx + 1 }}</div>
+                
+                <div class="w-20 h-20 rounded-2xl overflow-hidden bg-white/[0.05] border border-white/[0.1] mb-4 relative">
+                  <img v-if="user.avatarUrl" :src="campusStore.getAvatarUrl(user.avatarUrl)" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                  <div v-else class="w-full h-full flex items-center justify-center text-2xl font-black text-slate-600">{{ user.username.charAt(0).toUpperCase() }}</div>
+                </div>
 
-        <!-- 2. MODÜL: SOSYAL (GÖNDERİ ANALİZİ) -->
-        <div
-          v-if="activeTab === 'SOSYAL'"
-          class="space-y-10 text-left text-left"
-        >
-          <div
-            class="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left text-left"
-          >
-            <div
-              class="lg:col-span-2 bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 flex flex-col h-[550px] shadow-2xl relative overflow-hidden text-left text-left text-left"
-            >
-              <div
-                class="flex items-center justify-between mb-10 text-left text-left text-left"
-              >
-                <div>
-                  <h3
-                    class="text-white font-medium text-xl tracking-tight leading-none mb-2"
-                  >
-                    Aktivite Akışı
-                  </h3>
-                  <p
-                    class="text-[10px] text-slate-600 uppercase font-black tracking-widest"
-                  >
-                    Paylaşım Yoğunluğu ({{ currentIntervalLabel }})
-                  </p>
-                </div>
-              </div>
-              <div class="flex-1 w-full text-left text-left text-left">
-                <apexchart
-                  type="bar"
-                  height="100%"
-                  :options="barChartOptions"
-                  :series="barChartSeries"
-                />
-              </div>
-            </div>
-            <div
-              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 flex flex-col items-center justify-center shadow-2xl text-left text-left"
-            >
-              <h3
-                class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-10"
-              >
-                Etkileşim Dengesi
-              </h3>
-              <div class="relative w-full aspect-square max-w-[220px]">
-                <apexchart
-                  type="donut"
-                  height="100%"
-                  :options="engagementDonutOptions"
-                  :series="engagementDonutSeries"
-                />
-                <div
-                  class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
-                >
-                  <span
-                    class="text-xs text-slate-600 font-black uppercase tracking-widest text-center"
-                    >Toplam</span
-                  >
-                  <span
-                    class="text-2xl font-black text-white tabular-nums text-left text-left"
-                    >{{ engagementTotal }}</span
-                  >
-                </div>
-              </div>
-              <div class="w-full mt-10 space-y-3">
-                <div
-                  v-for="item in engagementBreakdown"
-                  :key="item.label"
-                  class="flex items-center justify-between px-4 py-2 bg-white/[0.02] border border-white/[0.05] rounded-xl group hover:bg-white/[0.04] transition-colors text-left"
-                >
-                  <div class="flex items-center gap-3">
-                    <div
-                      class="w-2 h-2 rounded-full"
-                      :style="{ backgroundColor: item.color }"
-                    ></div>
-                    <span
-                      class="text-[10px] font-black text-slate-400 uppercase group-hover:text-white transition-colors"
-                      >{{ item.label }}</span
-                    >
+                <div class="space-y-1 w-full text-left">
+                  <h4 class="text-sm font-bold text-white truncate">{{ user.fullName || user.username }}</h4>
+                  <p class="text-[10px] text-slate-500 font-medium truncate italic mb-4">@{{ user.username }}</p>
+                  
+                  <div class="flex flex-col gap-2 pt-4 border-t border-white/[0.02]">
+                    <div class="flex items-center justify-between">
+                      <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest">PAYLAŞIM</span>
+                      <span class="text-[11px] font-black text-blue-500 tabular-nums">{{ user.postCount }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-[8px] font-black text-slate-600 uppercase tracking-widest">KATEGORİ</span>
+                      <span class="text-[9px] font-black text-white uppercase tracking-tighter truncate">{{ user.topCategory }}</span>
+                    </div>
                   </div>
-                  <span
-                    class="text-xs font-black text-white tabular-nums text-left text-left"
-                    >{{ item.value }}</span
-                  >
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          <!-- KAMPÜS NABZI -->
-          <div
-            class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 flex flex-col h-[450px] shadow-2xl relative overflow-hidden text-left text-left text-left text-left"
-          >
-            <div
-              class="flex items-center justify-between mb-10 text-left text-left text-left"
-            >
-              <div>
-                <h3
-                  class="text-white font-medium text-xl tracking-tight leading-none mb-2 text-left"
-                >
-                  Günlük Nabız
-                </h3>
-                <p
-                  class="text-[10px] text-slate-600 uppercase font-black tracking-widest text-left text-left"
-                >
-                  24 Saatlik Gönderi Dağılımı
-                </p>
-              </div>
+        <!-- SOSYAL -->
+        <div v-if="activeTab === 'SOSYAL'" class="space-y-10">
+          <!-- Üst Bilgi Kartları -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-6 flex flex-col justify-between h-[120px] shadow-xl group relative overflow-hidden">
+              <div class="absolute -right-2 -top-2 w-12 h-12 bg-blue-500/10 rounded-full blur-xl group-hover:scale-150 transition-transform"></div>
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest relative z-10">ZİRVE SAAT</span>
+              <div class="text-3xl font-medium italic tracking-tighter text-white relative z-10">{{ data?.social?.peakHour || '22:00' }}</div>
+              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10">En Aktif Zaman</p>
             </div>
-            <div class="flex-1 w-full text-left text-left">
-              <apexchart
-                type="area"
-                height="100%"
-                :options="pulseChartOptions"
-                :series="pulseChartSeries"
-              />
+
+            <div class="md:col-span-3 bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-6 flex flex-col justify-between h-[120px] shadow-xl group">
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">İÇERİK KARIŞIMI</span>
+              <div class="flex items-center gap-4 w-full">
+                <div class="flex-1 h-3 bg-white/5 rounded-full overflow-hidden flex">
+                  <div :style="{ width: (data?.social?.contentMix?.media / data?.summary?.totalPosts * 100 || 0) + '%' }" class="h-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)]" title="Medya"></div>
+                  <div :style="{ width: (data?.social?.contentMix?.docs / data?.summary?.totalPosts * 100 || 0) + '%' }" class="h-full bg-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.5)]" title="Döküman"></div>
+                  <div :style="{ width: (data?.social?.contentMix?.textOnly / data?.summary?.totalPosts * 100 || 0) + '%' }" class="h-full bg-slate-700" title="Sadece Metin"></div>
+                </div>
+                <div class="flex gap-4 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                  <div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Medya</div>
+                  <div class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div> Döküman</div>
+                </div>
+              </div>
+              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest">Paylaşımların Yapısı</p>
             </div>
           </div>
 
-          <!-- EN POPÜLER GÖNDERİLER -->
-          <section
-            class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] overflow-hidden shadow-2xl text-left text-left text-left text-left"
-          >
-            <div
-              class="p-8 border-b border-white/[0.02] bg-white/[0.01] text-left text-left text-left"
-            >
-              <h3
-                class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-left text-left"
-              >
-                En Yüksek Etkileşimli Gönderiler
-              </h3>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 flex flex-col items-center shadow-2xl">
+              <h3 class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-10">Kategori Dağılımı</h3>
+              <div class="w-full aspect-square max-w-[220px]">
+                <apexchart type="donut" height="100%" :options="categoryDonutOptions" :series="categoryDonutSeries" />
+              </div>
             </div>
-            <div class="overflow-x-auto text-left text-left text-left">
-              <table
-                v-if="data?.topPosts?.length"
-                class="w-full text-left text-left text-left"
-              >
+            <div class="lg:col-span-2 bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 h-[400px] shadow-2xl relative overflow-hidden group">
+              <!-- Grafikte Premium Arka Plan Efekti -->
+              <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px] group-hover:bg-blue-500/20 transition-all duration-1000"></div>
+              
+              <h3 class="text-white font-medium text-xl tracking-tight leading-none mb-2">Aktivite Akışı</h3>
+              <p class="text-[10px] text-slate-600 uppercase font-black tracking-widest mb-10">Paylaşım Yoğunluğu (Premium Analiz)</p>
+              <div class="flex-1 w-full h-[250px]">
+                <apexchart type="area" height="100%" :options="areaChartOptions" :series="areaChartSeries" />
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Kategoriler Tablosu -->
+            <section class="lg:col-span-2 bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] overflow-hidden shadow-2xl">
+              <div class="p-8 border-b border-white/[0.02]">
+                <h4 class="text-white font-medium tracking-tight">Kategori Performansı</h4>
+                <p class="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Görmek istediğin kategoriye tıkla</p>
+              </div>
+              <table class="w-full text-left">
                 <thead>
-                  <tr
-                    class="bg-gray-50/30 dark:bg-gray-800/30 font-black text-slate-600 uppercase tracking-widest border-b border-white/[0.02] text-left text-left text-left"
-                  >
-                    <th class="py-6 px-10 text-left">Yazar & Mesaj</th>
-                    <th class="py-6 px-10 text-center text-left">Beğeni</th>
-                    <th class="py-6 px-10 text-center text-left">Yorum</th>
-                    <th class="py-6 px-10 text-center text-left">Remakü</th>
-                    <th class="py-6 px-10 text-right text-left">Etki</th>
+                  <tr class="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] border-b border-white/[0.02]">
+                    <th class="py-6 px-10">Kategori Adı</th>
+                    <th class="py-6 px-10 text-center">Toplam</th>
+                    <th class="py-6 px-10 text-center">Etkileşim Skor</th>
+                    <th class="py-6 px-10 text-right">Durum</th>
                   </tr>
                 </thead>
-                <tbody
-                  class="divide-y divide-white/[0.02] text-left text-left text-left text-left"
-                >
-                  <tr
-                    v-for="p in data.topPosts"
-                    :key="p.id"
-                    class="hover:bg-white/[0.01] transition-colors group text-left text-left text-left"
-                  >
-                    <td class="py-6 px-10 max-w-md text-left text-left">
-                      <div class="flex flex-col space-y-1.5">
-                        <span
-                          class="text-sm font-medium text-white tracking-tight leading-none mb-1 text-left text-left text-left"
-                          >@{{ p.author.username }}</span
-                        ><span
-                          class="text-[11px] text-slate-500 italic line-clamp-2 leading-relaxed text-left text-left text-left text-left"
-                          >"{{ p.content }}"</span
-                        >
+                <tbody class="divide-y divide-white/[0.02]">
+                  <tr v-for="cat in data?.social?.categories" :key="cat.name" 
+                      @click="fetchCategoryPosts(cat.id, cat.name)"
+                      :class="['hover:bg-white/[0.02] transition-all cursor-pointer group', selectedCategoryId === cat.id ? 'bg-blue-500/[0.03]' : '']">
+                    <td class="py-6 px-10">
+                      <div class="flex items-center gap-3">
+                        <div class="w-2 h-2 rounded-full shadow-[0_0_8px_rgba(255,255,255,0.2)]" :style="{ backgroundColor: cat.color }"></div>
+                        <span :class="['text-xs font-medium uppercase tracking-wider group-hover:text-white transition-colors', selectedCategoryId === cat.id ? 'text-white' : 'text-slate-400']">{{ cat.name }}</span>
                       </div>
                     </td>
-                    <td
-                      class="py-6 px-10 text-center font-medium text-slate-200 tabular-nums"
-                    >
-                      {{ p._count.likes }}
-                    </td>
-                    <td
-                      class="py-6 px-10 text-center font-medium text-slate-200 tabular-nums"
-                    >
-                      {{ p._count.comments }}
-                    </td>
-                    <td
-                      class="py-6 px-10 text-center font-medium text-slate-200 tabular-nums"
-                    >
-                      {{ p._count.reposts }}
+                    <td class="py-6 px-10 text-center text-slate-400 font-black tabular-nums">{{ cat.count }}</td>
+                    <td class="py-6 px-10 text-center">
+                      <div class="flex flex-col items-center gap-1">
+                        <span class="text-[10px] font-black text-blue-500">{{ cat.engagementRate }}%</span>
+                        <div class="w-12 h-1 bg-white/5 rounded-full overflow-hidden">
+                          <div class="h-full bg-blue-500" :style="{ width: (cat.engagementRate * 10) + '%' }"></div>
+                        </div>
+                      </div>
                     </td>
                     <td class="py-6 px-10 text-right">
-                      <div
-                        class="w-24 ml-auto h-1.5 bg-white/[0.02] rounded-full overflow-hidden border border-white/[0.05]"
-                      >
-                        <div
-                          class="h-full bg-gradient-to-r from-blue-600 to-indigo-500"
-                          :style="{
-                            width: Math.min(p._count.likes * 10, 100) + '%',
-                          }"
-                        ></div>
-                      </div>
+                      <svg :class="['w-4 h-4 ml-auto transition-transform', selectedCategoryId === cat.id ? 'rotate-90 text-blue-500' : 'text-slate-700 group-hover:translate-x-1']" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 5l7 7-7 7" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
                     </td>
                   </tr>
                 </tbody>
               </table>
-              <div
-                v-else
-                class="py-24 text-center text-slate-700 font-black uppercase italic opacity-40 text-left text-left"
-              >
-                Gönderi verisi bulunamadı.
+            </section>
+
+            <!-- Kategori Detay / Son Postlar -->
+            <section class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden flex flex-col">
+              <div v-if="!selectedCategoryId" class="flex-1 flex flex-col items-center justify-center text-center space-y-4 opacity-30">
+                <svg class="w-12 h-12 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p class="text-[10px] font-black uppercase tracking-[0.2em]">Kategori Seçilmedi</p>
+              </div>
+              
+              <div v-else class="space-y-6 flex-1 flex flex-col">
+                <div class="flex items-center justify-between border-b border-white/[0.03] pb-4">
+                  <div>
+                    <h5 class="text-white font-black text-[10px] uppercase tracking-widest">{{ selectedCategoryName }}</h5>
+                    <p class="text-[8px] text-slate-600 font-bold uppercase mt-0.5">Son Paylaşımlar</p>
+                  </div>
+                  <button @click="selectedCategoryId = null" class="text-slate-600 hover:text-white transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-width="2.5" stroke-linecap="round"/></svg></button>
+                </div>
+
+                <div v-if="catPostsLoading" class="flex-1 flex items-center justify-center">
+                  <div class="w-6 h-6 border-2 border-white/5 border-t-blue-500 rounded-full animate-spin"></div>
+                </div>
+
+                <div v-else-if="categoryPosts.length" class="space-y-3 overflow-y-auto no-scrollbar max-h-[450px]">
+                  <div v-for="post in categoryPosts" :key="post.id" @click="$router.push('/post/' + post.id)" class="p-4 bg-white/[0.01] border border-white/[0.03] rounded-2xl hover:bg-white/[0.03] transition-all group cursor-pointer">
+                    <div class="flex items-center gap-3 mb-2">
+                      <div class="w-6 h-6 rounded-lg bg-white/5 overflow-hidden flex items-center justify-center">
+                        <img v-if="post.author.avatarUrl" :src="getAvatarUrl(post.author.avatarUrl)" class="w-full h-full object-cover" />
+                        <span v-else class="text-[8px] font-black text-slate-600">{{ post.author.username.charAt(0).toUpperCase() }}</span>
+                      </div>
+                      <span class="text-[10px] font-bold text-slate-200">@{{ post.author.username }}</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 line-clamp-2 italic leading-relaxed">"{{ post.content }}"</p>
+                  </div>
+                </div>
+
+                <div v-else class="flex-1 flex items-center justify-center text-center opacity-20">
+                  <p class="text-[9px] font-black uppercase italic">Bu dönemde paylaşım yok</p>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+
+        <!-- PSİKOLOJİ -->
+        <div v-if="activeTab === 'PSİKOLOJİ'" class="space-y-10">
+          <!-- Psikoloji Üst Bilgi Kartları -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <!-- Mood Forecast Card -->
+            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl group relative overflow-hidden">
+              <div class="absolute -right-2 -top-2 text-6xl opacity-10 group-hover:scale-125 transition-transform">{{ data?.psychology?.forecast?.icon || '☀️' }}</div>
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest relative z-10">PSİKOLOJİK HAVA DURUMU</span>
+              <div class="text-2xl font-black italic tracking-tighter text-white relative z-10 uppercase leading-tight">{{ data?.psychology?.forecast?.label || 'STABİL' }}</div>
+              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10">Gelecek 6 Saat Tahmini</p>
+            </div>
+
+            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl group relative overflow-hidden text-left">
+              <div class="absolute -right-4 -top-4 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest relative z-10">DUYGU DENGESİ</span>
+              <div class="flex items-center gap-3 relative z-10">
+                <div class="text-4xl font-medium italic tracking-tighter text-emerald-400 tabular-nums">%{{ data?.psychology?.emotionalBalance || 0 }}</div>
+                <div class="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden min-w-[60px]">
+                  <div :style="{ width: (data?.psychology?.emotionalBalance || 0) + '%' }" class="h-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div>
+                </div>
+              </div>
+              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10">Pozitif Sinyal Oranı</p>
+            </div>
+
+            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl group relative overflow-hidden text-left">
+              <div class="absolute -right-4 -top-4 w-20 h-20 bg-orange-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest relative z-10 text-left">VOLATİLİTE</span>
+              <div class="flex items-end gap-3 relative z-10 text-left">
+                <div class="text-4xl font-medium italic tracking-tighter text-orange-400">{{ data?.psychology?.volatility || 0 }}</div>
+                <span class="text-[9px] font-black text-slate-600 uppercase mb-2">/ 10</span>
+              </div>
+              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10">Ruh Hali Değişkenliği</p>
+            </div>
+
+            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl group relative overflow-hidden text-left">
+              <div class="absolute -right-4 -top-4 w-20 h-20 bg-purple-500/10 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
+              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest relative z-10 text-left">EN RADİKAL ALAN</span>
+              <div class="text-2xl font-medium italic tracking-tighter text-purple-400 relative z-10 uppercase truncate">{{ data?.psychology?.mostPolarizedCategory || 'KAMPÜS' }}</div>
+              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10">Duyguların En Uç Yaşandığı Alan</p>
+            </div>
+          </div>
+
+          <!-- Duygu Liderleri Bölümü -->
+          <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] p-10 shadow-2xl space-y-8">
+            <div class="flex items-center justify-between border-b border-white/[0.02] pb-6">
+              <div>
+                <h3 class="text-white font-medium text-2xl tracking-tight uppercase italic leading-none">Duygu Liderleri</h3>
+                <p class="text-[10px] text-slate-600 uppercase font-black tracking-[0.2em] mt-2">Kampüsün Modunu En Çok Etkileyenler</p>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div v-for="inf in data?.psychology?.influencers" :key="inf.username" class="p-6 bg-white/[0.01] border border-white/[0.03] rounded-[2rem] flex items-center gap-5 hover:bg-white/[0.03] transition-all group">
+                <div class="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex-shrink-0">
+                  <img v-if="inf.avatarUrl" :src="getAvatarUrl(inf.avatarUrl)" class="w-full h-full object-cover" />
+                  <div v-else class="w-full h-full flex items-center justify-center font-black text-slate-600">{{ inf.username.charAt(0) }}</div>
+                </div>
+                <div>
+                  <h4 class="text-sm font-bold text-white">@{{ inf.username }}</h4>
+                  <div class="flex items-center gap-2 mt-1">
+                    <span class="text-[8px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 uppercase">ETKİ: {{ inf.impact }}</span>
+                    <span :class="['text-[8px] font-black px-2 py-0.5 rounded-full uppercase', inf.dominantMood === 'Pozitif' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400']">{{ inf.dominantMood }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-12 flex flex-col items-center shadow-2xl relative overflow-hidden">
+              <div class="absolute inset-0 bg-blue-500/[0.01] pointer-events-none"></div>
+              <h3 class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-12 relative z-10">Kampüsün Ruh Hali</h3>
+              <div class="relative w-full aspect-square max-w-[260px] z-10">
+                <apexchart :key="sentimentDonutSeries.length + (data?.psychology?.distribution?.[0]?.count || 0)" type="donut" height="100%" :options="sentimentDonutOptions" :series="sentimentDonutSeries" />
+              </div>
+              <p class="text-[8px] text-slate-700 font-bold uppercase mt-6 tracking-widest relative z-10 italic">İstatistikler İçin Dilimlere Tıklayabilirsin</p>
+            </div>
+            <!-- Duygu Isı Haritası -->
+            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-12 flex flex-col h-[400px] shadow-2xl relative overflow-hidden group">
+              <div class="absolute -top-24 -right-24 w-64 h-64 bg-blue-500/10 rounded-full blur-[80px]"></div>
+              <h3 class="text-white font-medium text-xl tracking-tight mb-2">Duygu Yoğunluk Haritası</h3>
+              <p class="text-[10px] text-slate-600 uppercase font-black tracking-widest mb-10">Saat Bazlı Duygu Dağılım Matrisi</p>
+              <div class="flex-1 w-full h-[250px]">
+                <apexchart :key="heatmapSeries.length + (data?.psychology?.matrix?.Neşeli?.[0] || 0)" type="heatmap" height="100%" :options="heatmapOptions" :series="heatmapSeries" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Kategori Bazlı Duygu Karnesi -->
+          <section class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] overflow-hidden shadow-2xl">
+            <div class="p-8 border-b border-white/[0.02] flex items-center justify-between">
+              <div>
+                <h4 class="text-white font-medium tracking-tight">Duygu Karnesi</h4>
+                <p class="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Kategorilerin Ortalama Pozitiflik Puanları</p>
+              </div>
+              <div class="flex gap-4 text-[8px] font-black text-slate-600 uppercase tracking-widest">
+                <span class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-red-500"></div> Negatif</span>
+                <span class="flex items-center gap-1.5"><div class="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Pozitif</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.02]">
+              <div v-for="cat in data?.psychology?.categorySentiments" :key="cat.name" class="bg-[#0A0A0C] p-8 group hover:bg-white/[0.01] transition-colors text-left">
+                <div class="flex items-center justify-between mb-4">
+                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ cat.name }}</span>
+                  <div :class="['text-lg font-black italic tracking-tighter', cat.avgScore > 0.6 ? 'text-emerald-500' : cat.avgScore < 0.4 ? 'text-red-500' : 'text-blue-500']">
+                    {{ cat.avgScore }}
+                  </div>
+                </div>
+                <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
+                  <div :style="{ width: (cat.avgScore * 100) + '%', backgroundColor: cat.avgScore > 0.6 ? '#10b981' : cat.avgScore < 0.4 ? '#ef4444' : '#3b82f6' }" class="h-full transition-all duration-1000"></div>
+                </div>
+                <div class="flex items-center justify-between mt-3 text-[7px] font-black uppercase tracking-widest">
+                  <span class="text-slate-700">{{ cat.postCount }} VERİ</span>
+                  <span class="text-purple-500/40 italic">RADİKALLİK: {{ cat.polarization }}</span>
+                </div>
               </div>
             </div>
           </section>
-        </div>
 
-        <!-- MODÜL 3: DUYGU -->
-        <div
-          v-if="activeTab === 'DUYGU'"
-          class="space-y-10 text-left text-left text-left"
-        >
-          <div
-            class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left text-left text-left"
-          >
-            <div
-              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-12 flex flex-col items-center shadow-2xl text-left text-left text-left"
-            >
-              <h3
-                class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-12 text-left text-left"
-              >
-                Duygu Dağılım Analizi
-              </h3>
-              <div
-                class="relative w-full aspect-square max-w-[260px] text-left text-left"
-              >
-                <apexchart
-                  v-if="data?.sentiment?.distribution?.length"
-                  type="donut"
-                  height="100%"
-                  :options="sentimentDonutOptions"
-                  :series="sentimentDonutSeries"
-                />
-                <div
-                  v-else
-                  class="h-full flex items-center justify-center opacity-40 italic text-[10px] font-black uppercase text-left text-left text-left"
-                >
-                  Veri Yok
-                </div>
-              </div>
-            </div>
-            <div
-              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-12 flex flex-col shadow-2xl text-left text-left text-left"
-            >
-              <h3
-                class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-12 text-left text-left"
-              >
-                Kategori Bazlı Mod
-              </h3>
-              <div class="flex-1 text-left text-left text-left">
-                <apexchart
-                  v-if="data?.sentiment?.categoryAnalysis?.length"
-                  type="bar"
-                  height="100%"
-                  :options="sentimentBarOptions"
-                  :series="sentimentBarSeries"
-                />
-                <div
-                  v-else
-                  class="h-full flex items-center justify-center opacity-40 italic text-[10px] font-black uppercase text-left text-left text-left text-left"
-                >
-                  Veri Yok
-                </div>
-              </div>
-            </div>
-          </div>
-          <div
-            class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-12 flex flex-col h-[500px] shadow-2xl relative overflow-hidden text-left text-left text-left text-left"
-          >
-            <div
-              class="flex items-center justify-between mb-12 text-left text-left text-left text-left"
-            >
+          <section class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 lg:p-14 shadow-2xl space-y-10 text-left">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-8">
               <div>
-                <h3
-                  class="text-white font-medium text-xl tracking-tight leading-none mb-2 text-left text-left text-left"
-                >
-                  Motivasyon Çizelgesi
-                </h3>
-                <p
-                  class="text-[10px] text-slate-600 uppercase font-black tracking-widest text-left text-left text-left"
-                >
-                  Haftalık Duygu Trendi
-                </p>
+                <h3 class="text-white font-medium text-2xl tracking-tight uppercase italic leading-none">Halkın Sesi</h3>
+                <p class="text-[10px] text-slate-600 uppercase font-black tracking-[0.2em] mt-2">Duyguya Göre Popüler Paylaşımlar (Top 5)</p>
+              </div>
+              <div class="flex flex-wrap gap-2">
+                <button v-for="s in sentiments" :key="s.name" 
+                        @click="selectedSentiment = s.name; fetchTopPosts();" 
+                        :style="{ 
+                          backgroundColor: selectedSentiment === s.name ? s.color + '20' : 'transparent',
+                          borderColor: selectedSentiment === s.name ? s.color : '#ffffff05',
+                          color: selectedSentiment === s.name ? s.color : '#475569'
+                        }"
+                        class="px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border-2">
+                  {{ s.name }}
+                </button>
               </div>
             </div>
-            <div
-              class="flex-1 w-full text-left text-left text-left text-left text-left text-left"
-            >
-              <apexchart
-                type="line"
-                height="100%"
-                :options="lineChartOptions"
-                :series="lineChartSeries"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- MODÜL 4: EKONOMİ -->
-        <div
-          v-if="activeTab === 'EKONOMİ'"
-          class="space-y-10 text-left text-left text-left text-left"
-        >
-          <div
-            class="grid grid-cols-1 md:grid-cols-3 gap-6 text-left text-left text-left"
-          >
-            <div
-              v-for="card in economyKPIs"
-              :key="card.label"
-              class="p-8 bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] flex flex-col justify-between h-[160px] shadow-xl text-left text-left text-left text-left"
-            >
-              <span
-                class="text-[10px] font-black text-slate-600 uppercase tracking-widest text-left text-left text-left text-left text-left"
-                >{{ card.label }}</span
-              >
-              <div
-                class="text-4xl font-medium italic tracking-tighter tabular-nums text-left text-left text-left text-left text-left"
-                :class="card.color"
-              >
-                {{ card.value }}
-              </div>
-              <span
-                class="text-[8px] font-bold text-slate-500 uppercase tracking-widest italic text-left text-left text-left text-left text-left text-left text-left"
-                >{{ currentIntervalLabel }} Verisi</span
-              >
-            </div>
-          </div>
-          <div
-            class="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left text-left text-left text-left text-left"
-          >
-            <div
-              class="lg:col-span-1 bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 flex flex-col items-center shadow-2xl text-left text-left text-left text-left text-left text-left"
-            >
-              <h3
-                class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-10 text-left text-left text-left text-left"
-              >
-                Pazar Payı
-              </h3>
-              <div
-                class="relative w-full aspect-square max-w-[220px] text-left text-left text-left text-left"
-              >
-                <apexchart
-                  v-if="data?.economy?.categories?.length"
-                  type="donut"
-                  height="100%"
-                  :options="economyDonutOptions"
-                  :series="economyDonutSeries"
-                />
-                <div
-                  v-else
-                  class="h-full flex items-center justify-center opacity-40 italic text-[10px] font-black uppercase text-left text-left text-left text-left text-left text-left text-left"
-                >
-                  Veri Yok
+            <div v-if="topPostsLoading" class="py-20 text-center animate-pulse text-[10px] font-black uppercase tracking-widest">Veriler İşleniyor...</div>
+            <div v-else-if="topPosts.length" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div v-for="post in topPosts" :key="post.id" @click="$router.push('/post/' + post.id)" class="p-6 bg-white/[0.01] border border-white/[0.03] rounded-3xl flex gap-5 hover:bg-white/[0.03] hover:border-blue-500/20 transition-all group cursor-pointer text-left">
+                <div class="w-12 h-12 rounded-2xl bg-white/[0.02] border border-white/[0.05] overflow-hidden flex-shrink-0 text-left">
+                  <img v-if="post.author.avatarUrl" :src="getAvatarUrl(post.author.avatarUrl)" class="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                  <div v-else class="w-full h-full flex items-center justify-center text-xs font-black text-slate-600">{{ post.author.username.charAt(0) }}</div>
+                </div>
+                <div class="flex-1 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-white tracking-tight">@{{ post.author.username }}</span>
+                    <div class="flex items-center gap-1 text-[9px] font-black text-blue-500 bg-blue-500/5 px-2 py-0.5 rounded-full">
+                      <svg class="w-2.5 h-2.5 fill-current" viewBox="0 0 24 24"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+                      {{ post._count.likes }}
+                    </div>
+                  </div>
+                  <p class="text-xs text-slate-400 italic leading-relaxed line-clamp-3 italic">"{{ post.content }}"</p>
                 </div>
               </div>
             </div>
-            <div
-              class="lg:col-span-2 bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] shadow-2xl overflow-hidden text-left text-left text-left text-left text-left text-left text-left"
-            >
-              <div
-                class="p-8 border-b border-white/[0.02] bg-white/[0.01] text-left text-left text-left text-left text-left text-left text-left text-left text-left"
-              >
-                <h3
-                  class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-left text-left text-left text-left text-left"
-                >
-                  Kategori Detayları
-                </h3>
+            <div v-else class="py-20 text-center text-slate-700 text-[10px] font-black uppercase italic opacity-40">İçerik bulunamadı.</div>
+          </section>
+        </div>
+
+        <!-- DAYANIŞMA -->
+        <div v-if="activeTab === 'EKONOMİ'" class="space-y-10">
+          <div v-if="!data?.solidarity" class="py-20 text-center animate-pulse text-[10px] font-black uppercase tracking-[0.3em]">Dayanışma Verileri Hazırlanıyor...</div>
+          <div v-else class="space-y-10">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <!-- Solidarity Pulse -->
+              <div class="lg:col-span-2 bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 h-[400px] shadow-2xl relative overflow-hidden group text-left">
+                <div class="absolute -top-24 -right-24 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px]"></div>
+                <h3 class="text-white font-medium text-xl tracking-tight leading-none mb-2 text-left">Dayanışma Nabzı</h3>
+                <p class="text-[10px] text-slate-600 uppercase font-black tracking-widest mb-10 text-left">Yardımlaşma Akış Hızı</p>
+                <div class="flex-1 w-full h-[250px]">
+                  <apexchart :key="'pulse-' + (data?.solidarity?.series?.length || 0)" type="area" height="100%" :options="solidarityPulseOptions" :series="solidarityPulseSeries" />
+                </div>
               </div>
-              <div
-                class="overflow-x-auto text-left text-left text-left text-left text-left text-left text-left"
-              >
-                <table
-                  v-if="data?.economy?.categories?.length"
-                  class="w-full text-left text-left text-left text-left text-left text-left text-left text-left"
-                >
+
+              <!-- Efficiency Gauge -->
+              <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 flex flex-col items-center justify-center shadow-2xl relative overflow-hidden">
+                <h3 class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-4">Çözüm Verimliliği</h3>
+                <div class="w-full aspect-square max-w-[240px]">
+                  <apexchart :key="'eff-' + (data?.summary?.solidarityEfficiency || 0)" type="radialBar" height="100%" :options="solidarityEfficiencyOptions" :series="solidarityEfficiencySeries" />
+                </div>
+                <p class="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-4 text-center">İhtiyaçların Tamamlanma Oranı</p>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-10 flex flex-col items-center shadow-2xl text-left">
+                <h3 class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-10">Etki Dağılımı</h3>
+                <div class="w-full aspect-square max-w-[220px]">
+                  <apexchart :key="'donut-' + (data?.solidarity?.categories?.length || 0)" type="donut" height="100%" :options="solidarityDonutOptions" :series="solidarityDonutSeries" />
+                </div>
+              </div>
+              <div class="lg:col-span-2 bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] shadow-2xl overflow-hidden text-left">
+                <table class="w-full text-left">
                   <thead>
-                    <tr
-                      class="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] border-b border-white/[0.02] text-left text-left text-left text-left text-left text-left text-left text-left"
-                    >
-                      <th
-                        class="py-6 px-10 text-left text-left text-left text-left text-left"
-                      >
-                        Kategori
-                      </th>
-                      <th
-                        class="py-6 px-10 text-center text-left text-left text-left text-left text-left"
-                      >
-                        İlan
-                      </th>
-                      <th
-                        class="py-6 px-10 text-center text-left text-left text-left text-left text-left"
-                      >
-                        Hacim
-                      </th>
-                      <th
-                        class="py-6 px-10 text-right text-left text-left text-left text-left text-left text-left"
-                      >
-                        Ortalama
-                      </th>
+                    <tr class="text-[9px] font-black text-slate-600 uppercase tracking-[0.2em] border-b border-white/[0.02]">
+                      <th class="py-6 px-10">Kategori</th>
+                      <th class="py-6 px-10 text-center">Aktif Süreç</th>
+                      <th class="py-6 px-10 text-right">Sosyal Etki</th>
                     </tr>
                   </thead>
-                  <tbody
-                    class="divide-y divide-white/[0.02] text-left text-left text-left text-left text-left text-left text-left text-left text-left text-left"
-                  >
-                    <tr
-                      v-for="cat in data.economy.categories"
-                      :key="cat.label"
-                      class="hover:bg-white/[0.01] transition-colors duration-500 group text-left text-left text-left text-left text-left text-left text-left text-left text-left"
-                    >
-                      <td
-                        class="py-6 px-10 text-left text-left text-left text-left text-left text-left text-left text-left"
-                      >
-                        <span
-                          class="text-xs font-medium text-white uppercase tracking-wider text-left text-left text-left text-left text-left"
-                          >{{ cat.label }}</span
-                        >
+                  <tbody class="divide-y divide-white/[0.02]">
+                    <tr v-for="cat in data?.solidarity?.categories" :key="cat.label" class="hover:bg-white/[0.01] transition-colors group">
+                      <td class="py-6 px-10">
+                        <div class="flex items-center gap-3">
+                          <div class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: cat.color }"></div>
+                          <span class="text-xs font-medium text-white uppercase tracking-wider">{{ cat.label }}</span>
+                        </div>
                       </td>
-                      <td
-                        class="py-6 px-10 text-center text-left text-left text-left text-left text-left text-left text-left"
-                      >
-                        <span
-                          class="text-sm text-slate-400 tabular-nums text-left text-left text-left text-left text-left text-left"
-                          >{{ cat.count }}</span
-                        >
-                      </td>
-                      <td
-                        class="py-6 px-10 text-center text-left text-left text-left text-left text-left text-left text-left text-left"
-                      >
-                        <span
-                          class="text-sm font-black text-slate-200 tabular-nums text-left text-left text-left text-left text-left text-left text-left"
-                          >{{ cat.totalValue.toLocaleString() }}₺</span
-                        >
-                      </td>
-                      <td
-                        class="py-6 px-10 text-right text-left text-left text-left text-left text-left text-left text-left text-left"
-                      >
-                        <span
-                          class="px-3 py-1 bg-white/[0.02] text-blue-400 text-[10px] font-black rounded-lg border border-white/[0.05] text-left text-left text-left text-left"
-                          >~{{ cat.avgPrice }}₺</span
-                        >
-                      </td>
+                      <td class="py-6 px-10 text-center text-slate-400 font-black tabular-nums">{{ cat.count }}</td>
+                      <td class="py-6 px-10 text-right text-amber-500 font-black tabular-nums">{{ cat.impactScore }} PTS</td>
+                    </tr>
+                    <tr v-if="!data?.solidarity?.categories?.length">
+                      <td colspan="3" class="py-20 text-center text-[10px] font-black uppercase italic opacity-30 text-slate-600">Bu dönemde dayanışma kaydı bulunamadı</td>
                     </tr>
                   </tbody>
                 </table>
@@ -743,436 +476,297 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, defineComponent, h } from "vue";
-import apiClient from "@/api/client";
+import { ref, computed, onMounted, defineComponent, h, watch } from "vue";
+import { useCampusStore } from "@/stores/campus";
 import { useToast } from "vue-toastification";
 import VueApexCharts from "vue3-apexcharts";
+import apiClient from "@/api/client";
 
 const apexchart = VueApexCharts;
 const toast = useToast();
-const loading = ref(true);
-const activeTab = ref("GENEL");
-const interval = ref<"hour" | "day" | "week">("day");
-const data = ref<any>(null);
+const campusStore = useCampusStore();
 
-// PREMIUM İKONLAR
-const DashIcon = defineComponent({
-  render: () =>
-    h("svg", { fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, [
-      h("path", {
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "stroke-width": "1.5",
-        d: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z",
-      }),
-    ]),
-});
-const SocialIcon = defineComponent({
-  render: () =>
-    h("svg", { fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, [
-      h("path", {
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "stroke-width": "1.5",
-        d: "M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z",
-      }),
-    ]),
-});
-const VibeIcon = defineComponent({
-  render: () =>
-    h("svg", { fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, [
-      h("path", {
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "stroke-width": "1.5",
-        d: "M13 10V3L4 14h7v7l9-11h-7z",
-      }),
-    ]),
-});
-const EconIcon = defineComponent({
-  render: () =>
-    h("svg", { fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, [
-      h("path", {
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "stroke-width": "1.5",
-        d: "M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z",
-      }),
-    ]),
-});
-const ActivityIcon = defineComponent({
-  render: () =>
-    h("svg", { fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, [
-      h("path", {
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "stroke-width": "1.5",
-        d: "M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2-2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z",
-      }),
-    ]),
-});
-const UsersIcon = defineComponent({
-  render: () =>
-    h("svg", { fill: "none", stroke: "currentColor", viewBox: "0 0 24 24" }, [
-      h("path", {
-        "stroke-linecap": "round",
-        "stroke-linejoin": "round",
-        "stroke-width": "1.5",
-        d: "M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z",
-      }),
-    ]),
-});
+const DashIcon = defineComponent({ render: () => h('svg', { fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [h('path', { d: 'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z' })]) });
+const SocialIcon = defineComponent({ render: () => h('svg', { fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [h('path', { d: 'M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z' })]) });
+const VibeIcon = defineComponent({ render: () => h('svg', { fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [h('path', { d: 'M13 10V3L4 14h7v7l9-11h-7z' })]) });
+const EconIcon = defineComponent({ render: () => h('svg', { fill: 'none', stroke: 'currentColor', 'stroke-width': '2', viewBox: '0 0 24 24' }, [h('path', { d: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z' })]) });
+
+const activeTab = ref("GENEL");
+const interval = ref("day");
+
+const loading = computed(() => campusStore.loading);
+const data = computed(() => campusStore.analytics);
+
+const topPosts = ref<any[]>([]);
+const topPostsLoading = ref(false);
+const selectedSentiment = ref("Neşeli");
+const sentiments = [
+  { name: "Neşeli", color: "#10b981" },
+  { name: "Hüzünlü", color: "#3b82f6" },
+  { name: "Kızgın", color: "#ef4444" },
+  { name: "Endişeli", color: "#f59e0b" },
+  { name: "Sakin", color: "#14b8a6" },
+  { name: "Meraklı", color: "#8b5cf6" },
+  { name: "Ciddi", color: "#64748b" }
+];
+
+const selectedCategoryId = ref<number | null>(null);
+const selectedCategoryName = ref("");
+const categoryPosts = ref<any[]>([]);
+const catPostsLoading = ref(false);
 
 const menuItems = [
   { id: "GENEL", label: "Özet Panel", icon: DashIcon },
-  { id: "SOSYAL", label: "Gönderi Analizi", icon: SocialIcon },
-  { id: "DUYGU", label: "Kampüs Modu", icon: VibeIcon },
-  { id: "EKONOMİ", label: "Pazar Analizi", icon: EconIcon },
+  { id: "SOSYAL", label: "Sosyal", icon: SocialIcon },
+  { id: "PSİKOLOJİ", label: "Psikoloji", icon: VibeIcon },
+  { id: "EKONOMİ", label: "Dayanışma", icon: EconIcon },
 ];
-
-const activeTabLabel = computed(
-  () => menuItems.find((m) => m.id === activeTab.value)?.label || "DASHBOARD",
-);
 
 const timeOptions = [
   { id: "hour", label: "24 SAAT" },
   { id: "day", label: "7 GÜN" },
   { id: "week", label: "30 GÜN" },
+  { id: "7months", label: "7 AY" },
+  { id: "4years", label: "4 YIL" },
 ];
 
-const currentIntervalLabel = computed(
-  () => timeOptions.find((t) => t.id === interval.value)?.label || "HAFTALIK",
-);
+const activeTabLabel = computed(() => menuItems.find(m => m.id === activeTab.value)?.label || "ANALİZ");
+const currentIntervalLabel = computed(() => timeOptions.find(t => t.id === interval.value)?.label || "HAFTALIK");
 
-const extendedStats = computed(() => [
-  {
-    label: "TOPLAM GÖNDERİ",
-    value: data.value?.summary?.totalPosts || 0,
-    icon: ActivityIcon,
-    textColor: "text-blue-400",
-  },
-  {
-    label: "GÜNLÜK ORT.",
-    value: data.value?.summary?.avgDailyPosts || 0,
-    icon: DashIcon,
-    textColor: "text-slate-200",
-  },
-  {
-    label: "ETKİLEŞİM",
-    value: data.value?.summary?.interactionRate || "%0",
-    icon: VibeIcon,
-    textColor: "text-purple-400",
-  },
-  {
-    label: "YENİ ÜYE",
-    value: data.value?.summary?.newUsers || 0,
-    icon: UsersIcon,
-    textColor: "text-emerald-400",
-  },
-  {
-    label: "SPOT İLAN",
-    value: data.value?.summary?.spotCount || 0,
-    icon: EconIcon,
-    textColor: "text-amber-400",
-  },
-  {
-    label: "DURUM",
-    value: data.value?.summary?.totalPosts > 0 ? "AKTİF" : "STBY",
-    icon: ActivityIcon,
-    textColor: "text-blue-500",
-  },
+const summaryStats = computed(() => [
+  { label: "TOPLAM GÖNDERİ", value: campusStore.analytics?.summary?.totalPosts || 0 },
+  { label: "ETKİLEŞİM", value: campusStore.analytics?.summary?.totalInteractions || 0 },
+  { label: "ETKİLEŞİM ORANI", value: campusStore.analytics?.summary?.interactionRate || 0 },
+  { label: "YENİ ÜYE", value: campusStore.analytics?.summary?.newUsers || 0 },
+  { label: "DAYANIŞMA ADEDİ", value: campusStore.analytics?.summary?.solidarityCount || 0 },
+  { label: "SOSYAL ETKİ", value: (campusStore.analytics?.summary?.solidarityImpact || 0).toLocaleString() + " PTS" },
 ]);
 
-const engagementTotal = computed(
-  () =>
-    (data.value?.social?.engagementMix?.likes || 0) +
-    (data.value?.social?.engagementMix?.comments || 0) +
-    (data.value?.social?.engagementMix?.reposts || 0),
-);
-const engagementBreakdown = computed(() => [
-  {
-    label: "Fav",
-    value: data.value?.social?.engagementMix?.likes || 0,
-    color: "#ef4444",
-  },
-  {
-    label: "Yorum",
-    value: data.value?.social?.engagementMix?.comments || 0,
-    color: "#3b82f6",
-  },
-  {
-    label: "Remakü",
-    value: data.value?.social?.engagementMix?.reposts || 0,
-    color: "#22c55e",
-  },
-]);
-
-const economyKPIs = computed(() => [
-  {
-    label: "Toplam Hacim",
-    value:
-      (data.value?.summary?.spotTotalValue || 0).toLocaleString("tr-TR") + "₺",
-    color: "text-white",
-  },
-  {
-    label: "Aktif İlanlar",
-    value: data.value?.summary?.spotCount || 0,
-    color: "text-slate-200",
-  },
-  {
-    label: "Ortalama Fiyat",
-    value:
-      "~" +
-      Math.round(
-        (data.value?.summary?.spotTotalValue || 0) /
-          (data.value?.summary?.spotCount || 1),
-      ) +
-      "₺",
-    color: "text-purple-400",
-  },
+const solidarityKPIs = computed(() => [
+  { label: "Topluluk Etkisi", value: (campusStore.analytics?.summary?.solidarityImpact || 0).toLocaleString() + " PTS", color: "text-white" },
+  { label: "Çözüm Verimliliği", value: "%" + (campusStore.analytics?.summary?.solidarityEfficiency || 0), color: "text-blue-400" },
+  { label: "Aktif Destekler", value: campusStore.analytics?.summary?.solidarityCount || 0, color: "text-emerald-400" },
 ]);
 
 const fetchAnalytics = async () => {
-  loading.value = true;
+  await campusStore.fetchAnalytics(interval.value);
+  if (activeTab.value === 'PSİKOLOJİ') fetchTopPosts();
+};
+
+const fetchTopPosts = async () => {
+  topPostsLoading.value = true;
   try {
-    const res = await apiClient.get(
-      `/campus/analytics?interval=${interval.value}`,
-    );
-    data.value = res.data;
-  } catch (error) {
-    toast.error("Bağlantı hatası");
-  } finally {
-    loading.value = false;
-  }
+    const res = await apiClient.get(`/campus/analytics/top-sentiment?sentiment=${selectedSentiment.value}&interval=${interval.value}`);
+    topPosts.value = res.data;
+  } catch { toast.error("Popüler içerikler yüklenemedi"); } 
+  finally { topPostsLoading.value = false; }
 };
 
-const getAvatarUrl = (path: string) => {
-  if (!path) return "";
-  if (path.startsWith("http")) return path;
-  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
-  return `${baseUrl}${path.startsWith("/uploads") ? path : "/uploads/avatars/" + path}`;
+const fetchCategoryPosts = async (catId: number, catName: string) => {
+  selectedCategoryId.value = catId;
+  selectedCategoryName.value = catName;
+  catPostsLoading.value = true;
+  try {
+    const res = await apiClient.get(`/campus/analytics/category-posts?categoryId=${catId}&interval=${interval.value}`);
+    categoryPosts.value = res.data;
+  } catch { toast.error("Kategori içerikleri yüklenemedi"); }
+  finally { catPostsLoading.value = false; }
 };
 
-// --- CHART CONFIGS ---
+const getAvatarUrl = (path: string) => campusStore.getAvatarUrl(path);
+
+watch(activeTab, (newTab) => {
+  if (newTab === 'PSİKOLOJİ') fetchTopPosts();
+});
+
+const categoryDonutOptions = computed(() => ({
+  chart: { type: "donut", background: 'transparent' },
+  labels: campusStore.analytics?.social?.categories?.map((c: any) => c.name) || [],
+  colors: campusStore.analytics?.social?.categories?.map((c: any) => c.color) || ["#3b82f6"],
+  stroke: { show: false },
+  legend: { position: "bottom", labels: { colors: "#64748b" } },
+  dataLabels: { enabled: false },
+  plotOptions: { pie: { donut: { size: "85%" } } }
+}));
+const categoryDonutSeries = computed(() => campusStore.analytics?.social?.categories?.map((c: any) => c.count) || []);
+
 const barChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    background: "transparent",
-    fontFamily: "inherit",
-  },
-  plotOptions: {
-    bar: { columnWidth: "30%", borderRadius: 12, distributed: true },
-  },
-  colors: ["#3b82f6", "#6366f1", "#8b5cf6", "#a855f7", "#3b82f6"],
-  xaxis: {
-    categories: data.value?.timeSeries.map((p: any) => p.label) || [],
-    labels: { style: { colors: "#475569", fontSize: "10px", fontWeight: 900 } },
-    axisBorder: { show: false },
-  },
-  yaxis: {
-    labels: { style: { colors: "#475569", fontSize: "10px", fontWeight: 900 } },
-  },
-  grid: { borderColor: "#ffffff03", strokeDashArray: 6 },
-  legend: { show: false },
-  tooltip: { theme: "dark" },
+  chart: { toolbar: { show: false }, background: "transparent" },
+  plotOptions: { bar: { columnWidth: "40%", borderRadius: 10, distributed: true } },
+  xaxis: { categories: campusStore.analytics?.timeSeries?.map((p: any) => p.label) || [], labels: { style: { colors: "#475569", fontSize: "10px" } } },
+  yaxis: { labels: { show: false } },
+  grid: { borderColor: "#ffffff03" },
+  legend: { show: false }
 }));
-const barChartSeries = computed(() => [
-  {
-    name: "Gönderi Sayısı",
-    data: data.value?.timeSeries.map((p: any) => p.count) || [],
-  },
-]);
+const barChartSeries = computed(() => [{ name: "Gönderi", data: campusStore.analytics?.timeSeries?.map((p: any) => p.count) || [] }]);
 
-const lineChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    background: "transparent",
-    fontFamily: "inherit",
-  },
-  stroke: { curve: "smooth", width: 5 },
-  colors: ["#a855f7"],
-  xaxis: {
-    categories: data.value?.timeSeries.map((p: any) => p.label) || [],
-    labels: { style: { colors: "#475569", fontSize: "10px", fontWeight: 900 } },
-    axisBorder: { show: false },
-  },
-  yaxis: {
-    min: 0,
-    max: 1,
-    labels: { style: { colors: "#475569", fontSize: "10px", fontWeight: 900 } },
-  },
-  grid: { borderColor: "#ffffff03", strokeDashArray: 6 },
-  markers: {
-    size: 6,
-    colors: ["#a855f7"],
-    strokeColors: "#050505",
-    strokeWidth: 3,
-  },
-  tooltip: { theme: "dark" },
-}));
-const lineChartSeries = computed(() => [
-  {
-    name: "Mod Skoru",
-    data:
-      data.value?.timeSeries.map((p: any) => p.avgSentiment.toFixed(2)) || [],
-  },
-]);
-
-const pulseChartOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    background: "transparent",
-    fontFamily: "inherit",
-  },
-  stroke: { curve: "smooth", width: 3 },
+const areaChartOptions = computed(() => ({
+  chart: { toolbar: { show: false }, background: "transparent", sparkline: { enabled: false } },
+  stroke: { curve: "smooth", width: 3, colors: ["#3b82f6"] },
   fill: {
     type: "gradient",
-    gradient: {
-      shadeIntensity: 1,
-      opacityFrom: 0.45,
-      opacityTo: 0.05,
-      stops: [20, 100],
-    },
+    gradient: { shadeIntensity: 1, opacityFrom: 0.45, opacityTo: 0.05, stops: [20, 100], colorStops: [{ offset: 0, color: "#3b82f6", opacity: 0.4 }, { offset: 100, color: "#3b82f6", opacity: 0 }] }
   },
+  xaxis: { categories: campusStore.analytics?.timeSeries?.map((p: any) => p.label) || [], labels: { style: { colors: "#475569", fontSize: "10px", fontWeight: 800 } }, axisBorder: { show: false }, axisTicks: { show: false } },
+  yaxis: { labels: { show: false } },
+  grid: { borderColor: "#ffffff03", strokeDashArray: 4 },
+  markers: { size: 0, hover: { size: 5 } },
+  tooltip: { theme: 'dark' }
+}));
+const areaChartSeries = computed(() => [{ name: "Aktivite", data: campusStore.analytics?.timeSeries?.map((p: any) => p.count) || [] }]);
+
+const sentimentDonutOptions = computed(() => {
+  const distribution = campusStore.analytics?.psychology?.distribution || [];
+  // Backend'den gelen label sırasına göre renkleri sentiments array'inden eşleştirelim
+  const colors = distribution.map((d: any) => sentiments.find(s => s.name === d.label)?.color || "#3b82f6");
+
+  return {
+    chart: { 
+      type: "donut", 
+      background: 'transparent',
+      events: {
+        dataPointSelection: (event: any, chartContext: any, config: any) => {
+          const sentimentName = config.w.config.labels[config.dataPointIndex];
+          if (sentimentName) {
+            selectedSentiment.value = sentimentName;
+            fetchTopPosts();
+          }
+        }
+      }
+    },
+    labels: distribution.map((s: any) => s.label),
+    colors: colors,
+    stroke: { show: true, width: 2, colors: ["#0A0A0C"] },
+    legend: { show: false },
+    dataLabels: { enabled: false },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: "82%",
+          labels: {
+            show: true,
+            name: { show: true, fontSize: "9px", fontWeight: 900, color: "#64748b", offsetY: -10 },
+            value: { show: true, fontSize: "24px", fontWeight: 500, color: "#fff", offsetY: 10, formatter: (val: any) => val },
+            total: {
+              show: true,
+              label: "KAMPÜS MODU",
+              color: "#64748b",
+              fontSize: "8px",
+              fontWeight: 900,
+              formatter: (w: any) => {
+                const total = w.globals.seriesTotals.reduce((a: any, b: any) => a + b, 0);
+                return total > 0 ? "AKTİF" : "SESSİZ";
+              }
+            }
+          }
+        }
+      }
+    },
+    tooltip: { theme: 'dark' }
+  };
+});
+const sentimentDonutSeries = computed(() => campusStore.analytics?.psychology?.distribution?.map((s: any) => s.count) || []);
+
+const lineChartOptions = computed(() => ({
+  chart: { toolbar: { show: false }, background: 'transparent' },
+  stroke: { curve: "smooth", width: 4 },
+  colors: ["#6366f1"],
+  xaxis: { categories: campusStore.analytics?.timeSeries?.map((p: any) => p.label) || [], labels: { style: { colors: "#475569", fontSize: "10px" } } },
+  yaxis: { min: 0, max: 1, labels: { show: false } },
+  grid: { borderColor: "#ffffff03" }
+}));
+const lineChartSeries = computed(() => [{ name: "Motivasyon", data: campusStore.analytics?.timeSeries?.map((p: any) => p.avgSentiment.toFixed(2)) || [] }]);
+
+const heatmapOptions = computed(() => ({
+  chart: { type: 'heatmap', toolbar: { show: false }, background: 'transparent' },
+  dataLabels: { enabled: false },
   colors: ["#3b82f6"],
   xaxis: {
-    categories: data.value?.social?.hourlyPulse?.map((p: any) => p.hour) || [],
-    labels: { style: { colors: "#475569", fontSize: "9px" } },
+    categories: Array.from({length: 24}, (_, i) => `${i}:00`),
+    labels: { style: { colors: "#475569", fontSize: "9px" } }
   },
-  yaxis: { show: false },
+  yaxis: { labels: { style: { colors: "#64748b", fontSize: "10px", fontWeight: 700 } } },
   grid: { show: false },
-  dataLabels: { enabled: false },
-  tooltip: { theme: "dark" },
-}));
-const pulseChartSeries = computed(() => [
-  {
-    name: "Gönderi",
-    data: data.value?.social?.hourlyPulse?.map((p: any) => p.count) || [],
-  },
-]);
-
-const engagementDonutOptions = computed(() => ({
-  chart: { type: "donut", fontFamily: "inherit" },
-  labels: ["Fav", "Yorum", "Remakü"],
-  colors: ["#ef4444", "#3b82f6", "#22c55e"],
-  stroke: { show: false },
-  legend: { show: false },
-  dataLabels: { enabled: false },
-  plotOptions: { pie: { donut: { size: "85%", background: "transparent" } } },
-  tooltip: { theme: "dark" },
-}));
-const engagementDonutSeries = computed(() => [
-  data.value?.social?.engagementMix?.likes || 0,
-  data.value?.social?.engagementMix?.comments || 0,
-  data.value?.social?.engagementMix?.reposts || 0,
-]);
-
-const sentimentDonutOptions = computed(() => ({
-  chart: { type: "donut", fontFamily: "inherit" },
-  labels: data.value?.sentiment?.distribution?.map((s: any) => s.label) || [],
-  colors: ["#4ade80", "#60a5fa", "#f87171", "#fb923c", "#c084fc", "#2dd4bf"],
-  stroke: { show: false },
-  legend: { position: "bottom", labels: { colors: "#64748b" } },
-  dataLabels: { enabled: false },
-  plotOptions: { pie: { donut: { size: "80%", background: "transparent" } } },
-  tooltip: { theme: "dark" },
-}));
-const sentimentDonutSeries = computed(
-  () => data.value?.sentiment?.distribution?.map((s: any) => s.count) || [],
-);
-
-const sentimentBarOptions = computed(() => ({
-  chart: {
-    toolbar: { show: false },
-    background: "transparent",
-    fontFamily: "inherit",
-  },
   plotOptions: {
-    bar: {
-      horizontal: true,
-      borderRadius: 8,
-      barHeight: "40%",
-      distributed: true,
-    },
-  },
-  colors: data.value?.sentiment?.categoryAnalysis?.map((c: any) => c.color) || [
-    "#3b82f6",
-  ],
-  xaxis: {
-    categories:
-      data.value?.sentiment?.categoryAnalysis?.map((c: any) => c.name) || [],
-    labels: { style: { colors: "#475569" } },
-    max: 1,
-  },
-  grid: { borderColor: "#ffffff03" },
-  legend: { show: false },
-  tooltip: { theme: "dark" },
+    heatmap: {
+      shadeIntensity: 0.5,
+      radius: 4,
+      useFillColorAsStroke: false,
+      colorScale: {
+        ranges: [
+          { from: 0, to: 0, name: 'Sessiz', color: '#1e293b' },
+          { from: 1, to: 5, name: 'Düşük', color: '#1d4ed8' },
+          { from: 6, to: 15, name: 'Orta', color: '#3b82f6' },
+          { from: 16, to: 100, name: 'Yüksek', color: '#60a5fa' }
+        ]
+      }
+    }
+  }
 }));
-const sentimentBarSeries = computed(() => [
-  {
-    name: "Pozitiflik Skoru",
-    data:
-      data.value?.sentiment?.categoryAnalysis?.map((c: any) =>
-        c.avgScore.toFixed(2),
-      ) || [],
+
+const heatmapSeries = computed(() => {
+  const matrix = campusStore.analytics?.psychology?.matrix || {};
+  return Object.entries(matrix).map(([name, points]: any) => ({
+    name: name.toUpperCase(),
+    data: points.map((val: number, i: number) => ({ x: `${i}:00`, y: val }))
+  }));
+});
+
+// DAYANIŞMA GRAFİKLERİ
+const solidarityPulseOptions = computed(() => ({
+  chart: { toolbar: { show: false }, background: 'transparent' },
+  stroke: { curve: "smooth", width: [3, 2], dashArray: [0, 5] },
+  fill: {
+    type: "gradient",
+    gradient: { opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 100] }
   },
+  xaxis: { categories: campusStore.analytics?.solidarity?.series?.map((s: any) => s.label) || [], labels: { style: { colors: "#475569", fontSize: "10px" } } },
+  yaxis: { show: false },
+  grid: { borderColor: "#ffffff03" },
+  colors: ["#f59e0b", "#d4af37"],
+  legend: { position: "top", horizontalAlign: "right", labels: { colors: "#64748b" }, markers: { radius: 12 } }
+}));
+
+const solidarityPulseSeries = computed(() => [
+  { name: "Yardım Talepleri", data: campusStore.analytics?.solidarity?.series?.map((s: any) => s.count) || [] },
+  { name: "Çözülen İhtiyaçlar", data: campusStore.analytics?.solidarity?.series?.map((s: any) => s.completed) || [] }
 ]);
 
-const economyDonutOptions = computed(() => ({
-  chart: { type: "donut", fontFamily: "inherit" },
-  labels: data.value?.economy?.categories?.map((c: any) => c.label) || [],
-  colors: ["#3b82f6", "#a855f7", "#ec4899", "#f59e0b", "#10b981"],
-  stroke: { show: false },
-  legend: { position: "bottom", labels: { colors: "#64748b" } },
-  dataLabels: { enabled: false },
-  plotOptions: { pie: { donut: { size: "80%", background: "transparent" } } },
-  tooltip: { theme: "dark" },
+const solidarityEfficiencyOptions = computed(() => ({
+  chart: { type: 'radialBar' },
+  plotOptions: {
+    radialBar: {
+      hollow: { size: '70%' },
+      track: { background: '#ffffff05' },
+      dataLabels: {
+        name: { show: true, label: 'VERİMLİLİK', color: '#64748b', fontSize: '10px', fontWeight: 900, offsetY: -10 },
+        value: { show: true, color: '#fff', fontSize: '24px', fontWeight: 500, offsetY: 5, formatter: (v: any) => '%' + v }
+      }
+    }
+  },
+  colors: ["#f59e0b"],
+  stroke: { lineCap: 'round' }
 }));
-const economyDonutSeries = computed(
-  () => data.value?.economy?.categories?.map((c: any) => c.totalValue) || [],
-);
 
-const donutOptions = computed(() => ({
-  chart: { type: "donut", fontFamily: "inherit" },
-  labels: data.value?.categories?.map((s: any) => s.name) || ["Bekleniyor"],
-  colors: ["#3b82f6", "#a855f7", "#ec4899", "#f59e0b", "#10b981"],
+const solidarityEfficiencySeries = computed(() => [campusStore.analytics?.summary?.solidarityEfficiency || 0]);
+
+const solidarityDonutOptions = computed(() => ({
+  chart: { type: "donut", background: 'transparent' },
+  labels: campusStore.analytics?.solidarity?.categories?.map((c: any) => c.label) || [],
+  colors: ["#f59e0b", "#d4af37", "#fbbf24", "#926239", "#78350f"],
   stroke: { show: false },
   legend: { show: false },
   dataLabels: { enabled: false },
-  plotOptions: { pie: { donut: { size: "85%", background: "transparent" } } },
-  tooltip: { theme: "dark" },
+  plotOptions: { pie: { donut: { size: "85%" } } }
 }));
-const donutSeries = computed(
-  () => data.value?.categories?.map((s: any) => s.count) || [1],
-);
+const solidarityDonutSeries = computed(() => campusStore.analytics?.solidarity?.categories?.map((c: any) => c.count) || []);
 
 onMounted(fetchAnalytics);
 </script>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 3px;
-  height: 3px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-}
-
-.animate-in {
-  animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
-}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.animate-in { animation: slideIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+@keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+.tabular-nums { font-variant-numeric: tabular-nums; }
 </style>
