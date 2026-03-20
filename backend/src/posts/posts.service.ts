@@ -538,6 +538,39 @@ export class PostsService {
     });
   }
 
+  async togglePin(userId: number, id: number) {
+    const post = await this.prisma.post.findUnique({
+      where: { id },
+    });
+
+    if (!post || post.isDeleted) {
+      throw new NotFoundException('Post bulunamadı.');
+    }
+
+    if (post.authorId !== userId) {
+      throw new ForbiddenException('Sadece kendi postlarınızı sabitleyebilirsiniz.');
+    }
+
+    if (post.isPinned) {
+      return this.prisma.post.update({
+        where: { id },
+        data: { isPinned: false },
+      });
+    }
+
+    // Önce bu kullanıcının diğer tüm sabitlerini kaldır
+    await this.prisma.post.updateMany({
+      where: { authorId: userId, isPinned: true },
+      data: { isPinned: false },
+    });
+
+    // Ve bu postu sabitle
+    return this.prisma.post.update({
+      where: { id },
+      data: { isPinned: true },
+    });
+  }
+
   async remove(id: number, userId: number) {
     const post = await this.prisma.post.findFirst({ where: { id, isDeleted: false } });
     if (!post) throw new NotFoundException('Post bulunamadı.');

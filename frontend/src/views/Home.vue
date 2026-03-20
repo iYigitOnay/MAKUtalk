@@ -3,9 +3,9 @@
   <div
     class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen font-sans relative"
   >
-    <!-- TOP TABS (Main Feed vs Academic Feed) -->
+    <!-- TOP TABS (Main Feed vs Academic Feed) - Not sticky anymore to avoid overlap -->
     <div
-      class="sticky top-0 z-50 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-b border-gray-200 dark:border-primary-900/30"
+      class="bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-b border-gray-200 dark:border-primary-900/30"
     >
       <div class="flex">
         <button
@@ -176,7 +176,7 @@
             "
             class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium min-h-[100px] overflow-hidden pt-2.5 pr-12"
             :disabled="postsStore.loading"
-            maxlength="280"
+            maxlength="750"
           />
 
           <!-- ... Mentions Modal ... -->
@@ -469,32 +469,32 @@
                         fill="transparent"
                         class="transition-all duration-500"
                         :class="
-                          newPostContent.length > 250
+                          newPostContent.length > 750
                             ? 'text-red-500'
-                            : newPostContent.length > 200
+                            : newPostContent.length > 650
                               ? 'text-orange-500'
                               : 'text-primary-500'
                         "
                         :stroke-dasharray="63"
                         :stroke-dashoffset="
-                          63 - (Math.min(newPostContent.length, 250) / 250) * 63
+                          63 - (Math.min(newPostContent.length, 750) / 750) * 63
                         "
                         stroke-linecap="round"
                       />
                     </svg>
                     <span
-                      v-if="newPostContent.length > 200"
+                      v-if="newPostContent.length > 650"
                       class="absolute text-[8px] font-black"
                       :class="
-                        newPostContent.length > 250
+                        newPostContent.length > 750
                           ? 'text-red-500'
                           : 'text-gray-400'
                       "
-                      >{{ 250 - newPostContent.length }}</span
+                      >{{ 750 - newPostContent.length }}</span
                     >
                   </div>
                   <div
-                    v-if="newPostContent.length > 250"
+                    v-if="newPostContent.length > 750"
                     class="w-px h-4 bg-gray-200 dark:bg-gray-800"
                   ></div>
                 </div>
@@ -505,7 +505,7 @@
                 :disabled="
                   (!newPostContent.trim() && !selectedImage) ||
                   postsStore.loading ||
-                  newPostContent.length > 250
+                  newPostContent.length > 750
                 "
                 class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50 disabled:grayscale transition-all"
               >

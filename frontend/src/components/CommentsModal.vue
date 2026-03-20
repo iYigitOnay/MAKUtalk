@@ -55,13 +55,17 @@
                 <textarea 
                   v-model="replyContent" 
                   rows="2" 
+                  maxlength="750"
                   placeholder="Yanıtını gönder..." 
                   class="w-full p-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-white/5 rounded-2xl text-sm focus:ring-2 focus:ring-blue-500/20 outline-none resize-none transition-all dark:text-white"
                 ></textarea>
-                <div class="flex justify-end mt-2">
+                <div class="flex justify-between items-center mt-2">
+                  <span class="text-[10px] font-bold text-gray-400 uppercase tracking-widest pl-2">
+                    {{ replyContent.length }} / 750
+                  </span>
                   <button 
                     @click="submitReply" 
-                    :disabled="!replyContent.trim() || sending" 
+                    :disabled="!replyContent.trim() || sending || replyContent.length > 750" 
                     class="px-6 py-2 bg-blue-600 text-white text-xs font-black rounded-xl uppercase hover:bg-blue-700 disabled:opacity-50 transition-all active:scale-95 shadow-lg shadow-blue-500/20"
                   >
                     <span v-if="!sending">Yanıtla</span>

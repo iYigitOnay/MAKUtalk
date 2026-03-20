@@ -145,6 +145,12 @@ export class PostsController {
     return this.postsService.update(id, user.id, updatePostDto);
   }
 
+  @Patch(':id/pin')
+  @UseGuards(JwtAuthGuard)
+  togglePin(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
+    return this.postsService.togglePin(user.id, id);
+  }
+
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {

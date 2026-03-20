@@ -15,6 +15,15 @@
 
     <!-- Tıklanabilir İçerik Alanı -->
     <div @click="$router.push(`/post/${displayPost.id}`)" class="p-4 pb-0 cursor-pointer relative z-10">
+      <!-- Pinned Header -->
+      <div
+        v-if="displayPost.isPinned"
+        class="flex items-center gap-2 mb-2 ml-14 sm:ml-16 text-blue-500 text-[10px] font-black uppercase tracking-widest"
+      >
+        <component :is="getBadgeComponent('pin')" class="w-3 h-3 fill-current" />
+        SABİTLENDİ
+      </div>
+
       <!-- Reply Header -->
       <div
         v-if="displayPost.parentId"
@@ -68,6 +77,10 @@
               </button>
               <div v-if="showMenu" class="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl z-[100] py-1.5 overflow-hidden">
                 <button @click="handleCopyLink" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('link')" class="w-4 h-4 text-gray-400" />Bağlantıyı Kopyala</button>
+                <button v-if="isOwner" @click="handleTogglePin" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2.5">
+                  <component :is="getBadgeComponent('pin')" class="w-4 h-4" />
+                  {{ displayPost.isPinned ? 'Sabiti Kaldır' : 'Profile Sabitle' }}
+                </button>
                 <button v-if="isOwner || isAdmin" @click="$emit('delete', post.id); showMenu = false;" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('trash-2')" class="w-4 h-4" />Gönderiyi Sil</button>
               </div>
             </div>
@@ -215,6 +228,17 @@ const likeLoading = ref(false);
 const repostLoading = ref(false);
 const bookmarkLoading = ref(false);
 const showMenu = ref(false);
+
+const handleTogglePin = async () => {
+  if (!displayPost.value) return;
+  try {
+    await postsStore.togglePin(displayPost.value.id);
+    toast.success(displayPost.value.isPinned ? "Profiline sabitlendi!" : "Sabit kaldırıldı.");
+    showMenu.value = false;
+  } catch (error) {
+    toast.error("İşlem başarısız.");
+  }
+};
 
 const handleBookmark = async () => {
   if (!displayPost.value) return;
