@@ -109,6 +109,22 @@ export function useSocket() {
       }
     });
 
+    socket.on("online_users", (userIds: number[]) => {
+      console.log("👥 Mevcut çevrim içi kullanıcılar:", userIds);
+      chatStore.setOnlineUsers(userIds);
+    });
+
+    socket.on("user_status", (data: { userId: number; isOnline: boolean }) => {
+      console.log(`👤 Kullanıcı durumu değişti: ${data.userId} -> ${data.isOnline ? 'ONLINE' : 'OFFLINE'}`);
+      chatStore.updateUserStatus(data.userId, data.isOnline);
+    });
+
+    socket.on('messages_read', (data: { conversationId: number; readByUserId: number }) => {
+      console.log(`👁️ Okundu sinyali geldi: Conv ${data.conversationId}`);
+      // Store'daki mesajları güncelle — bu konuşmadaki tüm gönderdiğim mesajlar okundu
+      chatStore.markMessagesAsRead(data.conversationId);
+    });
+
     listenersAttached = true;
     (window as any).socket = socket;
   };
@@ -145,6 +161,11 @@ export function useSocket() {
     socket.emit("typing", { conversationId, receiverId, isTyping });
   };
 
+  const sendMarkRead = (conversationId: number) => {
+    if (!socket?.connected) return;
+    socket.emit('mark_read', { conversationId });
+  };
+
   // GLOBAL WATCHER: Auth durumu değiştikçe bağlan/kop
   // Bu watcher useSocket her çağrıldığında değil, uygulama ömrü boyunca sadece 1 kez kurulmalı
   if (!(window as any).__socket_watcher_installed) {
@@ -154,5 +175,5 @@ export function useSocket() {
     (window as any).__socket_watcher_installed = true;
   }
 
-  return { isConnected, connect, disconnect, sendMessage, sendTyping };
+  return { isConnected, connect, disconnect, sendMessage, sendTyping, sendMarkRead };
 }

@@ -55,7 +55,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       await client.join(userRoom);
       this.logger.log(`Client connected: ${client.id} (User: ${userId})`);
       
-      // Adminlere yeni birinin geldiğini haber ver (opsiyonel)
+      // Bağlanan kullanıcıya mevcut çevrim içi kullanıcıları gönder
+      client.emit('online_users', Array.from(ChatGateway.onlineUsers));
+
+      // Herkese bu kullanıcının çevrim içi olduğunu bildir
+      this.server.emit('user_status', { userId, isOnline: true });
+      
       this.server.emit('online_count', ChatGateway.onlineUsers.size);
     } catch (e) {
       client.disconnect();
@@ -66,6 +71,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const userId = client.data.userId;
     if (userId) {
       ChatGateway.onlineUsers.delete(userId);
+      this.server.emit('user_status', { userId, isOnline: false });
       this.server.emit('online_count', ChatGateway.onlineUsers.size);
     }
     this.logger.log(`Client disconnected: ${client.id}`);
@@ -81,8 +87,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const senderId = client.data.userId;
       if (!senderId) throw new Error("Yetkisiz erişim!");
 
-      // 1. DOĞRULAMA (Audit Log önerisiyle): 
-      // Client'ın gönderdiği receiverId'ye GÜVENME. Conversation üzerinden doğrula!
       const conversation = await this.prisma.conversation.findUnique({
         where: { id: data.conversationId },
         include: { participants: true }
@@ -95,7 +99,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const actualReceiver = conversation.participants.find(p => p.userId !== senderId);
       if (!actualReceiver) throw new Error("Alıcı bulunamadı.");
 
-      // 2. Veritabanına kaydet (Service içinde auth ve transaction kuralları çalışır)
       const message = await this.chatService.sendMessage(
         senderId,
         data.conversationId,
@@ -103,10 +106,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         data.postId,
       );
 
-      // 3. Mesajı gönderene onayla
       client.emit('new_message', message);
 
-      // 4. ALICIYA DOĞRULANMIŞ ODA ÜZERİNDEN İLET
       const receiverRoom = `user_${actualReceiver.userId}`;
       this.server.to(receiverRoom).emit('new_message', message);
       
@@ -126,7 +127,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @MessageBody() data: TypingDto,
   ) {
     const senderId = client.data.userId;
-    // Typing durumu için de katılımcı doğrulaması (Opsiyonel ama önerilen güvenlik)
     const conversation = await this.prisma.conversation.findUnique({
       where: { id: data.conversationId },
       include: { participants: { select: { userId: true } } }
@@ -144,7 +144,49 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  // YENİ: Gönderi Paylaşıldığında Tüm Kullanıcılara Duyur (Gerçek Zamanlı Akış)
+  @SubscribeMessage('mark_read')
+  async handleMarkRead(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { conversationId: number },
+  ) {
+    const userId = client.data.userId;
+    if (!userId || !data.conversationId) return;
+
+    await this.prisma.message.updateMany({
+      where: {
+        conversationId: data.conversationId,
+        senderId: { not: userId },
+        isRead: false,
+      },
+      data: { isRead: true },
+    });
+
+    const conversation = await this.prisma.conversation.findUnique({
+      where: { id: data.conversationId },
+      include: { participants: { select: { userId: true } } },
+    });
+
+    if (!conversation) return;
+
+    const otherParticipant = conversation.participants.find(p => p.userId !== userId);
+    if (!otherParticipant) return;
+
+    const senderRoom = `user_${otherParticipant.userId}`;
+    this.server.to(senderRoom).emit('messages_read', {
+      conversationId: data.conversationId,
+      readByUserId: userId,
+    });
+
+    this.logger.log(`👁️ [READ_EVENT] User ${userId} read Conv ${data.conversationId}. Notifying Sender ${otherParticipant.userId}`);
+  }
+
+  broadcastMessagesRead(conversationId: number, readByUserId: number, receiverUserId: number) {
+    this.server.to(`user_${receiverUserId}`).emit('messages_read', {
+      conversationId,
+      readByUserId,
+    });
+  }
+
   broadcastNewPost(post: any) {
     this.server.emit('new_post', post);
   }

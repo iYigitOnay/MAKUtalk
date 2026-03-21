@@ -10,7 +10,22 @@ export const useChatStore = defineStore("chat", () => {
   const messages = ref<any[]>([]);
   const loading = ref(false);
   const typingUsers = ref<Record<number, boolean>>({});
-  const latestIncomingMessage = ref<any | null>(null); // Bildirim kartı için eklendi
+  const onlineUsers = ref<Set<number>>(new Set());
+  const latestIncomingMessage = ref<any | null>(null);
+
+  const setOnlineUsers = (userIds: number[]) => {
+    onlineUsers.value = new Set(userIds);
+  };
+
+  const updateUserStatus = (userId: number, isOnline: boolean) => {
+    if (isOnline) {
+      onlineUsers.value.add(userId);
+    } else {
+      onlineUsers.value.delete(userId);
+    }
+  };
+
+  const isUserOnline = (userId: number) => onlineUsers.value.has(Number(userId));
 
   const setTypingStatus = (conversationId: number, isTyping: boolean) => {
     typingUsers.value[conversationId] = isTyping;
@@ -93,6 +108,22 @@ export const useChatStore = defineStore("chat", () => {
     if (!exists) messages.value.push(normalizedMessage);
   };
 
+  const markMessagesAsRead = (conversationId: number) => {
+    // Aktif sohbetin mesajlarını güncelle
+    messages.value = messages.value.map(msg => {
+      if (Number(msg.conversationId) === Number(conversationId)) {
+        return { ...msg, isRead: true };
+      }
+      return msg;
+    });
+
+    // Konuşma listesindeki lastMessage'ı da güncelle
+    const conv = conversations.value.find(c => c.id === conversationId);
+    if (conv?.lastMessage) {
+      conv.lastMessage.isRead = true;
+    }
+  };
+
   const deleteConversation = async (conversationId: number) => {
     try {
       await apiClient.post(`/chat/delete/${conversationId}`);
@@ -137,6 +168,11 @@ export const useChatStore = defineStore("chat", () => {
     deleteConversation, 
     updateUserInChat, 
     typingUsers, 
-    setTypingStatus 
+    setTypingStatus,
+    markMessagesAsRead,
+    onlineUsers,
+    setOnlineUsers,
+    updateUserStatus,
+    isUserOnline
   };
 });

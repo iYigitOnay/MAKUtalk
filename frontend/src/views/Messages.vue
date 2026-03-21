@@ -59,6 +59,8 @@
           <div class="relative flex-shrink-0 w-12 h-12">
             <img v-if="conv.otherParticipant?.avatarUrl" :src="getImageUrl(conv.otherParticipant.avatarUrl)" class="w-full h-full rounded-full object-cover shadow-sm" />
             <div v-else class="w-full h-full rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold">{{ conv.otherParticipant?.username?.charAt(0).toUpperCase() }}</div>
+            <!-- Online Indicator -->
+            <div v-if="chatStore.isUserOnline(conv.otherParticipant?.id)" class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-gray-900 rounded-full shadow-sm z-10"></div>
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate tracking-tight">{{ conv.otherParticipant?.fullName || conv.otherParticipant?.username }}</h3>
@@ -86,12 +88,15 @@
               <div class="relative">
                 <img v-if="otherUser?.avatarUrl" :src="getImageUrl(otherUser.avatarUrl)" class="w-11 h-11 rounded-full object-cover shadow-sm border border-slate-100 dark:border-white/5" />
                 <div v-else class="w-11 h-11 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg">{{ otherUser?.username?.charAt(0).toUpperCase() }}</div>
-                <div v-if="chatStore.activeConversation.canChat" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-[#0b0f19] rounded-full shadow-sm"></div>
+                <div v-if="chatStore.isUserOnline(otherUser?.id)" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-[#0b0f19] rounded-full shadow-sm"></div>
               </div>              <div class="text-left">
                 <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">{{ otherUser?.fullName || otherUser?.username }}</h3>
                 <transition name="fade">
                   <p v-if="chatStore.typingUsers[chatStore.activeConversation.id]" class="text-[11px] font-bold text-indigo-500 dark:text-indigo-400 flex items-center gap-1.5 mt-0.5 animate-pulse">yazıyor...</p>
-                  <p v-else-if="chatStore.activeConversation.canChat" class="text-[10px] text-emerald-500 font-bold mt-0.5">Sohbet Aktif</p>
+                  <p v-else-if="chatStore.isUserOnline(otherUser?.id)" class="text-[10px] text-emerald-500 font-bold mt-0.5 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
+                    Çevrimiçi
+                  </p>
                 </transition>
               </div>
             </div>
@@ -151,14 +156,46 @@
           </div>
 
           <!-- Mesaj Balonları -->
-          <div v-for="(msg, index) in chatStore.messages" :key="msg.id || index" class="flex flex-col" :class="isMyMessage(msg.senderId) ? 'items-end' : 'items-start'">
-            <div class="max-w-[85%] md:max-w-[70%] px-5 py-3.5 text-sm font-medium rounded-3xl shadow-sm transition-all" :class="isMyMessage(msg.senderId) ? 'bg-indigo-600 text-white rounded-tr-none' : 'bg-white dark:bg-[#1e293b] text-slate-900 dark:text-slate-100 rounded-tl-none border border-slate-100 dark:border-white/5'" :style="isMyMessage(msg.senderId) ? { backgroundColor: currentThemeColor } : {}">
-              
-              <!-- Paylaşılan Post Kartı (Premium) -->
-              <SharedPostCard v-if="msg.sharedPost" :post="msg.sharedPost" />
+          <div v-for="(msg, index) in chatStore.messages" :key="msg.id || index" class="flex flex-col space-y-1.5" :class="isMyMessage(msg.senderId) ? 'items-end' : 'items-start'">
+            
+            <div 
+              class="max-w-[85%] md:max-w-[70%] px-3 py-1.5 shadow-sm transition-all relative group" 
+              :class="isMyMessage(msg.senderId) 
+                ? 'text-white rounded-2xl rounded-tr-none' 
+                : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-none border border-slate-100 dark:border-white/5 shadow-slate-200/50 dark:shadow-none'" 
+              :style="isMyMessage(msg.senderId) ? { 
+                background: `linear-gradient(135deg, ${currentThemeColor}, ${currentThemeColor}dd)`,
+                boxShadow: `0 3px 10px -3px ${currentThemeColor}44`
+              } : {}"
+            >
+              <!-- Paylaşılan Post Kartı -->
+              <SharedPostCard v-if="msg.sharedPost" :post="msg.sharedPost" class="mb-2" />
 
-              <div :class="{ 'mt-2 pt-2 border-t border-white/20': msg.sharedPost && decrypt(msg.content) }">
+              <!-- MESAJ İÇERİĞİ VE METADATA (Dinamik Hizalama) -->
+              <div class="block text-[14px] leading-relaxed font-medium tracking-tight whitespace-pre-wrap break-words min-w-[60px]">
                 {{ decrypt(msg.content) }}
+                
+                <!-- PREMIUM METADATA (Metin Sonunda) -->
+                <span 
+                  class="inline-flex items-center gap-1.5 ml-2 select-none pointer-events-none transition-all duration-300 opacity-60 group-hover:opacity-100 align-middle"
+                  :class="isMyMessage(msg.senderId) ? '' : 'text-slate-400 dark:text-slate-500'"
+                >
+                  <span class="text-[8px] font-bold uppercase tracking-wider leading-none">
+                    {{ formatTime(msg.createdAt) }}
+                  </span>
+                  
+                  <div v-if="isMyMessage(msg.senderId)" class="flex items-center">
+                    <!-- OKUNDU (Neon White Glow) -->
+                    <div v-if="msg.isRead" class="flex -space-x-1.5 transition-all">
+                      <svg class="w-3 h-3 text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                      <svg class="w-3 h-3 text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    </div>
+                    <!-- İLETİLDİ (Gri Tek Tik) -->
+                    <svg v-else class="w-3 h-3 text-slate-300/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 6L9 17l-5-5"/>
+                    </svg>
+                  </div>
+                </span>
               </div>
             </div>
           </div>
@@ -223,16 +260,28 @@ import EmojiPicker from "@/components/EmojiPicker.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import SharedPostCard from "@/components/SharedPostCard.vue";
 
+import { format } from "date-fns";
+import { tr } from "date-fns/locale";
+
 const authStore = useAuthStore();
 const chatStore = useChatStore();
 const toast = useToast();
 const route = useRoute();
 const router = useRouter();
-const { sendMessage, sendTyping } = useSocket();
+const { sendMessage, sendTyping, sendMarkRead } = useSocket();
 
 const activeTab = ref('chats'); // 'chats' | 'requests'
 const searchQuery = ref("");
 const messageInput = ref("");
+
+const formatTime = (dateStr: string) => {
+  if (!dateStr) return "";
+  try {
+    return format(new Date(dateStr), 'HH:mm', { locale: tr });
+  } catch (e) {
+    return "";
+  }
+};
 
 const filteredConversations = computed(() => {
   return chatStore.conversations.filter(conv => {
@@ -352,18 +401,50 @@ const scrollToBottom = () => nextTick(() => { if (messagesContainer.value) messa
 onMounted(async () => {
   await chatStore.fetchConversations();
   if (route.query.userId) {
-    // listingId varsa onu da gönderiyoruz
     await chatStore.selectConversation(Number(route.query.userId), route.query.fromSpot === 'true', Number(route.query.listingId));
+    if (chatStore.activeConversation?.id) {
+      sendMarkRead(chatStore.activeConversation.id);
+    }
     if (route.query.initialMessage && chatStore.messages.length === 0) {
       setTimeout(() => handleSendMessage(route.query.initialMessage as string), 500);
     }
   }
   loadTheme();
   scrollToBottom();
+
+  window.addEventListener('focus', () => {
+    if (chatStore.activeConversation?.id) {
+      sendMarkRead(chatStore.activeConversation.id);
+    }
+  });
 });
 
-watch(() => chatStore.messages.length, scrollToBottom);
-watch(() => chatStore.activeConversation, (val) => { if (val) { loadTheme(); setTimeout(scrollToBottom, 150); } });
+// ✅ KRİTİK: Yeni mesaj geldiğinde otomatik "okundu" gönder
+watch(
+  () => chatStore.messages.length,
+  () => {
+    scrollToBottom();
+    const activeId = chatStore.activeConversation?.id;
+    if (!activeId) return;
+    
+    const lastMsg = chatStore.messages[chatStore.messages.length - 1];
+    if (lastMsg && Number(lastMsg.senderId) !== currentUserId.value) {
+      sendMarkRead(activeId);
+    }
+  }
+);
+
+// ✅ KRİTİK: Sohbet değiştirildiğinde "okundu" gönder
+watch(
+  () => chatStore.activeConversation?.id,
+  (newId) => {
+    if (newId) {
+      loadTheme();
+      setTimeout(scrollToBottom, 150);
+      sendMarkRead(newId);
+    }
+  }
+);
 </script>
 
 <style scoped>
