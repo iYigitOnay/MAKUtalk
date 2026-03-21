@@ -407,6 +407,7 @@
                 v-for="p in currentTabPosts"
                 :key="p.id"
                 :post="p"
+                :is-profile-view="true"
                 @delete="handleDeletePost"
                 @showComments="handleShowComments"
               />

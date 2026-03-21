@@ -50,18 +50,18 @@ export class ChatController {
   }
 
   @Get('messages/:conversationId')
-  getMessages(@Param('conversationId') conversationId: string) {
-    return this.chatService.getMessages(+conversationId);
+  getMessages(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
+    return this.chatService.getMessages(+conversationId, user.id);
   }
 
   @Post(':id/read')
   markAsRead(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.chatService.markAsRead(user.id, +id);
+    return this.chatService.markMessagesAsRead(+id, user.id);
   }
 
   @Post('delete/:conversationId')
   async deleteConversation(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
-    return this.chatService.deleteConversation(user.id, +conversationId);
+    return this.chatService.removeConversation(user.id, +conversationId);
   }
 
   @Post('theme/:conversationId')

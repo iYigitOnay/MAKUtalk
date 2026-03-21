@@ -112,13 +112,14 @@
         <div v-else-if="!userPosts.length" class="card text-center py-12">
           <p class="text-gray-500">Henüz paylaşım yok.</p>
         </div>
-
-        <PostCard
-          v-for="post in userPosts"
-          :key="post.id"
-          :post="post"
-          @delete="handleDeletePost"
-          @report="openPostReport"
+<PostCard
+  v-for="post in userPosts"
+  :key="post.id"
+  :post="post"
+  :is-profile-view="true"
+  @delete="handleDeletePost"
+  @report="openPostReport"
+/>
           @showComments="handleShowComments"
         />
       </div>

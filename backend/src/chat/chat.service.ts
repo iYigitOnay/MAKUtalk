@@ -1,7 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { censorContent } from '../common/utils/content-filter.util';
-import { MyLogger } from '../common/logger/my-logger.service';
+import { MyLogger } from '../common/logger/logger.service';
 
 @Injectable()
 export class ChatService {
@@ -161,7 +161,7 @@ export class ChatService {
     if (!conversation.participants.some(p => p.userId === userId)) throw new ForbiddenException();
 
     await this.prisma.message.updateMany({
-      where: { conversationId, senderId: { NOT: userId }, isRead: false },
+      where: { conversationId, senderId: { not: userId }, isRead: false },
       data: { isRead: true }
     });
 

@@ -2,22 +2,23 @@
 <template>
   <div
     v-if="displayPost"
-    class="bg-white dark:bg-gray-950/40 hover:bg-gray-50 dark:hover:bg-gray-900/60 transition-all duration-500 cursor-default border-b border-gray-200 dark:border-primary-900/20 relative overflow-hidden"
+    class="bg-white dark:bg-gray-950/40 hover:bg-gray-50 dark:hover:bg-gray-900/60 transition-all duration-500 cursor-default border-b border-gray-200 dark:border-primary-900/20 relative"
     :class="[
       isThreadParent ? 'border-none' : '', 
       (displayPost.isAcademic && !displayPost.isLiked) 
         ? 'academic-unread shadow-sm z-10' 
-        : ''
+        : '',
+      showMenu ? 'z-[50]' : 'z-0'
     ]"
   >
-    <!-- Academic Decorative Pattern - Removed pulse for premium feel -->
+    <!-- Academic Decorative Pattern -->
     <div v-if="displayPost.isAcademic && !displayPost.isLiked" class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 blur-3xl pointer-events-none"></div>
 
     <!-- Tıklanabilir İçerik Alanı -->
     <div @click="$router.push(`/post/${displayPost.id}`)" class="p-4 pb-0 cursor-pointer relative z-10">
-      <!-- Pinned Header -->
+      <!-- Pinned Header - Sadece profil sayfalarında gösterilir -->
       <div
-        v-if="displayPost.isPinned"
+        v-if="displayPost.isPinned && isProfileView"
         class="flex items-center gap-2 mb-2 ml-14 sm:ml-16 text-blue-500 text-[10px] font-black uppercase tracking-widest"
       >
         <component :is="getBadgeComponent('pin')" class="w-3 h-3 fill-current" />
@@ -77,10 +78,22 @@
               </button>
               <div v-if="showMenu" class="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl z-[100] py-1.5 overflow-hidden">
                 <button @click="handleCopyLink" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('link')" class="w-4 h-4 text-gray-400" />Bağlantıyı Kopyala</button>
+                
                 <button v-if="isOwner" @click="handleTogglePin" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2.5">
                   <component :is="getBadgeComponent('pin')" class="w-4 h-4" />
                   {{ displayPost.isPinned ? 'Sabiti Kaldır' : 'Profile Sabitle' }}
                 </button>
+
+                <button v-if="isAdmin" @click="handleRefreshAI" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors flex items-center gap-2.5">
+                  <component :is="getBadgeComponent('refresh-cw')" class="w-4 h-4" />
+                  AI Analizini Yenile
+                </button>
+
+                <button v-if="!isOwner" @click="$emit('report', displayPost.id); showMenu = false;" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2.5">
+                  <component :is="getBadgeComponent('flag')" class="w-4 h-4" />
+                  Şikayet Et
+                </button>
+
                 <button v-if="isOwner || isAdmin" @click="$emit('delete', post.id); showMenu = false;" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('trash-2')" class="w-4 h-4" />Gönderiyi Sil</button>
               </div>
             </div>
@@ -206,9 +219,11 @@ const props = withDefaults(
   defineProps<{
     post: Post;
     isThreadParent?: boolean;
+    isProfileView?: boolean;
   }>(),
   {
     isThreadParent: false,
+    isProfileView: false,
   },
 );
 
