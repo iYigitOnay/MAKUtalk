@@ -52,7 +52,7 @@ export class ChatService {
       include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'desc' } } }
     });
 
-    let existing = null;
+    let existing: any = null;
 
     if (potentialConversations.length > 0) {
       existing = potentialConversations.sort((a, b) => b.participants.length - a.participants.length)[0];
@@ -64,7 +64,7 @@ export class ChatService {
         }
       }
 
-      if (existing.participants.length < 2) {
+      if (existing && existing.participants.length < 2) {
         await this.prisma.conversation.delete({ where: { id: existing.id } }).catch(() => {});
         existing = null;
       }
@@ -85,7 +85,9 @@ export class ChatService {
       });
     }
 
-    const myParticipantData = existing.participants.find(p => Number(p.userId) === uid);
+    if (!existing) throw new Error("Sohbet oluşturulamadı.");
+
+    const myParticipantData = existing.participants.find((p: any) => Number(p.userId) === uid);
     const otherParticipantData = await this.prisma.user.findUnique({ 
       where: { id: tid }, 
       select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true } 
