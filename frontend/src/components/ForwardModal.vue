@@ -103,6 +103,8 @@ import { useToast } from "vue-toastification";
 const props = defineProps<{
   isOpen: boolean;
   content: string;
+  mediaUrl?: string;
+  mediaType?: string;
 }>();
 
 const emit = defineEmits(["close"]);
@@ -154,8 +156,8 @@ const forwardTo = async (conv: any) => {
       Number(conv.otherParticipant.id),
       undefined,
       true, // isForwarded
-      undefined, // mediaUrl
-      undefined  // mediaType
+      props.mediaUrl,
+      props.mediaType
     );
 
     sentTo.value.push(conv.id);
