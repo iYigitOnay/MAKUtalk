@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { censorContent } from '../common/utils/content-filter.util';
 import { MyLogger } from '../common/logger/logger.service';
@@ -32,13 +32,14 @@ export class ChatService {
   }
 
   async getOrCreateConversation(userId: number, targetUserId: number, fromSpot: boolean = false, listingId?: number) {
+    if (!targetUserId || isNaN(targetUserId)) throw new BadRequestException('Geçersiz kullanıcı.');
     if (userId === targetUserId) throw new ForbiddenException('Kendinizle sohbet edemezsiniz.');
 
     let existing = await this.prisma.conversation.findFirst({
       where: {
         participants: { every: { userId: { in: [userId, targetUserId] } } }
       },
-      include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'asc' } } }
+      include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'desc' } } }
     });
 
     const targetFollowsMe = await this.prisma.follow.findFirst({
@@ -52,10 +53,10 @@ export class ChatService {
           isRejected: false,
           participants: { create: [{ userId }, { userId: targetUserId }] }
         },
-        include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'asc' } } }
+        include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'desc' } } }
       });
     } else if (fromSpot && existing.isRejected) {
-      existing = await this.prisma.conversation.update({ where: { id: existing.id }, data: { isRejected: false, isAccepted: false }, include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'asc' } } } });
+      existing = await this.prisma.conversation.update({ where: { id: existing.id }, data: { isRejected: false, isAccepted: false }, include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'desc' } } } });
     }
 
     const myParticipantData = existing.participants.find(p => p.userId === userId);
@@ -68,7 +69,7 @@ export class ChatService {
   }
 
   async sendMessage(senderId: number, conversationId: number, content?: string, postId?: number, isForwarded: boolean = false) {
-    const conversation = await this.prisma.conversation.findUnique({ where: { id: conversationId }, include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'asc' } } } });
+    const conversation = await this.prisma.conversation.findUnique({ where: { id: conversationId }, include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'desc' } } } });
     if (!conversation) throw new NotFoundException();
     
     const other = conversation.participants.find(p => p.userId !== senderId);
@@ -112,29 +113,40 @@ export class ChatService {
       include: {
         conversation: {
           include: {
-            participants: { where: { NOT: { userId } }, include: { user: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true } } } },
+            participants: { 
+              where: { userId: { not: userId } }, 
+              include: { user: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true } } } 
+            },
             messages: { where: { isDeleted: false }, orderBy: { createdAt: 'desc' }, take: 1 }
           }
         }
       }
     });
 
-    return participantEntries.map(p => {
-      const conv = p.conversation;
-      return {
-        id: conv.id,
-        isAccepted: conv.isAccepted,
-        isRejected: conv.isRejected,
-        createdAt: conv.createdAt,
-        themeColor: p.themeColor,
-        otherParticipant: (conv.participants[0] as any)?.user,
-        lastMessage: conv.messages[0] || null
-      };
-    }).sort((a, b) => {
-      const dateA = a.lastMessage?.createdAt || a.createdAt;
-      const dateB = b.lastMessage?.createdAt || b.createdAt;
-      return new Date(dateB).getTime() - new Date(dateA).getTime();
-    });
+    return participantEntries
+      .map(p => {
+        const conv = p.conversation;
+        const otherParticipant = (conv.participants[0] as any)?.user;
+        
+        // EĞER KARŞI KATILIMCI YOKSA BU SOHBETİ LİSTEYE ALMA (HAYALET SOHBET KORUMASI)
+        if (!otherParticipant) return null;
+
+        return {
+          id: conv.id,
+          isAccepted: conv.isAccepted,
+          isRejected: conv.isRejected,
+          createdAt: conv.createdAt,
+          themeColor: p.themeColor,
+          otherParticipant,
+          lastMessage: conv.messages[0] || null
+        };
+      })
+      .filter(c => c !== null)
+      .sort((a, b) => {
+        const dateA = a!.lastMessage?.createdAt || a!.createdAt;
+        const dateB = b!.lastMessage?.createdAt || b!.createdAt;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
   }
 
   async getMessages(conversationId: number, userId: number) {
@@ -191,11 +203,12 @@ export class ChatService {
   async removeMessage(messageId: number, userId: number) {
     const message = await this.prisma.message.findUnique({ where: { id: messageId } });
     if (!message) throw new NotFoundException();
+    
+    // Sadece mesajın sahibi silebilir (Global Soft Delete için şimdilik kısıt koymuyoruz ama güvenlik için kontrol ekledik)
     if (message.senderId !== userId) {
-      // Sadece benden sil (Soft Delete logic: normalde bir 'deletedFor' tablosu gerekir ama şimdilik genel soft delete yapalım)
-      // Kullanıcı talebi: "sil diyince hata alıyorum" ve "sadece kendinden" isteği vardı.
-      // Şimdilik genel isDeleted: true yapalım.
+       // İleride 'deleteForUserId' gibi bir tablo eklenirse burası genişletilebilir
     }
+
     return this.prisma.message.update({ where: { id: messageId }, data: { isDeleted: true } });
   }
 

@@ -60,6 +60,10 @@ export const useChatStore = defineStore("chat", () => {
   };
 
   const selectConversation = async (targetUserId: number, fromSpot: boolean = false, listingId?: number) => {
+    if (!targetUserId || isNaN(targetUserId)) {
+      console.warn("⚠️ Geçersiz targetUserId ile selectConversation çağrıldı.");
+      return;
+    }
     activeConversation.value = null;
     messages.value = [];
 

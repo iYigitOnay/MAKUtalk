@@ -52,7 +52,7 @@
         <button
           v-for="conv in filteredConversations"
           :key="conv.id"
-          @click="chatStore.selectConversation(conv.otherParticipant?.id)"
+          @click="conv.otherParticipant?.id && chatStore.selectConversation(conv.otherParticipant.id)"
           class="w-full p-4 flex items-center gap-4 rounded-2xl transition-all border border-transparent group text-left"
           :class="chatStore.activeConversation?.id === conv.id ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-500/20 shadow-sm' : 'hover:bg-slate-50 dark:hover:bg-white/5'"
         >
