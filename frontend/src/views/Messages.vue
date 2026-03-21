@@ -443,8 +443,12 @@ onMounted(async () => {
   window.addEventListener('focus', () => chatStore.activeConversation?.id && sendMarkRead(chatStore.activeConversation.id));
 });
 
-watch(() => chatStore.messages.length, () => { 
-  scrollToBottom(); 
+watch(() => chatStore.messages.length, (newLen, oldLen) => { 
+  // Eğer sadece 1 mesaj eklendiyse (yeni mesaj geldiyse) yumuşak kaydır, 
+  // ama toplu mesaj yüklendiyse (sohbet açıldıysa) anında en aşağı git.
+  const isNewSingleMessage = newLen - oldLen === 1;
+  scrollToBottom(isNewSingleMessage); 
+  
   const activeId = chatStore.activeConversation?.id; 
   if (activeId) { 
     const lastMsg = chatStore.messages[chatStore.messages.length - 1]; 
@@ -454,8 +458,9 @@ watch(() => chatStore.messages.length, () => {
 
 watch(() => chatStore.activeConversation?.id, (newId) => { 
   if (newId) { 
+    showScrollButton.value = false; // Sohbet değişince butonu gizle
     loadTheme(); 
-    scrollToBottom(false); 
+    scrollToBottom(false); // Anında en aşağı in (kayma animasyonu olmadan)
     sendMarkRead(newId); 
   } 
 });
