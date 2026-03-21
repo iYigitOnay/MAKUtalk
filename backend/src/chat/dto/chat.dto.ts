@@ -18,6 +18,14 @@ export class SendMessageDto {
   @IsOptional()
   postId?: number;
 
+  @IsString()
+  @IsOptional()
+  mediaUrl?: string;
+
+  @IsString()
+  @IsOptional()
+  mediaType?: string;
+
   @IsBoolean()
   @IsOptional()
   isForwarded?: boolean;

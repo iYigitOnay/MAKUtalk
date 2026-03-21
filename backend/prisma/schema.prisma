@@ -115,8 +115,10 @@ model Message {
   id             Int      @id @default(autoincrement())
   conversationId Int
   senderId       Int
-  content        String   @db.Text
+  content        String?  @db.Text
   postId         Int?     // Paylaşılan postun ID'si
+  mediaUrl       String?  // Yüklenen medyanın yolu
+  mediaType      String?  // IMAGE, VIDEO, FILE
   isRead         Boolean  @default(false)
   isForwarded    Boolean  @default(false)
   isDeleted      Boolean  @default(false)

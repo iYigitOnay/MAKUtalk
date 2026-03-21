@@ -153,7 +153,9 @@ const forwardTo = async (conv: any) => {
       props.content, // Şifreli içerik
       Number(conv.otherParticipant.id),
       undefined,
-      true // isForwarded
+      true, // isForwarded
+      undefined, // mediaUrl
+      undefined  // mediaType
     );
 
     sentTo.value.push(conv.id);
