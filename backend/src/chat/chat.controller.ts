@@ -31,18 +31,11 @@ export class ChatController {
   ) {
     let isFromSpot = fromSpot === 'true';
 
-    // SPOT BYPASS KORUMASI: Eğer fromSpot true ise, gerçekten bir ilan var mı kontrol et!
     if (isFromSpot && listingId) {
       const listing = await this.prisma.spotListing.findUnique({ where: { id: +listingId } });
-      if (!listing) {
-        throw new BadRequestException('Geçersiz ilan referansı.');
-      }
-      // Opsiyonel: İlanın sahibinin targetUserId olup olmadığı da kontrol edilebilir
-      if (listing.authorId !== +targetUserId) {
-        throw new BadRequestException('Bu ilan bu kullanıcıya ait değil.');
-      }
+      if (!listing) throw new BadRequestException('Geçersiz ilan referansı.');
+      if (listing.authorId !== +targetUserId) throw new BadRequestException('Bu ilan bu kullanıcıya ait değil.');
     } else if (isFromSpot && !listingId) {
-       // listingId yoksa ama fromSpot true ise şüpheli durum, normal gizlilik kurallarını uygula
        isFromSpot = false;
     }
 
@@ -70,16 +63,16 @@ export class ChatController {
     @Param('conversationId') conversationId: string,
     @Body('color') color: string
   ) {
-    return this.chatService.updateThemeColor(user.id, +conversationId, color);
+    return this.chatService.updateThemeColor(Number(user.id), +conversationId, color);
   }
 
   @Post('accept/:conversationId')
   acceptRequest(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
-    return this.chatService.acceptRequest(user.id, +conversationId);
+    return this.chatService.acceptRequest(Number(user.id), +conversationId);
   }
 
   @Post('reject/:conversationId')
   rejectRequest(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
-    return this.chatService.rejectRequest(user.id, +conversationId);
+    return this.chatService.rejectRequest(Number(user.id), +conversationId);
   }
 }

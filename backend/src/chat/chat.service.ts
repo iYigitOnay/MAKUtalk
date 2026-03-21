@@ -42,7 +42,6 @@ export class ChatService {
     if (!tid || isNaN(tid)) throw new BadRequestException('Geçersiz kullanıcı.');
     if (uid === tid) throw new ForbiddenException('Kendinizle sohbet edemezsiniz.');
 
-    // KESİN SORGULAMA: Her iki katılımcının da olduğu sohbetleri bul
     const potentialConversations = await this.prisma.conversation.findMany({
       where: {
         AND: [
@@ -56,18 +55,15 @@ export class ChatService {
     let existing = null;
 
     if (potentialConversations.length > 0) {
-      // Eğer birden fazla varsa (HATA DURUMU), en sağlıklı olanı seç, diğerlerini arka planda temizle
       existing = potentialConversations.sort((a, b) => b.participants.length - a.participants.length)[0];
       
       if (potentialConversations.length > 1) {
-        this.logger.warn(`Duplicate sohbetler bulundu, temizleniyor...`);
         const toDelete = potentialConversations.filter(c => c.id !== existing.id);
         for (const c of toDelete) {
           await this.prisma.conversation.delete({ where: { id: c.id } }).catch(() => {});
         }
       }
 
-      // Seçtiğimiz de bozuksa (tek kişiyse) sil ve yeniden oluştur
       if (existing.participants.length < 2) {
         await this.prisma.conversation.delete({ where: { id: existing.id } }).catch(() => {});
         existing = null;
@@ -86,12 +82,6 @@ export class ChatService {
           participants: { create: [{ userId: uid }, { userId: tid }] }
         },
         include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'desc' } } }
-      });
-    } else if (fromSpot && existing.isRejected) {
-      existing = await this.prisma.conversation.update({ 
-        where: { id: existing.id }, 
-        data: { isRejected: false, isAccepted: false }, 
-        include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'desc' } } } 
       });
     }
 
@@ -121,10 +111,7 @@ export class ChatService {
     if (!conversation) throw new NotFoundException('Sohbet bulunamadı.');
     
     const isUserParticipant = conversation.participants.some(p => Number(p.userId) === uid);
-    if (!isUserParticipant) {
-      this.logger.error(`SendMessage Blocked: User ${uid} is not in Conv ${cid}`);
-      throw new ForbiddenException('Bu sohbete mesaj gönderme yetkiniz yok.');
-    }
+    if (!isUserParticipant) throw new ForbiddenException('Bu sohbete mesaj gönderme yetkiniz yok.');
 
     const other = conversation.participants.find(p => Number(p.userId) !== uid);
     if (!other) throw new ForbiddenException('Sohbet katılımcısı bulunamadı.');
@@ -138,14 +125,10 @@ export class ChatService {
     if (!auth.canChat && !conversation.isAccepted) { }
     else if (!auth.canChat) throw new ForbiddenException('Kısıtlı hesap.');
 
-    if (!content && !postId) {
-      throw new ForbiddenException('Mesaj içeriği veya paylaşılacak gönderi eksik.');
-    }
+    if (!content && !postId) throw new ForbiddenException('Mesaj içeriği veya paylaşılacak gönderi eksik.');
 
     const { cleanText, count } = censorContent(content || '');
-    if (count > 0) {
-      this.myLogger.warn(`Chat İhlali: Kullanıcı ID ${uid}, Konuşma ID ${cid} içinde küfür kullandı.`, 'Security');
-    }
+    if (count > 0) this.myLogger.warn(`Chat İhlali: Kullanıcı ID ${uid}, Konuşma ID ${cid} içinde küfür kullandı.`, 'Security');
 
     return this.prisma.message.create({ 
       data: { content: cleanText, senderId: uid, conversationId: cid, postId: postId ? Number(postId) : null, isForwarded }, 
@@ -181,7 +164,6 @@ export class ChatService {
         const conv = p.conversation;
         const otherParticipantEntry = conv.participants.find(part => Number(part.userId) !== uid);
         const otherParticipant = otherParticipantEntry?.user;
-        
         if (!otherParticipant) return null;
 
         return {
@@ -206,18 +188,11 @@ export class ChatService {
     const cid = Number(conversationId);
     const uid = Number(userId);
 
-    // Daha güvenli bir kontrol: Tablo isminden emin olalım
     const participant = await this.prisma.conversationParticipant.findFirst({ 
       where: { conversationId: cid, userId: uid } 
     });
     
-    if (!participant) {
-      this.logger.error(`Access Denied: User ${uid} is not a participant of Conv ${cid}`);
-      // DEBUG: Tüm katılımcıları çekip loglayalım
-      const allParts = await this.prisma.conversationParticipant.findMany({ where: { conversationId: cid } });
-      this.logger.error(`Conv ${cid} actual participants: ${JSON.stringify(allParts)}`);
-      throw new ForbiddenException('Bu sohbetin mesajlarına erişim yetkiniz yok.');
-    }
+    if (!participant) throw new ForbiddenException('Bu sohbetin mesajlarına erişim yetkiniz yok.');
 
     return this.prisma.message.findMany({
       where: { conversationId: cid, isDeleted: false },
@@ -252,30 +227,24 @@ export class ChatService {
   async acceptRequest(userId: number, conversationId: number) {
     const cid = Number(conversationId);
     const uid = Number(userId);
-
     const isPart = await this.prisma.conversationParticipant.findFirst({ where: { conversationId: cid, userId: uid } });
     if (!isPart) throw new ForbiddenException();
-    
     return this.prisma.conversation.update({ where: { id: cid }, data: { isAccepted: true, isRejected: false } });
   }
 
   async rejectRequest(userId: number, conversationId: number) {
     const cid = Number(conversationId);
     const uid = Number(userId);
-
     const isPart = await this.prisma.conversationParticipant.findFirst({ where: { conversationId: cid, userId: uid } });
     if (!isPart) throw new ForbiddenException();
-
     return this.prisma.conversation.update({ where: { id: cid }, data: { isRejected: true, isAccepted: false } });
   }
 
   async removeConversation(userId: number, conversationId: number) {
     const cid = Number(conversationId);
     const uid = Number(userId);
-
     const isPart = await this.prisma.conversationParticipant.findFirst({ where: { conversationId: cid, userId: uid } });
     if (!isPart) throw new ForbiddenException();
-
     await this.prisma.message.updateMany({ where: { conversationId: cid }, data: { isDeleted: true } });
     return this.prisma.conversation.delete({ where: { id: cid } });
   }
@@ -283,10 +252,8 @@ export class ChatService {
   async removeMessage(messageId: number, userId: number) {
     const mid = Number(messageId);
     const uid = Number(userId);
-
     const message = await this.prisma.message.findUnique({ where: { id: mid } });
     if (!message) throw new NotFoundException();
-    
     return this.prisma.message.update({ where: { id: mid }, data: { isDeleted: true } });
   }
 

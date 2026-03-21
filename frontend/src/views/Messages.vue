@@ -223,13 +223,13 @@
               </div>
 
               <!-- MESAJ İÇERİĞİ -->
-              <div class="text-[14.5px] leading-relaxed font-medium tracking-tight whitespace-pre-wrap break-words">
+              <div class="text-[14.5px] leading-relaxed font-medium tracking-tight whitespace-pre-wrap break-words min-w-0">
                 {{ decrypt(msg.content) }}
               </div>
 
-              <!-- PREMIUM METADATA (Sabit Alt-Sağ) -->
+              <!-- PREMIUM METADATA (Daha Esnek Alt-Sağ) -->
               <div 
-                class="flex items-center justify-end gap-1 mt-1 select-none pointer-events-none transition-all duration-300 self-end h-3"
+                class="flex items-center justify-end gap-1 mt-1 select-none pointer-events-none transition-all duration-300 self-end h-3 flex-shrink-0"
                 :class="isMyMessage(msg.senderId) ? 'opacity-100' : 'opacity-60 text-slate-400 dark:text-slate-500'"
               >
                 <span class="text-[8px] font-bold uppercase tracking-wider leading-none transition-all group-hover:drop-shadow-[0_0_3px_rgba(255,255,255,0.5)]">
