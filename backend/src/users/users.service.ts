@@ -310,6 +310,7 @@ export class UsersService {
       reportedUserId,
       reportedPostId,
       reportedCommentId,
+      reportedMessageId,
       reason,
       subReason,
     } = data;
@@ -320,6 +321,7 @@ export class UsersService {
         reportedPostId: reportedPostId || null,
         reportedCommentId: reportedCommentId || null,
         reportedUserId: reportedUserId || null,
+        reportedMessageId: reportedMessageId || null,
       },
     });
 
@@ -335,6 +337,7 @@ export class UsersService {
         reportedUserId,
         reportedPostId,
         reportedCommentId,
+        reportedMessageId,
         reason,
         subReason,
       },
@@ -352,9 +355,6 @@ export class UsersService {
           where: { id: reportedPostId },
           data: { published: false },
         });
-        console.warn(
-          `[Moderasyon] Post #${reportedPostId} çok fazla şikayet aldığı için otomatik gizlendi.`,
-        );
       }
     }
 
@@ -366,11 +366,21 @@ export class UsersService {
       if (reportCount >= THRESHOLD) {
         await this.prisma.comment.update({
           where: { id: reportedCommentId },
-          data: { isDeleted: true }, // Yorumu gizle (Soft Delete)
+          data: { isDeleted: true },
         });
-        console.warn(
-          `[Moderasyon] Yorum #${reportedCommentId} otomatik olarak karantinaya alındı.`,
-        );
+      }
+    }
+
+    if (reportedMessageId) {
+      const reportCount = await (this.prisma as any).report.count({
+        where: { reportedMessageId },
+      });
+
+      if (reportCount >= THRESHOLD) {
+        await this.prisma.message.update({
+          where: { id: reportedMessageId },
+          data: { isDeleted: true },
+        });
       }
     }
 

@@ -105,7 +105,18 @@ export const useChatStore = defineStore("chat", () => {
       conversationId: Number(message.conversationId),
     };
     const exists = messages.value.some(m => m.id === normalizedMessage.id);
-    if (!exists) messages.value.push(normalizedMessage);
+    if (!exists) {
+      messages.value.push(normalizedMessage);
+      
+      // ✅ KONUŞMA LİSTESİNİ ANLIK GÜNCELLE (State Management)
+      const convIndex = conversations.value.findIndex(c => c.id === normalizedMessage.conversationId);
+      if (convIndex !== -1) {
+        conversations.value[convIndex].lastMessage = normalizedMessage;
+        // Konuşmayı listenin en üstüne taşı
+        const [updatedConv] = conversations.value.splice(convIndex, 1);
+        conversations.value.unshift(updatedConv);
+      }
+    }
   };
 
   const markMessagesAsRead = (conversationId: number) => {

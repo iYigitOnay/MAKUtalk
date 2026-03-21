@@ -98,7 +98,8 @@ export class AdminController {
       include: {
         reporter: { select: { username: true, avatarUrl: true } },
         reportedPost: { select: { content: true, author: { select: { username: true } } } },
-        reportedComment: { select: { content: true, user: { select: { username: true } } } }
+        reportedComment: { select: { content: true, user: { select: { username: true } } } },
+        reportedMessage: { select: { id: true, content: true, sender: { select: { username: true } } } }
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -238,5 +239,17 @@ export class AdminController {
   async deletePost(@CurrentUser() user, @Param('id', ParseIntPipe) id: number) {
     this.checkAdmin(user);
     return this.prisma.post.update({ where: { id }, data: { isDeleted: true } });
+  }
+
+  @Delete('comments/:id')
+  async deleteComment(@CurrentUser() user, @Param('id', ParseIntPipe) id: number) {
+    this.checkAdmin(user);
+    return this.prisma.comment.update({ where: { id }, data: { isDeleted: true } });
+  }
+
+  @Delete('messages/:id')
+  async deleteMessage(@CurrentUser() user, @Param('id', ParseIntPipe) id: number) {
+    this.checkAdmin(user);
+    return this.prisma.message.update({ where: { id }, data: { isDeleted: true } });
   }
 }

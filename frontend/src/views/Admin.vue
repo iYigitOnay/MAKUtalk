@@ -142,13 +142,22 @@
                         <span class="text-[10px] text-slate-500 uppercase font-bold tracking-widest">{{ formatDate(r.createdAt) }}</span>
                       </div>
                       <div class="bg-[#050505] p-4 rounded-xl mb-6 border border-white/[0.02]">
-                        <p class="text-sm text-slate-300 font-medium italic mb-2">"{{ r.reportedPost?.content || r.reportedComment?.content || "İçerik bulunamadı." }}"</p>
-                        <p class="text-[9px] text-slate-500 uppercase tracking-widest">Kaynak: <span class="text-slate-300">@{{ r.reporter?.username || "Bilinmiyor" }}</span></p>
+                        <p v-if="r.reportedPost" class="text-sm text-slate-300 font-medium italic mb-2">"{{ r.reportedPost.content }}"</p>
+                        <p v-else-if="r.reportedComment" class="text-sm text-slate-300 font-medium italic mb-2">"{{ r.reportedComment.content }}"</p>
+                        <p v-else-if="r.reportedMessage" class="text-sm text-slate-300 font-medium italic mb-2">"{{ r.subReason || 'Şifreli Mesaj (ID: ' + r.reportedMessageId + ')' }}"</p>
+                        <p v-else class="text-sm text-slate-300 font-medium italic mb-2">"İçerik bulunamadı."</p>
+                        
+                        <p class="text-[9px] text-slate-500 uppercase tracking-widest">
+                          Kaynak: <span class="text-slate-300">@{{ r.reporter?.username || "Bilinmiyor" }}</span>
+                          <span v-if="r.reportedMessage" class="ml-2">• Gönderen: @{{ r.reportedMessage.sender?.username }}</span>
+                        </p>
                       </div>
                     </div>
                     <div class="flex gap-3">
                       <button @click="updateReportStatus(r.id, 'RESOLVED')" class="flex-1 py-2 bg-white/[0.03] hover:bg-white/[0.08] text-slate-300 text-[10px] font-bold uppercase tracking-widest rounded-lg border border-white/[0.05]">Güvenli</button>
                       <button v-if="r.reportedPostId" @click="openConfirmModal('Sil', 'İçerik silinsin mi?', () => deletePost(r.reportedPostId, r.id))" class="flex-1 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 text-[10px] font-bold uppercase tracking-widest rounded-lg">Sil</button>
+                      <button v-else-if="r.reportedCommentId" @click="openConfirmModal('Sil', 'Yorum silinsin mi?', () => deleteComment(r.reportedCommentId, r.id))" class="flex-1 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 text-[10px] font-bold uppercase tracking-widest rounded-lg">Sil</button>
+                      <button v-else-if="r.reportedMessageId" @click="openConfirmModal('Sil', 'Mesaj silinsin mi?', () => deleteMessage(r.reportedMessageId, r.id))" class="flex-1 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 border border-rose-500/20 text-[10px] font-bold uppercase tracking-widest rounded-lg">Sil</button>
                     </div>
                   </div>
                 </div>
@@ -430,6 +439,14 @@ const toggleBan = async (id: number) => {
 
 const deletePost = async (id: number, reportId: number) => {
   try { await apiClient.delete(`/admin/posts/${id}`); await apiClient.patch(`/admin/reports/${reportId}/status`, { status: "RESOLVED" }); fetchTabData(); showNotification("Silindi", "success"); } catch (e) {}
+};
+
+const deleteComment = async (id: number, reportId: number) => {
+  try { await apiClient.delete(`/admin/comments/${id}`); await apiClient.patch(`/admin/reports/${reportId}/status`, { status: "RESOLVED" }); fetchTabData(); showNotification("Yorum Silindi", "success"); } catch (e) {}
+};
+
+const deleteMessage = async (id: number, reportId: number) => {
+  try { await apiClient.delete(`/admin/messages/${id}`); await apiClient.patch(`/admin/reports/${reportId}/status`, { status: "RESOLVED" }); fetchTabData(); showNotification("Mesaj Silindi", "success"); } catch (e) {}
 };
 
 const updateReportStatus = async (id: number, status: string) => {

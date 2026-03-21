@@ -148,12 +148,12 @@ export function useSocket() {
     }
   };
 
-  const sendMessage = (conversationId: number, content: string, receiverId: number, postId?: number) => {
+  const sendMessage = (conversationId: number, content: string, receiverId: number, postId?: number, isForwarded: boolean = false) => {
     if (!socket?.connected) {
       console.error("❌ Mesaj gönderilemedi: Soket bağlı değil.");
       return;
     }
-    socket.emit("send_message", { conversationId, content, receiverId, postId });
+    socket.emit("send_message", { conversationId, content, receiverId, postId, isForwarded });
   };
 
   const sendTyping = (conversationId: number, receiverId: number, isTyping: boolean) => {

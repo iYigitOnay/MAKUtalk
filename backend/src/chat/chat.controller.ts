@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Body, UseGuards, Query, BadRequestException } from '@nestjs/common';
+import { Controller, Get, Param, Post, Body, UseGuards, Query, BadRequestException, Delete, ParseIntPipe } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -11,6 +11,11 @@ export class ChatController {
     private readonly chatService: ChatService,
     private readonly prisma: PrismaService
   ) {}
+
+  @Delete('message/:id')
+  async deleteMessage(@CurrentUser() user: any, @Param('id', ParseIntPipe) id: number) {
+    return this.chatService.removeMessage(id, user.id);
+  }
 
   @Get('conversations')
   getConversations(@CurrentUser() user: any) {

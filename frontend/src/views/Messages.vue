@@ -64,9 +64,30 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate tracking-tight">{{ conv.otherParticipant?.fullName || conv.otherParticipant?.username }}</h3>
-            <p class="text-xs truncate">
+            <p class="text-[11px] truncate mt-0.5">
               <span v-if="chatStore.typingUsers[conv.id]" class="text-indigo-500 font-bold animate-pulse italic">yazıyor...</span>
-              <span v-else class="text-slate-500 dark:text-slate-400">{{ conv.lastMessage?.content ? decrypt(conv.lastMessage.content) : 'Sohbeti başlat...' }}</span>
+              <span v-else class="text-slate-500 dark:text-slate-400">
+                <template v-if="conv.lastMessage">
+                  <!-- BEN GÖNDERDİYSEM -->
+                  <template v-if="Number(conv.lastMessage.senderId) === currentUserId">
+                    <span class="font-bold text-slate-400 dark:text-slate-500">Siz:</span>
+                    <span class="ml-1">{{ conv.lastMessage.content ? decrypt(conv.lastMessage.content) : '🖼️ Gönderi' }}</span>
+                  </template>
+
+                  <!-- BAŞKASI GÖNDERDİYSE VE OKUNMADIYSA -->
+                  <template v-else-if="!conv.lastMessage.isRead">
+                    <span class="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] font-black animate-pulse flex items-center gap-1.5">
+                      Yeni bir mesaj gönderdi
+                    </span>
+                  </template>
+
+                  <!-- BAŞKASI GÖNDERDİYSE VE OKUNDUYSA -->
+                  <template v-else>
+                    {{ conv.lastMessage.content ? decrypt(conv.lastMessage.content) : '🖼️ Gönderi paylaştı' }}
+                  </template>
+                </template>
+                <template v-else>Sohbeti başlat...</template>
+              </span>
             </p>
           </div>
           <div v-if="!conv.isAccepted && !conv.isRejected && Number(conv.lastMessage?.senderId) !== currentUserId" class="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-lg"></div>
@@ -75,25 +96,34 @@
     </aside>
 
     <!-- SAĞ PANEL: MESAJLAŞMA -->
-    <main class="flex-1 flex flex-col bg-white dark:bg-[#0b0f19] relative h-full">
+    <main 
+      class="flex-1 flex flex-col bg-white dark:bg-[#0b0f19] relative h-full transition-all duration-300"
+      :class="{ 'fixed inset-0 z-[100] md:relative': chatStore.activeConversation }"
+    >
       <div v-if="chatStore.activeConversation" class="flex flex-col h-full overflow-hidden">
         
         <!-- Header -->
         <header class="h-16 md:h-20 px-4 md:px-8 flex items-center justify-between border-b border-slate-200/60 dark:border-white/5 bg-white/80 dark:bg-[#0b0f19]/80 backdrop-blur-xl z-20 flex-shrink-0 text-left">
           <div class="flex items-center gap-4">
-            <button @click="chatStore.activeConversation = null" class="md:hidden p-2 -ml-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5 rounded-xl transition-colors">
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7" /></svg>
+            <!-- MOBİL GERİ BUTONU -->
+            <button 
+              @click="chatStore.activeConversation = null" 
+              class="md:hidden p-2.5 -ml-2 bg-slate-100 dark:bg-white/5 text-slate-600 dark:text-slate-400 rounded-xl active:scale-90 transition-all"
+            >
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <div class="flex items-center gap-4">
+            
+            <div class="flex items-center gap-3 md:gap-4">
               <div class="relative">
-                <img v-if="otherUser?.avatarUrl" :src="getImageUrl(otherUser.avatarUrl)" class="w-11 h-11 rounded-full object-cover shadow-sm border border-slate-100 dark:border-white/5" />
-                <div v-else class="w-11 h-11 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-lg">{{ otherUser?.username?.charAt(0).toUpperCase() }}</div>
-                <div v-if="chatStore.isUserOnline(otherUser?.id)" class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-[#0b0f19] rounded-full shadow-sm"></div>
-              </div>              <div class="text-left">
-                <h3 class="text-base font-bold text-slate-900 dark:text-white leading-tight">{{ otherUser?.fullName || otherUser?.username }}</h3>
+                <img v-if="otherUser?.avatarUrl" :src="getImageUrl(otherUser.avatarUrl)" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover shadow-sm border border-slate-100 dark:border-white/5" />
+                <div v-else class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-indigo-100 dark:bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-base md:text-lg">{{ otherUser?.username?.charAt(0).toUpperCase() }}</div>
+                <div v-if="chatStore.isUserOnline(otherUser?.id)" class="absolute -bottom-0.5 -right-0.5 w-3 h-3 md:w-3.5 md:h-3.5 bg-emerald-500 border-2 border-white dark:border-[#0b0f19] rounded-full shadow-sm"></div>
+              </div>
+              <div class="text-left">
+                <h3 class="text-sm md:text-base font-bold text-slate-900 dark:text-white leading-tight truncate max-w-[150px] md:max-w-none">{{ otherUser?.fullName || otherUser?.username }}</h3>
                 <transition name="fade">
-                  <p v-if="chatStore.typingUsers[chatStore.activeConversation.id]" class="text-[11px] font-bold text-indigo-500 dark:text-indigo-400 flex items-center gap-1.5 mt-0.5 animate-pulse">yazıyor...</p>
-                  <p v-else-if="chatStore.isUserOnline(otherUser?.id)" class="text-[10px] text-emerald-500 font-bold mt-0.5 flex items-center gap-1">
+                  <p v-if="chatStore.typingUsers[chatStore.activeConversation.id]" class="text-[10px] md:text-[11px] font-bold text-indigo-500 dark:text-indigo-400 flex items-center gap-1.5 mt-0.5 animate-pulse">yazıyor...</p>
+                  <p v-else-if="chatStore.isUserOnline(otherUser?.id)" class="text-[9px] md:text-[10px] text-emerald-500 font-bold mt-0.5 flex items-center gap-1">
                     <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
                     Çevrimiçi
                   </p>
@@ -159,7 +189,7 @@
           <div v-for="(msg, index) in chatStore.messages" :key="msg.id || index" class="flex flex-col space-y-1.5" :class="isMyMessage(msg.senderId) ? 'items-end' : 'items-start'">
             
             <div 
-              class="max-w-[85%] md:max-w-[70%] px-3 py-1.5 shadow-sm transition-all relative group" 
+              class="max-w-[85%] md:max-w-[70%] px-3 py-2 shadow-sm transition-all relative group flex flex-col" 
               :class="isMyMessage(msg.senderId) 
                 ? 'text-white rounded-2xl rounded-tr-none' 
                 : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 rounded-2xl rounded-tl-none border border-slate-100 dark:border-white/5 shadow-slate-200/50 dark:shadow-none'" 
@@ -168,34 +198,55 @@
                 boxShadow: `0 3px 10px -3px ${currentThemeColor}44`
               } : {}"
             >
+              <!-- MESAJ MENÜSÜ (Hover/Click) -->
+              <div class="absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-all z-10" :class="isMyMessage(msg.senderId) ? 'right-full mr-2' : 'left-full ml-2'">
+                <div class="relative">
+                  <button @click="toggleMsgMenu(msg.id)" class="p-1.5 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 transition-colors">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" /></svg>
+                  </button>
+                  <div v-if="activeMsgMenu === msg.id" class="absolute bottom-full mb-2 w-40 bg-white dark:bg-slate-900 border border-slate-100 dark:border-white/10 rounded-2xl shadow-2xl py-2 animate-in fade-in slide-in-from-bottom-2 duration-200 overflow-hidden" :class="isMyMessage(msg.senderId) ? 'right-0' : 'left-0'">
+                    <button @click="copyMsgText(msg)" class="w-full text-left px-4 py-2 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/5 flex items-center gap-2"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" stroke-width="2.5" /></svg>Kopyala</button>
+                    <button @click="forwardMsg(msg)" class="w-full text-left px-4 py-2 text-[11px] font-bold text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 flex items-center gap-2"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-width="2.5" /></svg>İlet</button>
+                    <button @click="reportMsg(msg)" class="w-full text-left px-4 py-2 text-[11px] font-bold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/10 flex items-center gap-2"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" stroke-width="2.5" /></svg>Şikayet</button>
+                    <button v-if="isMyMessage(msg.senderId)" @click="deleteMsg(msg)" class="w-full text-left px-4 py-2 text-[11px] font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 flex items-center gap-2"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" stroke-width="2.5" /></svg>Sil</button>
+                  </div>
+                </div>
+              </div>
+
               <!-- Paylaşılan Post Kartı -->
               <SharedPostCard v-if="msg.sharedPost" :post="msg.sharedPost" class="mb-2" />
 
-              <!-- MESAJ İÇERİĞİ VE METADATA (Dinamik Hizalama) -->
-              <div class="block text-[14px] leading-relaxed font-medium tracking-tight whitespace-pre-wrap break-words min-w-[60px]">
+              <!-- İLETİLDİ BİLGİSİ -->
+              <div v-if="msg.isForwarded" class="flex items-center gap-1 mb-1 opacity-50">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                <span class="text-[9px] font-black uppercase tracking-widest">İletildi</span>
+              </div>
+
+              <!-- MESAJ İÇERİĞİ -->
+              <div class="text-[14.5px] leading-relaxed font-medium tracking-tight whitespace-pre-wrap break-words">
                 {{ decrypt(msg.content) }}
-                
-                <!-- PREMIUM METADATA (Metin Sonunda) -->
-                <span 
-                  class="inline-flex items-center gap-1.5 ml-2 select-none pointer-events-none transition-all duration-300 opacity-60 group-hover:opacity-100 align-middle"
-                  :class="isMyMessage(msg.senderId) ? '' : 'text-slate-400 dark:text-slate-500'"
-                >
-                  <span class="text-[8px] font-bold uppercase tracking-wider leading-none">
-                    {{ formatTime(msg.createdAt) }}
-                  </span>
-                  
-                  <div v-if="isMyMessage(msg.senderId)" class="flex items-center">
-                    <!-- OKUNDU (Neon White Glow) -->
-                    <div v-if="msg.isRead" class="flex -space-x-1.5 transition-all">
-                      <svg class="w-3 h-3 text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                      <svg class="w-3 h-3 text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
-                    </div>
-                    <!-- İLETİLDİ (Gri Tek Tik) -->
-                    <svg v-else class="w-3 h-3 text-slate-300/40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M20 6L9 17l-5-5"/>
-                    </svg>
-                  </div>
+              </div>
+
+              <!-- PREMIUM METADATA (Sabit Alt-Sağ) -->
+              <div 
+                class="flex items-center justify-end gap-1 mt-1 select-none pointer-events-none transition-all duration-300 self-end h-3"
+                :class="isMyMessage(msg.senderId) ? 'opacity-100' : 'opacity-60 text-slate-400 dark:text-slate-500'"
+              >
+                <span class="text-[8px] font-bold uppercase tracking-wider leading-none transition-all group-hover:drop-shadow-[0_0_3px_rgba(255,255,255,0.5)]">
+                  {{ formatTime(msg.createdAt) }}
                 </span>
+                
+                <div v-if="isMyMessage(msg.senderId)" class="flex items-center">
+                  <!-- OKUNDU (Neon White Glow - Küçük Boyut) -->
+                  <div v-if="msg.isRead" class="flex -space-x-1.5 transition-all">
+                    <svg class="w-2.5 h-2.5 text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.9)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                    <svg class="w-2.5 h-2.5 text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.9)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+                  </div>
+                  <!-- İLETİLDİ (Gri Tek Tik) -->
+                  <svg v-else class="w-2.5 h-2.5 text-white/30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6L9 17l-5-5"/>
+                  </svg>
+                </div>
               </div>
             </div>
           </div>
@@ -204,11 +255,15 @@
         <!-- Giriş Altlığı -->
         <footer class="p-4 md:p-6 bg-white dark:bg-[#0b0f19] border-t border-slate-200/60 dark:border-white/5 flex-shrink-0">
           <div v-if="chatStore.activeConversation.isAccepted || chatStore.activeConversation.isFriend" class="max-w-4xl mx-auto flex items-center gap-3">
-            <div class="flex-1 bg-slate-100/80 dark:bg-white/5 rounded-3xl p-2 flex items-center shadow-inner border border-transparent focus-within:border-indigo-500/20 transition-all min-w-0">
+            <div class="flex-1 bg-slate-100/80 dark:bg-white/5 rounded-3xl p-2 flex items-center shadow-inner border border-transparent focus-within:border-indigo-500/20 transition-all min-w-0 relative">
               <div class="flex-shrink-0 flex items-center"><EmojiPicker :modelValue="messageInput" @update:modelValue="(e) => (messageInput += e)" class="ml-1" /></div>
-              <textarea v-model="messageInput" @input="handleTyping" @keydown.enter.prevent="handleSendMessage()" placeholder="Bir mesaj yazın..." rows="1" class="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-sm py-2.5 px-2 text-slate-900 dark:text-white resize-none max-h-40 overflow-y-auto"></textarea>
+              <textarea v-model="messageInput" @input="handleTyping" @keydown.enter.prevent="handleSendMessage()" placeholder="Bir mesaj yazın..." rows="1" maxlength="1000" class="flex-1 bg-transparent border-none focus:ring-0 focus:outline-none text-sm py-2.5 px-2 text-slate-900 dark:text-white resize-none max-h-40 overflow-y-auto"></textarea>
+              <!-- Karakter Sayacı -->
+              <div v-if="messageInput.length > 800" class="absolute -top-6 right-4 text-[9px] font-black tracking-widest opacity-40 uppercase" :class="messageInput.length >= 1000 ? 'text-red-500 opacity-100' : 'text-slate-500'">
+                {{ messageInput.length }} / 1000
+              </div>
             </div>
-            <button @click="handleSendMessage()" :disabled="!messageInput.trim()" class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-all flex-shrink-0" :style="{ backgroundColor: currentThemeColor }"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
+            <button @click="handleSendMessage()" :disabled="!messageInput.trim() || messageInput.length > 1000" class="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-lg active:scale-95 transition-all flex-shrink-0" :style="{ backgroundColor: currentThemeColor }"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></svg></button>
           </div>
           <div v-else class="text-center py-4 opacity-50"><p class="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Sohbet için onay bekleniyor.</p></div>
         </footer>
@@ -244,6 +299,9 @@
     <!-- SOHBET SİL MODALI -->
     <DeleteConfirmModal :is-open="showDeleteModal" :is-deleting="deletingConv" title="SOHBETİ SİL" message="Bu sohbeti sildiğinizde tüm mesaj geçmişi kalıcı olarak yok edilecektir. Bu işlem geri alınamaz." confirm-text="EVET, SİSTEMDEN SİL" @confirm="confirmDeleteConversation" @cancel="showDeleteModal = false" />
 
+    <!-- MESAJ İLET MODALI -->
+    <ForwardModal :is-open="showForwardModal" :content="forwardContent" @close="showForwardModal = false" />
+
   </div>
 </template>
 
@@ -259,6 +317,7 @@ import apiClient from "@/api/client";
 import EmojiPicker from "@/components/EmojiPicker.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import SharedPostCard from "@/components/SharedPostCard.vue";
+import ForwardModal from "@/components/ForwardModal.vue";
 
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -273,6 +332,55 @@ const { sendMessage, sendTyping, sendMarkRead } = useSocket();
 const activeTab = ref('chats'); // 'chats' | 'requests'
 const searchQuery = ref("");
 const messageInput = ref("");
+
+// --- YENİ: MESAJ AKSİYONLARI ---
+const activeMsgMenu = ref<number | null>(null);
+const toggleMsgMenu = (id: number) => { activeMsgMenu.value = activeMsgMenu.value === id ? null : id; };
+
+const copyMsgText = (msg: any) => {
+  const text = decrypt(msg.content);
+  navigator.clipboard.writeText(text);
+  toast.success("Mesaj kopyalandı! 📋");
+  activeMsgMenu.value = null;
+};
+
+const deleteMsg = async (msg: any) => {
+  try {
+    await apiClient.delete(`/chat/message/${msg.id}`);
+    // State'den anlık sil
+    chatStore.messages = chatStore.messages.filter(m => m.id !== msg.id);
+    toast.success("Mesaj sizden silindi.");
+  } catch { toast.error("Hata!"); }
+  activeMsgMenu.value = null;
+};
+
+const reportMsg = async (msg: any) => {
+  try {
+    // GÜVENLİK: Mesaj içeriğini asla açık metin (plaintext) olarak göndermiyoruz.
+    // Sadece mesaj ID'sini ve şikayet nedenini iletiyoruz.
+    await apiClient.post("/users/report", { 
+      reportedUserId: msg.senderId,
+      reportedMessageId: msg.id,
+      reason: "DM Mesajı",
+      subReason: "Özel mesaj şikayeti (İçerik uçtan uca şifreli korunmaktadır)."
+    });
+    toast.warning("Mesaj moderasyona bildirildi! 🛡️");
+  } catch { toast.error("Hata!"); }
+  activeMsgMenu.value = null;
+};
+
+// --- İLETME (FORWARD) ---
+const showForwardModal = ref(false);
+const forwardContent = ref("");
+
+const forwardMsg = (msg: any) => {
+  // Şifreli içeriği iletiyoruz
+  forwardContent.value = msg.content;
+  showForwardModal.value = true;
+  activeMsgMenu.value = null;
+};
+// -----------------------
+// -----------------------------
 
 const formatTime = (dateStr: string) => {
   if (!dateStr) return "";
@@ -400,7 +508,14 @@ const scrollToBottom = () => nextTick(() => { if (messagesContainer.value) messa
 
 onMounted(async () => {
   await chatStore.fetchConversations();
-  if (route.query.userId) {
+  
+  if (route.query.conversationId) {
+    const convId = Number(route.query.conversationId);
+    const conv = chatStore.conversations.find(c => c.id === convId);
+    if (conv && conv.otherParticipant) {
+      await chatStore.selectConversation(conv.otherParticipant.id);
+    }
+  } else if (route.query.userId) {
     await chatStore.selectConversation(Number(route.query.userId), route.query.fromSpot === 'true', Number(route.query.listingId));
     if (chatStore.activeConversation?.id) {
       sendMarkRead(chatStore.activeConversation.id);

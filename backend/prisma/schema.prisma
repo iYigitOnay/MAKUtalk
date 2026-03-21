@@ -118,12 +118,14 @@ model Message {
   content        String   @db.Text
   postId         Int?     // Paylaşılan postun ID'si
   isRead         Boolean  @default(false)
+  isForwarded    Boolean  @default(false)
   isDeleted      Boolean  @default(false)
   createdAt      DateTime @default(now())
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender       User         @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   sharedPost   Post?        @relation("SharedPost", fields: [postId], references: [id], onDelete: SetNull)
+  reports      Report[]
 
   @@index([conversationId])
   @@index([senderId])
@@ -351,6 +353,8 @@ model Report {
   reportedPost      Post?    @relation(fields: [reportedPostId], references: [id])
   reportedCommentId Int?
   reportedComment   Comment? @relation(fields: [reportedCommentId], references: [id])
+  reportedMessageId Int?
+  reportedMessage   Message? @relation(fields: [reportedMessageId], references: [id])
   reason            String
   subReason         String?
   status            String   @default("PENDING") 

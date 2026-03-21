@@ -234,7 +234,7 @@ const props = defineProps<{
 const emit = defineEmits(["close"]);
 
 const chatStore = useChatStore();
-const { sendMessage } = useSocket();
+const { sendMessage, isConnected } = useSocket();
 const toast = useToast();
 
 const searchQuery = ref("");
@@ -313,22 +313,29 @@ const shareExternal = async () => {
 const sendToConversation = (conv: any) => {
   if (sendingTo.value || sentTo.value.includes(conv.id)) return;
 
+  if (!isConnected.value) {
+    toast.error("Bağlantı hatası. Lütfen sayfayı yenileyin.");
+    return;
+  }
+
   sendingTo.value = conv.id;
 
   try {
     const text = shareComment.value.trim();
-    const encryptedContent = CryptoJS.AES.encrypt(text, secretKey).toString();
+    // Eğer metin varsa şifrele, yoksa boş gönder (Backend artık content'i optional kabul ediyor)
+    const encryptedContent = text ? CryptoJS.AES.encrypt(text, secretKey).toString() : "";
 
-    // socket.emit('send_message', { conversationId, content, receiverId, postId })
     sendMessage(
-      conv.id,
+      Number(conv.id),
       encryptedContent,
-      conv.otherParticipant.id,
-      props.post.id,
+      Number(conv.otherParticipant.id),
+      Number(props.post.id),
     );
 
     sentTo.value.push(conv.id);
+    toast.success("Gönderildi! 🚀");
   } catch (err) {
+    console.error("Paylaşım Hatası:", err);
     toast.error("Gönderilemedi.");
   } finally {
     sendingTo.value = null;

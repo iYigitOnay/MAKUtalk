@@ -104,6 +104,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         data.conversationId,
         data.content,
         data.postId,
+        data.isForwarded || false
       );
 
       client.emit('new_message', message);
