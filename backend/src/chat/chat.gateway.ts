@@ -46,7 +46,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       if (!token) return client.disconnect();
 
       const payload = this.jwtService.verify(token);
-      const userId = payload.sub;
+      const userId = Number(payload.sub);
       client.data.userId = userId;
       
       ChatGateway.onlineUsers.add(userId);
@@ -93,10 +93,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       });
 
       if (!conversation) throw new Error("Sohbet bulunamadı.");
-      const isParticipant = conversation.participants.some(p => p.userId === senderId);
+      const isParticipant = conversation.participants.some(p => p.userId == senderId);
       if (!isParticipant) throw new Error("Bu sohbete mesaj gönderme yetkiniz yok.");
 
-      const actualReceiver = conversation.participants.find(p => p.userId !== senderId);
+      const actualReceiver = conversation.participants.find(p => p.userId != senderId);
       if (!actualReceiver) throw new Error("Alıcı bulunamadı.");
 
       const message = await this.chatService.sendMessage(

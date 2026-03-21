@@ -14,12 +14,12 @@ export class ChatController {
 
   @Delete('message/:id')
   async deleteMessage(@CurrentUser() user: any, @Param('id', ParseIntPipe) id: number) {
-    return this.chatService.removeMessage(id, user.id);
+    return this.chatService.removeMessage(id, Number(user.id));
   }
 
   @Get('conversations')
   getConversations(@CurrentUser() user: any) {
-    return this.chatService.getUserConversations(user.id);
+    return this.chatService.getUserConversations(Number(user.id));
   }
 
   @Get('conversation/:targetUserId')
@@ -46,22 +46,22 @@ export class ChatController {
        isFromSpot = false;
     }
 
-    return this.chatService.getOrCreateConversation(user.id, +targetUserId, isFromSpot);
+    return this.chatService.getOrCreateConversation(Number(user.id), +targetUserId, isFromSpot);
   }
 
   @Get('messages/:conversationId')
   getMessages(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
-    return this.chatService.getMessages(+conversationId, user.id);
+    return this.chatService.getMessages(+conversationId, Number(user.id));
   }
 
   @Post(':id/read')
   markAsRead(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.chatService.markMessagesAsRead(+id, user.id);
+    return this.chatService.markMessagesAsRead(+id, Number(user.id));
   }
 
   @Post('delete/:conversationId')
   async deleteConversation(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
-    return this.chatService.removeConversation(user.id, +conversationId);
+    return this.chatService.removeConversation(Number(user.id), +conversationId);
   }
 
   @Post('theme/:conversationId')
