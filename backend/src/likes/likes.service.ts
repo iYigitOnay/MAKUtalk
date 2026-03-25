@@ -4,15 +4,17 @@ import {
   NotificationsService,
   NotificationType,
 } from '../notifications/notifications.service';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
 
 @Injectable()
 export class LikesService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private snowflakeService: SnowflakeService,
   ) {}
 
-  async likePost(userId: number, postId: number) {
+  async likePost(userId: bigint, postId: bigint) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     if (!post) {
       throw new NotFoundException('Post bulunamadı.');
@@ -36,7 +38,11 @@ export class LikesService {
     } else {
       // Like
       await this.prisma.like.create({
-        data: { userId, postId: targetPostId },
+        data: { 
+          id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+          userId, 
+          postId: targetPostId 
+        },
       });
 
       // Bildirim oluştur (orijinal post sahibine)
@@ -54,7 +60,7 @@ export class LikesService {
     }
   }
 
-  async getPostLikes(postId: number) {
+  async getPostLikes(postId: bigint) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     const targetId = post?.repostId || postId;
     const count = await this.prisma.like.count({
@@ -63,7 +69,7 @@ export class LikesService {
     return { postId: targetId, likes: count };
   }
 
-  async isLikedByUser(userId: number, postId: number) {
+  async isLikedByUser(userId: bigint, postId: bigint) {
     const post = await this.prisma.post.findUnique({ where: { id: postId } });
     const targetId = post?.repostId || postId;
     const like = await this.prisma.like.findUnique({

@@ -70,7 +70,7 @@ export class AuthService {
 
     // JWT payload
     const payload = {
-      sub: user.id,
+      sub: user.id.toString(),
       email: user.email,
       username: user.username,
       role: user.role,
@@ -92,7 +92,7 @@ export class AuthService {
     };
   }
 
-  async verifyPassword(userId: number, password: string): Promise<boolean> {
+  async verifyPassword(userId: bigint, password: string): Promise<boolean> {
     const userSummary = await this.usersService.findById(userId);
     if (!userSummary || !userSummary.email) return false;
 
@@ -124,7 +124,7 @@ export class AuthService {
     };
   }
 
-  async validateUser(userId: number) {
+  async validateUser(userId: bigint) {
     return this.usersService.findById(userId);
   }
 }

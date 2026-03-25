@@ -13,8 +13,8 @@ export class HashtagController {
   @Get(':tag/posts')
   getPostsByHashtag(
     @Param('tag') tag: string,
-    @Query('userId', ParseIntPipe) userId?: number,
+    @Query('userId') userId?: string,
   ) {
-    return this.hashtagService.getPostsByHashtag(tag, userId);
+    return this.hashtagService.getPostsByHashtag(tag, userId ? BigInt(userId) : undefined);
   }
 }

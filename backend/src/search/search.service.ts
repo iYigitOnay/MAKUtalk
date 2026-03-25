@@ -47,7 +47,7 @@ export class SearchService {
   }
 
   // Genel arama
-  async search(query: string, currentUserId?: number) {
+  async search(query: string, currentUserId?: bigint) {
     if (!query || query.trim().length < 2) return { posts: [], users: [] };
 
     const [posts, users] = await Promise.all([
@@ -144,7 +144,7 @@ export class SearchService {
   }
 
   // Hashtag'e göre postlar
-  async searchByHashtag(hashtag: string, currentUserId?: number) {
+  async searchByHashtag(hashtag: string, currentUserId?: bigint) {
     const tag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
 
     const posts = await this.prisma.post.findMany({

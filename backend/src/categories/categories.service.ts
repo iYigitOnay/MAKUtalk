@@ -48,7 +48,7 @@ export class CategoriesService {
       .sort((a, b) => b.weeklyPostCount - a.weeklyPostCount);
   }
 
-  async findOne(id: number) {
+  async findOne(id: bigint) {
     return this.prisma.category.findUnique({
       where: { id },
     });

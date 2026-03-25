@@ -11,6 +11,7 @@ import {
 } from '../notifications/notifications.service';
 import { censorContent } from '../common/utils/content-filter.util';
 import { MyLogger } from '../common/logger/logger.service';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
 
 @Injectable()
 export class CommentsService {
@@ -18,11 +19,12 @@ export class CommentsService {
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
     private myLogger: MyLogger,
+    private snowflakeService: SnowflakeService,
   ) {}
 
   async create(
-    userId: number,
-    postId: number,
+    userId: bigint,
+    postId: bigint,
     createCommentDto: CreateCommentDto,
   ) {
     const post = await this.prisma.post.findFirst({
@@ -30,7 +32,6 @@ export class CommentsService {
     });
     if (!post) throw new NotFoundException('Post bulunamadı.');
 
-    // 1. KÜFÜR FİLTRESİ
     const { cleanText, count } = censorContent(createCommentDto.content);
     if (count > 0) {
       this.myLogger.warn(
@@ -41,6 +42,7 @@ export class CommentsService {
 
     const comment = await this.prisma.comment.create({
       data: {
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
         content: cleanText,
         userId,
         postId,
@@ -57,16 +59,13 @@ export class CommentsService {
       post.authorId,
       userId,
       postId,
-      comment.id, // Yeni alan: Yorum ID'si
+      comment.id, 
     );
     
     if (notification) {
       this.myLogger.log(`✅ [Comments] Bildirim oluşturuldu: ID=${notification.id}, Alıcı=${post.authorId}`, 'Notifications');
-    } else {
-      this.myLogger.warn(`⚠️ [Comments] Bildirim oluşturulmadı (Muhtemelen kendi postu veya hata). Alıcı=${post.authorId}, Gönderen=${userId}`, 'Notifications');
     }
 
-    // ETİKETLEME (MENTION) SİSTEMİ
     const mentionRegex = /@(\w+)/g;
     const matches = [...cleanText.matchAll(mentionRegex)];
     const mentionedUsernames = [...new Set(matches.map((match) => match[1]))];
@@ -96,7 +95,7 @@ export class CommentsService {
     return { ...rest, author: user };
   }
 
-  async findByPost(postId: number) {
+  async findByPost(postId: bigint) {
     const comments = await this.prisma.comment.findMany({
       where: { postId, isDeleted: false },
       include: {
@@ -110,7 +109,7 @@ export class CommentsService {
     return comments.map(({ user, ...rest }) => ({ ...rest, author: user }));
   }
 
-  async remove(commentId: number, userId: number) {
+  async remove(commentId: bigint, userId: bigint) {
     const comment = await this.prisma.comment.findFirst({
       where: { id: commentId, isDeleted: false },
     });
@@ -125,7 +124,6 @@ export class CommentsService {
     if (comment.userId !== userId && !isAdmin)
       throw new ForbiddenException('Bu yorumu silme yetkiniz yok.');
 
-    // SOFT DELETE
     await this.prisma.comment.update({
       where: { id: commentId },
       data: { isDeleted: true },

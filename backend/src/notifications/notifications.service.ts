@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { ChatGateway } from '../chat/chat.gateway';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
 
 export enum NotificationType {
   LIKE = 'LIKE',
@@ -15,18 +16,18 @@ export class NotificationsService {
   constructor(
     private prisma: PrismaService,
     private chatGateway: ChatGateway,
+    private snowflakeService: SnowflakeService,
   ) {}
 
   async createNotification(
     type: NotificationType,
-    recipientId: number,
-    senderId: number,
-    postId?: number,
-    commentId?: number,
+    recipientId: bigint,
+    senderId: bigint,
+    postId?: bigint,
+    commentId?: bigint,
   ) {
     if (recipientId === senderId) return null;
 
-    // Sadece LIKE ve FOLLOW için 5 dakikalık spam korumasını uygula.
     if (type === NotificationType.LIKE || type === NotificationType.FOLLOW) {
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
       const existing = await this.prisma.notification.findFirst({
@@ -44,6 +45,7 @@ export class NotificationsService {
 
     const newNotification = await this.prisma.notification.create({
       data: {
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
         type,
         recipientId,
         senderId,
@@ -74,11 +76,10 @@ export class NotificationsService {
       },
     });
 
-    // SOCKET.IO ILE ANLIK BILDIRIM GONDER
     if (this.chatGateway.server) {
-      const room = `user_${recipientId}`;
+      const room = `user_${recipientId.toString()}`;
       this.chatGateway.server.to(room).emit('new_notification', newNotification);
-      console.log(`🚀 [Notifications] Bildirim gönderildi: Tip=${type}, AlıcıRoom=${room}, GönderenID=${senderId}`);
+      console.log(`🚀 [Notifications] Bildirim gönderildi: Tip=${type}, AlıcıRoom=${room}, GönderenID=${senderId.toString()}`);
     } else {
       console.error('❌ [Notifications] Hata: ChatGateway server hazır değil!');
     }
@@ -86,7 +87,7 @@ export class NotificationsService {
     return newNotification;
   }
 
-  async getUserNotifications(userId: number, limit = 20) {
+  async getUserNotifications(userId: bigint, limit = 20) {
     return this.prisma.notification.findMany({
       where: { recipientId: userId },
       include: {
@@ -116,7 +117,7 @@ export class NotificationsService {
     });
   }
 
-  async getUnreadCount(userId: number) {
+  async getUnreadCount(userId: bigint) {
     return this.prisma.notification.count({
       where: {
         recipientId: userId,
@@ -125,7 +126,7 @@ export class NotificationsService {
     });
   }
 
-  async markAsRead(notificationId: number, userId: number) {
+  async markAsRead(notificationId: bigint, userId: bigint) {
     const notification = await this.prisma.notification.findFirst({
       where: {
         id: notificationId,
@@ -141,7 +142,7 @@ export class NotificationsService {
     });
   }
 
-  async markAllAsRead(userId: number) {
+  async markAllAsRead(userId: bigint) {
     return this.prisma.notification.updateMany({
       where: {
         recipientId: userId,
@@ -151,7 +152,7 @@ export class NotificationsService {
     });
   }
 
-  async deleteNotification(notificationId: number, userId: number) {
+  async deleteNotification(notificationId: bigint, userId: bigint) {
     const notification = await this.prisma.notification.findFirst({
       where: {
         id: notificationId,

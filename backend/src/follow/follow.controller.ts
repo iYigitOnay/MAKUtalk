@@ -1,65 +1,56 @@
 import {
   Controller,
-  Get,
   Post,
   Param,
-  Delete,
   UseGuards,
-  ParseIntPipe,
+  Get,
+  Delete,
 } from '@nestjs/common';
 import { FollowService } from './follow.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
 
 @Controller('follow')
-@UseGuards(JwtAuthGuard)
 export class FollowController {
   constructor(private readonly followService: FollowService) {}
 
-  @Post(':userId')
-  toggleFollow(
-    @CurrentUser() user,
-    @Param('userId', ParseIntPipe) followingId: number,
-  ) {
-    return this.followService.toggleFollow(user.id, followingId);
+  @Post(':id')
+  @UseGuards(JwtAuthGuard)
+  async toggleFollow(@Param('id') followingId: string, @CurrentUser() user) {
+    return this.followService.toggleFollow(BigInt(user.id), BigInt(followingId));
   }
 
   @Get('requests')
-  getPendingRequests(@CurrentUser() user) {
-    return this.followService.getPendingRequests(user.id);
+  @UseGuards(JwtAuthGuard)
+  async getPendingRequests(@CurrentUser() user) {
+    return this.followService.getPendingRequests(BigInt(user.id));
   }
 
   @Post('requests/:id/accept')
-  acceptRequest(
-    @CurrentUser() user,
-    @Param('id', ParseIntPipe) requestId: number,
-  ) {
-    return this.followService.acceptRequest(user.id, requestId);
+  @UseGuards(JwtAuthGuard)
+  async acceptRequest(@Param('id') requestId: string, @CurrentUser() user) {
+    return this.followService.acceptRequest(BigInt(user.id), BigInt(requestId));
   }
 
-  @Post('requests/:id/reject')
-  rejectRequest(
-    @CurrentUser() user,
-    @Param('id', ParseIntPipe) requestId: number,
-  ) {
-    return this.followService.rejectRequest(user.id, requestId);
+  @Delete('requests/:id/reject')
+  @UseGuards(JwtAuthGuard)
+  async rejectRequest(@Param('id') requestId: string, @CurrentUser() user) {
+    return this.followService.rejectRequest(BigInt(user.id), BigInt(requestId));
   }
 
   @Get('followers/:userId')
-  getFollowers(@Param('userId', ParseIntPipe) userId: number) {
-    return this.followService.getFollowers(userId);
+  async getFollowers(@Param('userId') userId: string) {
+    return this.followService.getFollowers(BigInt(userId));
   }
 
   @Get('following/:userId')
-  getFollowing(@Param('userId', ParseIntPipe) userId: number) {
-    return this.followService.getFollowing(userId);
+  async getFollowing(@Param('userId') userId: string) {
+    return this.followService.getFollowing(BigInt(userId));
   }
 
-  @Get('check/:userId')
-  isFollowing(
-    @CurrentUser() user,
-    @Param('userId', ParseIntPipe) followingId: number,
-  ) {
-    return this.followService.isFollowing(user.id, followingId);
+  @Get('status/:userId')
+  @UseGuards(JwtAuthGuard)
+  async getFollowStatus(@Param('userId') userId: string, @CurrentUser() user) {
+    return this.followService.isFollowing(BigInt(user.id), BigInt(userId));
   }
 }

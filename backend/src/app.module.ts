@@ -24,6 +24,7 @@ import { ClubsModule } from './clubs/clubs.module';
 import { SpotModule } from './spot/spot.module';
 import { EventsModule } from './events/events.module';
 import { LoggerModule } from './common/logger/logger.module';
+import { SnowflakeModule } from './common/snowflake/snowflake.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { LoggerModule } from './common/logger/logger.module';
       isGlobal: true,
     }),
     LoggerModule,
+    SnowflakeModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
@@ -38,17 +40,17 @@ import { LoggerModule } from './common/logger/logger.module';
     ThrottlerModule.forRoot([
       {
         name: 'short',
-        ttl: 1000, 
+        ttl: 1000,
         limit: 10, // 3 -> 10 yapıldı
       },
       {
         name: 'medium',
-        ttl: 60000, 
+        ttl: 60000,
         limit: 150, // 100 -> 150 yapıldı
       },
       {
         name: 'long',
-        ttl: 3600000, 
+        ttl: 3600000,
         limit: 2000, // 1000 -> 2000 yapıldı
       },
     ]),

@@ -7,7 +7,6 @@ import {
   Param,
   Delete,
   UseGuards,
-  ParseIntPipe,
   Query,
   UseInterceptors,
   UploadedFiles,
@@ -36,14 +35,14 @@ export class PostsController {
     @Body() createPostDto: CreatePostDto,
     @UploadedFiles() files?: { image?: Express.Multer.File[], document?: Express.Multer.File[] },
   ) {
-    return this.postsService.create(user.id, createPostDto, files);
+    return this.postsService.create(BigInt(user.id), createPostDto, files);
   }
 
   @Get()
   @UseGuards(JwtAuthGuard)
   findAll(@Query('currentUserId') currentUserId?: string) {
     return this.postsService.findAll(
-      currentUserId ? +currentUserId : undefined,
+      currentUserId ? BigInt(currentUserId) : undefined,
     );
   }
 
@@ -51,115 +50,115 @@ export class PostsController {
   @UseGuards(JwtAuthGuard)
   findAcademicFeed(@Query('currentUserId') currentUserId?: string) {
     return this.postsService.findAcademicFeed(
-      currentUserId ? +currentUserId : undefined,
+      currentUserId ? BigInt(currentUserId) : undefined,
     );
   }
 
   @Get('bookmarks')
   @UseGuards(JwtAuthGuard)
   findBookmarks(@CurrentUser() user) {
-    return this.postsService.findBookmarks(user.id);
+    return this.postsService.findBookmarks(BigInt(user.id));
   }
 
   @Post(':id/bookmark')
   @UseGuards(JwtAuthGuard)
-  toggleBookmark(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
-    return this.postsService.toggleBookmark(user.id, id);
+  toggleBookmark(@Param('id') id: string, @CurrentUser() user) {
+    return this.postsService.toggleBookmark(BigInt(user.id), BigInt(id));
   }
 
   @Get('category/:categoryId')
   findByCategory(
-    @Param('categoryId', ParseIntPipe) categoryId: number,
+    @Param('categoryId') categoryId: string,
     @Query('currentUserId') currentUserId?: string,
   ) {
     return this.postsService.findByCategory(
-      categoryId,
-      currentUserId ? +currentUserId : undefined,
+      BigInt(categoryId),
+      currentUserId ? BigInt(currentUserId) : undefined,
     );
   }
 
   @Get('my-posts')
   @UseGuards(JwtAuthGuard)
   findMyPosts(@CurrentUser() user) {
-    return this.postsService.findMyPosts(user.id);
+    return this.postsService.findMyPosts(BigInt(user.id));
   }
 
   @Post(':id/repost')
   @UseGuards(JwtAuthGuard)
   @Throttle({ medium: { limit: 5, ttl: 60000 } })
-  toggleRepost(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
-    return this.postsService.toggleRepost(user.id, id);
+  toggleRepost(@Param('id') id: string, @CurrentUser() user) {
+    return this.postsService.toggleRepost(BigInt(user.id), BigInt(id));
   }
 
   @Get('user/:userId/reposts')
   findUserReposts(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId') userId: string,
     @Query('currentUserId') currentUserId?: string,
   ) {
     return this.postsService.findUserReposts(
-      userId,
-      currentUserId ? +currentUserId : undefined,
+      BigInt(userId),
+      currentUserId ? BigInt(currentUserId) : undefined,
     );
   }
 
   @Get('user/:userId/likes')
   findLikedPosts(
-    @Param('userId', ParseIntPipe) userId: number,
+    @Param('userId') userId: string,
     @Query('currentUserId') currentUserId?: string,
   ) {
     return this.postsService.findLikedPosts(
-      userId,
-      currentUserId ? +currentUserId : undefined,
+      BigInt(userId),
+      currentUserId ? BigInt(currentUserId) : undefined,
     );
   }
 
   @Get(':id/thread')
   getThread(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Query('currentUserId') currentUserId?: string,
   ) {
     return this.postsService.getThread(
-      id,
-      currentUserId ? +currentUserId : undefined,
+      BigInt(id),
+      currentUserId ? BigInt(currentUserId) : undefined,
     );
   }
 
   @Get(':id')
   findOne(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Query('currentUserId') currentUserId?: string,
   ) {
     return this.postsService.findOne(
-      id,
-      currentUserId ? +currentUserId : undefined,
+      BigInt(id),
+      currentUserId ? BigInt(currentUserId) : undefined,
     );
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @CurrentUser() user,
     @Body() updatePostDto: UpdatePostDto,
   ) {
-    return this.postsService.update(id, user.id, updatePostDto);
+    return this.postsService.update(BigInt(id), BigInt(user.id), updatePostDto);
   }
 
   @Patch(':id/pin')
   @UseGuards(JwtAuthGuard)
-  togglePin(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
-    return this.postsService.togglePin(user.id, id);
+  togglePin(@Param('id') id: string, @CurrentUser() user) {
+    return this.postsService.togglePin(BigInt(user.id), BigInt(id));
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
-    return this.postsService.remove(id, user.id);
+  remove(@Param('id') id: string, @CurrentUser() user) {
+    return this.postsService.remove(BigInt(id), BigInt(user.id));
   }
 
   @Post(':id/refresh-sentiment')
   @UseGuards(JwtAuthGuard)
-  refreshSentiment(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
-    return this.postsService.refreshSentiment(id, user.id);
+  refreshSentiment(@Param('id') id: string, @CurrentUser() user) {
+    return this.postsService.refreshSentiment(BigInt(id), BigInt(user.id));
   }
 }

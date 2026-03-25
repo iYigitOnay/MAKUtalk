@@ -9,12 +9,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
+    private snowflakeService: SnowflakeService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -49,6 +51,7 @@ export class UsersService {
 
     const user = await this.prisma.user.create({
       data: {
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
         ...createUserDto,
         password: hashedPassword,
         role: role,
@@ -63,7 +66,11 @@ export class UsersService {
       });
       if (academicBadge) {
         await this.prisma.userBadge.create({
-          data: { userId: user.id, badgeId: academicBadge.id },
+          data: { 
+            id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+            userId: user.id, 
+            badgeId: academicBadge.id 
+          },
         });
       }
     }
@@ -88,8 +95,7 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { username } });
   }
 
-  // Controller'ın beklediği metod
-  async findByUsername(username: string, currentUserId?: number) {
+  async findByUsername(username: string, currentUserId?: bigint) {
     const user = await this.prisma.user.findUnique({
       where: { username },
       include: {
@@ -118,11 +124,11 @@ export class UsersService {
     return { ...user, isFollowing, isBlocked };
   }
 
-  async findById(id: number) {
+  async findById(id: bigint) {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async findByIdWithStats(id: number, currentUserId?: number) {
+  async findByIdWithStats(id: bigint, currentUserId?: bigint) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
@@ -146,8 +152,8 @@ export class UsersService {
   }
 
   async updateProfile(
-    userId: number,
-    currentUserId: number,
+    userId: bigint,
+    currentUserId: bigint,
     data: any,
     files?: {
       avatar?: Express.Multer.File[];
@@ -172,7 +178,6 @@ export class UsersService {
     const uploadedFiles: string[] = [];
 
     try {
-      // AVATAR İŞLEME
       if (files?.avatar?.[0]) {
         const file = files.avatar[0];
         const fileName = `avatar-${userId}-${Date.now()}.webp`;
@@ -245,7 +250,7 @@ export class UsersService {
     }
   }
 
-  async toggleBan(userId: number, currentUserId: number) {
+  async toggleBan(userId: bigint, currentUserId: bigint) {
     const admin = await this.prisma.user.findUnique({
       where: { id: currentUserId },
     });
@@ -260,7 +265,7 @@ export class UsersService {
     });
   }
 
-  async deleteUser(userId: number, currentUserId: number) {
+  async deleteUser(userId: bigint, currentUserId: bigint) {
     const admin = await this.prisma.user.findUnique({
       where: { id: currentUserId },
     });
@@ -273,7 +278,7 @@ export class UsersService {
     return this.prisma.user.delete({ where: { id: userId } });
   }
 
-  async toggleBlock(blockerId: number, blockedId: number) {
+  async toggleBlock(blockerId: bigint, blockedId: bigint) {
     const existing = await this.prisma.block.findFirst({
       where: { blockerId, blockedId },
     });
@@ -281,8 +286,13 @@ export class UsersService {
       await this.prisma.block.delete({ where: { id: existing.id } });
       return { blocked: false };
     }
-    await this.prisma.block.create({ data: { blockerId, blockedId } });
-    // Bloklayınca takibi de bırak
+    await this.prisma.block.create({ 
+      data: { 
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        blockerId, 
+        blockedId 
+      } 
+    });
     await this.prisma.follow.deleteMany({
       where: {
         OR: [
@@ -294,7 +304,7 @@ export class UsersService {
     return { blocked: true };
   }
 
-  async getBlockedUsers(userId: number) {
+  async getBlockedUsers(userId: bigint) {
     return this.prisma.block.findMany({
       where: { blockerId: userId },
       include: {
@@ -305,7 +315,7 @@ export class UsersService {
     });
   }
 
-  async createReport(reporterId: number, data: any) {
+  async createReport(reporterId: bigint, data: any) {
     const {
       reportedUserId,
       reportedPostId,
@@ -315,7 +325,7 @@ export class UsersService {
       subReason,
     } = data;
 
-    const existingReport = await (this.prisma as any).report.findFirst({
+    const existingReport = await this.prisma.report.findFirst({
       where: {
         reporterId,
         reportedPostId: reportedPostId || null,
@@ -331,8 +341,9 @@ export class UsersService {
       );
     }
 
-    const report = await (this.prisma as any).report.create({
+    const report = await this.prisma.report.create({
       data: {
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
         reporterId,
         reportedUserId,
         reportedPostId,
@@ -346,7 +357,7 @@ export class UsersService {
     const THRESHOLD = 3;
 
     if (reportedPostId) {
-      const reportCount = await (this.prisma as any).report.count({
+      const reportCount = await this.prisma.report.count({
         where: { reportedPostId },
       });
 
@@ -359,7 +370,7 @@ export class UsersService {
     }
 
     if (reportedCommentId) {
-      const reportCount = await (this.prisma as any).report.count({
+      const reportCount = await this.prisma.report.count({
         where: { reportedCommentId },
       });
 
@@ -372,7 +383,7 @@ export class UsersService {
     }
 
     if (reportedMessageId) {
-      const reportCount = await (this.prisma as any).report.count({
+      const reportCount = await this.prisma.report.count({
         where: { reportedMessageId },
       });
 
@@ -387,10 +398,15 @@ export class UsersService {
     return report;
   }
 
-  async createFeedback(userId: number, type: string, message: string) {
+  async createFeedback(userId: bigint, type: string, message: string) {
     if (!userId) throw new Error('UserId gerekli.');
-    return (this.prisma as any).feedback.create({
-      data: { userId, type, message },
+    return this.prisma.feedback.create({
+      data: { 
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        userId, 
+        type, 
+        message 
+      },
     });
   }
 
@@ -402,9 +418,9 @@ export class UsersService {
   }
 
   async toggleUserBadge(
-    userId: number,
-    badgeId: number,
-    currentUserId: number,
+    userId: bigint,
+    badgeId: bigint,
+    currentUserId: bigint,
   ) {
     const admin = await this.prisma.user.findUnique({
       where: { id: currentUserId },
@@ -423,7 +439,13 @@ export class UsersService {
       await this.prisma.userBadge.delete({ where: { id: ex.id } });
       return { assigned: false };
     } else {
-      await this.prisma.userBadge.create({ data: { userId, badgeId } });
+      await this.prisma.userBadge.create({ 
+        data: { 
+          id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+          userId, 
+          badgeId 
+        } 
+      });
       return { assigned: true };
     }
   }

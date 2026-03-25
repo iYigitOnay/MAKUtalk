@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
+  id        BigInt   @id
   email     String   @unique
   username  String   @unique
   password  String
@@ -55,16 +55,16 @@ model User {
 }
 
 model Event {
-  id          Int      @id @default(autoincrement())
+  id          BigInt   @id
   title       String
   description String   @db.Text
   date        DateTime
   location    String?
   campus      String?  @default("İstiklal")
-  type        String   @default("DİĞER") // KONSER, SEMİNER, SPOR, vb.
+  type        String   @default("DİĞER")
   imageUrl    String?
-  creatorId   Int
-  clubId      Int?
+  creatorId   BigInt
+  clubId      BigInt?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -76,9 +76,9 @@ model Event {
 }
 
 model EventParticipant {
-  id        Int      @id @default(autoincrement())
-  eventId   Int
-  userId    Int
+  id        BigInt   @id
+  eventId   BigInt
+  userId    BigInt
   createdAt DateTime @default(now())
 
   event Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
@@ -88,7 +88,7 @@ model EventParticipant {
 }
 
 model Conversation {
-  id          Int      @id @default(autoincrement())
+  id          BigInt   @id
   isAccepted  Boolean  @default(true)
   isRejected  Boolean  @default(false)
   createdAt   DateTime @default(now())
@@ -99,9 +99,9 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  id             Int      @id @default(autoincrement())
-  conversationId Int
-  userId         Int
+  id             BigInt   @id
+  conversationId BigInt
+  userId         BigInt
   themeColor     String   @default("#4f46e5")
   joinedAt       DateTime @default(now())
 
@@ -112,11 +112,11 @@ model ConversationParticipant {
 }
 
 model Message {
-  id             Int      @id @default(autoincrement())
-  conversationId Int
-  senderId       Int
+  id             BigInt   @id
+  conversationId BigInt
+  senderId       BigInt
   content        String?  @db.Text
-  postId         Int?     // Paylaşılan postun ID'si
+  postId         BigInt?  // Paylaşılan postun ID'si
   mediaUrl       String?  // Yüklenen medyanın yolu
   mediaType      String?  // IMAGE, VIDEO, FILE
   isRead         Boolean  @default(false)
@@ -140,7 +140,7 @@ enum BadgeType {
 }
 
 model Badge {
-  id          Int         @id @default(autoincrement())
+  id          BigInt      @id
   name        String      @unique
   icon        String?     
   color       String      @default("#1E3A8A")
@@ -153,9 +153,9 @@ model Badge {
 }
 
 model UserBadge {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  badgeId   Int
+  id        BigInt   @id
+  userId    BigInt
+  badgeId   BigInt
   assignedAt DateTime @default(now())
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -165,9 +165,9 @@ model UserBadge {
 }
 
 model ClubBadge {
-  id        Int      @id @default(autoincrement())
-  clubId    Int
-  badgeId   Int
+  id        BigInt   @id
+  clubId    BigInt
+  badgeId   BigInt
   assignedAt DateTime @default(now())
 
   club      Club     @relation(fields: [clubId], references: [id], onDelete: Cascade)
@@ -177,11 +177,11 @@ model ClubBadge {
 }
 
 model FollowRequest {
-  id          Int      @id @default(autoincrement())
-  senderId    Int
-  receiverId  Int
+  id          BigInt        @id
+  senderId    BigInt
+  receiverId  BigInt
   status      RequestStatus @default(PENDING)
-  createdAt   DateTime @default(now())
+  createdAt   DateTime      @default(now())
 
   sender      User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
   receiver    User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
@@ -203,7 +203,7 @@ enum UserRole {
 }
 
 model Category {
-  id          Int      @id @default(autoincrement())
+  id          BigInt   @id
   name        String   @unique
   slug        String   @unique
   description String?
@@ -215,16 +215,16 @@ model Category {
 }
 
 model Post {
-  id         Int      @id @default(autoincrement())
+  id         BigInt   @id
   content    String?  @db.Text
   imageUrl   String?  
   documentUrl String?
   isAcademic Boolean  @default(false)
   published  Boolean  @default(true)
-  authorId   Int
-  categoryId Int?
-  repostId   Int?     
-  parentId   Int?     // <- TWITTER MANTIĞI: Bu post hangi posta cevap olarak atıldı?
+  authorId   BigInt
+  categoryId BigInt?
+  repostId   BigInt?  
+  parentId   BigInt?  // <- TWITTER MANTIĞI: Bu post hangi posta cevap olarak atıldı?
   sentiment      String?  
   sentimentScore Float?
   isDeleted  Boolean  @default(false)
@@ -257,9 +257,9 @@ model Post {
 }
 
 model Like {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  postId    Int
+  id        BigInt   @id
+  userId    BigInt
+  postId    BigInt
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -271,10 +271,10 @@ model Like {
 }
 
 model Comment {
-  id        Int      @id @default(autoincrement())
+  id        BigInt   @id
   content   String   @db.Text
-  userId    Int
-  postId    Int
+  userId    BigInt
+  postId    BigInt
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -289,9 +289,9 @@ model Comment {
 }
 
 model Follow {
-  id          Int      @id @default(autoincrement())
-  followerId  Int
-  followingId Int
+  id          BigInt   @id
+  followerId  BigInt
+  followingId BigInt
   createdAt   DateTime @default(now())
 
   follower  User @relation("UserFollowing", fields: [followerId], references: [id], onDelete: Cascade)
@@ -303,12 +303,12 @@ model Follow {
 }
 
 model Notification {
-  id         Int              @id @default(autoincrement())
+  id         BigInt           @id
   type       NotificationType
-  recipientId Int
-  senderId   Int?
-  postId     Int?
-  commentId  Int?
+  recipientId BigInt
+  senderId   BigInt?
+  postId     BigInt?
+  commentId  BigInt?
   read       Boolean          @default(false)
   createdAt  DateTime         @default(now())
 
@@ -323,9 +323,9 @@ model Notification {
 }
 
 model Block {
-  id          Int      @id @default(autoincrement())
-  blockerId   Int      
-  blockedId   Int      
+  id          BigInt   @id
+  blockerId   BigInt   
+  blockedId   BigInt   
   createdAt   DateTime @default(now())
 
   blocker     User     @relation("Blocker", fields: [blockerId], references: [id], onDelete: Cascade)
@@ -337,25 +337,25 @@ model Block {
 }
 
 model Feedback {
-  id        Int      @id @default(autoincrement())
+  id        BigInt   @id
   type      String   
   message   String   @db.Text
-  userId    Int?
+  userId    BigInt?
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt DateTime @default(now())
 }
 
 model Report {
-  id                Int      @id @default(autoincrement())
-  reporterId        Int
+  id                BigInt   @id
+  reporterId        BigInt
   reporter          User     @relation("ReportedBy", fields: [reporterId], references: [id])
-  reportedUserId    Int?
+  reportedUserId    BigInt?
   reportedUser      User?    @relation("ReportedUser", fields: [reportedUserId], references: [id])
-  reportedPostId    Int?
+  reportedPostId    BigInt?
   reportedPost      Post?    @relation(fields: [reportedPostId], references: [id])
-  reportedCommentId Int?
+  reportedCommentId BigInt?
   reportedComment   Comment? @relation(fields: [reportedCommentId], references: [id])
-  reportedMessageId Int?
+  reportedMessageId BigInt?
   reportedMessage   Message? @relation(fields: [reportedMessageId], references: [id])
   reason            String
   subReason         String?
@@ -364,7 +364,7 @@ model Report {
 }
 
 model Club {
-  id               Int      @id @default(autoincrement())
+  id               BigInt   @id
   name             String   @unique
   slug             String   @unique
   description      String   @db.Text
@@ -379,7 +379,7 @@ model Club {
   requiredSkills   String?  // Virgülle ayrılmış yetenekler
   metadata         Json?    // Dinamik alanlar için (mevki, proje kodu vb.)
   status           ClubStatus @default(PENDING)
-  founderId        Int?
+  founderId        BigInt?
   advisorName      String?
   advisorEmail     String?
   academicApproval Boolean  @default(false)
@@ -395,9 +395,9 @@ model Club {
 }
 
 model ClubMember {
-  id        Int      @id @default(autoincrement())
-  clubId    Int
-  userId    Int
+  id        BigInt   @id
+  clubId    BigInt
+  userId    BigInt
   role      String   @default("MEMBER") 
   joinedAt  DateTime @default(now())
 
@@ -428,7 +428,7 @@ enum NotificationType {
 }
 
 model SpotListing {
-  id          Int          @id @default(autoincrement())
+  id          BigInt       @id
   title       String       
   description String       @db.Text
   price       Float?       
@@ -438,7 +438,7 @@ model SpotListing {
   location    String?      
   contactInfo String?      
   isNegotiable Boolean     @default(false) 
-  authorId    Int
+  authorId    BigInt
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 
@@ -462,9 +462,9 @@ enum ListingStatus {
 }
 
 model Bookmark {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  postId    Int
+  id        BigInt   @id
+  userId    BigInt
+  postId    BigInt
   createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -474,4 +474,3 @@ model Bookmark {
   @@index([userId])
   @@index([postId])
 }
-

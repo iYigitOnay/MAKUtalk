@@ -8,15 +8,17 @@ import {
   NotificationsService,
   NotificationType,
 } from '../notifications/notifications.service';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
 
 @Injectable()
 export class FollowService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private snowflakeService: SnowflakeService,
   ) {}
 
-  private async autoAcceptConversations(userA: number, userB: number) {
+  private async autoAcceptConversations(userA: bigint, userB: bigint) {
     await this.prisma.conversation.updateMany({
       where: {
         AND: [
@@ -29,7 +31,7 @@ export class FollowService {
     });
   }
 
-  async toggleFollow(followerId: number, followingId: number) {
+  async toggleFollow(followerId: bigint, followingId: bigint) {
     if (followerId === followingId)
       throw new BadRequestException('Kendinizi takip edemezsiniz.');
 
@@ -62,19 +64,17 @@ export class FollowService {
       return { following: false, status: 'NONE', message: 'Takipten çıkıldı.' };
     }
 
-    const existingRequest = await (this.prisma as any).followRequest.findUnique(
-      {
-        where: {
-          senderId_receiverId: {
-            senderId: followerId,
-            receiverId: followingId,
-          },
+    const existingRequest = await this.prisma.followRequest.findUnique({
+      where: {
+        senderId_receiverId: {
+          senderId: followerId,
+          receiverId: followingId,
         },
       },
-    );
+    });
 
     if (existingRequest) {
-      await (this.prisma as any).followRequest.delete({
+      await this.prisma.followRequest.delete({
         where: { id: existingRequest.id },
       });
       return {
@@ -85,8 +85,9 @@ export class FollowService {
     }
 
     if (userToFollow.isPrivate === true) {
-      await (this.prisma as any).followRequest.create({
+      await this.prisma.followRequest.create({
         data: {
+          id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
           senderId: followerId,
           receiverId: followingId,
           status: 'PENDING',
@@ -99,8 +100,13 @@ export class FollowService {
       };
     }
 
-    // HESAP AÇIKSA: Takip et ve SOHBETİ AÇ
-    await this.prisma.follow.create({ data: { followerId, followingId } });
+    await this.prisma.follow.create({ 
+      data: { 
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        followerId, 
+        followingId 
+      } 
+    });
     await this.autoAcceptConversations(followerId, followingId);
 
     await this.notificationsService.createNotification(
@@ -111,7 +117,7 @@ export class FollowService {
     return { following: true, status: 'FOLLOWING', message: 'Takip edildi.' };
   }
 
-  async acceptRequest(receiverId: number, requestId: number) {
+  async acceptRequest(receiverId: bigint, requestId: bigint) {
     const request = await this.prisma.followRequest.findUnique({
       where: { id: requestId },
     });
@@ -120,7 +126,11 @@ export class FollowService {
 
     await this.prisma.$transaction([
       this.prisma.follow.create({
-        data: { followerId: request.senderId, followingId: request.receiverId },
+        data: { 
+          id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+          followerId: request.senderId, 
+          followingId: request.receiverId 
+        },
       }),
       this.prisma.followRequest.delete({ where: { id: requestId } }),
     ]);
@@ -135,7 +145,7 @@ export class FollowService {
     return { success: true, message: 'İstek kabul edildi.' };
   }
 
-  async rejectRequest(receiverId: number, requestId: number) {
+  async rejectRequest(receiverId: bigint, requestId: bigint) {
     const request = await this.prisma.followRequest.findUnique({
       where: { id: requestId },
     });
@@ -145,7 +155,7 @@ export class FollowService {
     return { success: true, message: 'İstek reddedildi.' };
   }
 
-  async getPendingRequests(userId: number) {
+  async getPendingRequests(userId: bigint) {
     return this.prisma.followRequest.findMany({
       where: { receiverId: userId, status: 'PENDING' },
       include: {
@@ -163,7 +173,7 @@ export class FollowService {
     });
   }
 
-  async getFollowers(userId: number) {
+  async getFollowers(userId: bigint) {
     return this.prisma.follow.findMany({
       where: { followingId: userId },
       include: {
@@ -180,7 +190,7 @@ export class FollowService {
     });
   }
 
-  async getFollowing(userId: number) {
+  async getFollowing(userId: bigint) {
     return this.prisma.follow.findMany({
       where: { followerId: userId },
       include: {
@@ -197,7 +207,7 @@ export class FollowService {
     });
   }
 
-  async isFollowing(followerId: number, followingId: number) {
+  async isFollowing(followerId: bigint, followingId: bigint) {
     const [follow, request] = await Promise.all([
       this.prisma.follow.findUnique({
         where: { followerId_followingId: { followerId, followingId } },

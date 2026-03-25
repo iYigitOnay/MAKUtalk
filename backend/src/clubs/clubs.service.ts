@@ -1,11 +1,15 @@
 import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
 
 @Injectable()
 export class ClubsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly snowflakeService: SnowflakeService
+  ) {}
 
-  async findAll(userId?: number, mainType?: string, category?: string) {
+  async findAll(userId?: bigint, mainType?: string, category?: string) {
     // 1. OTOMATİK TEMİZLİK: Süresi geçmiş olanları DB'den kalıcı olarak sil
     try {
       await (this.prisma as any).club.deleteMany({
@@ -60,7 +64,7 @@ export class ClubsService {
     }));
   }
 
-  async findMyFounded(userId: number) {
+  async findMyFounded(userId: bigint) {
     return (this.prisma as any).club.findMany({
       where: { founderId: userId },
       include: { _count: { select: { members: true } } }
@@ -81,29 +85,36 @@ export class ClubsService {
     });
   }
 
-  async approveByAcademic(userId: number, clubId: number) {
+  async approveByAcademic(userId: bigint, clubId: bigint) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.role !== 'ACADEMIC') throw new ForbiddenException('Yetkiniz yok.');
     return (this.prisma as any).club.update({ where: { id: clubId }, data: { academicApproval: true } });
   }
 
-  async approveByAdmin(userId: number, clubId: number) {
+  async approveByAdmin(userId: bigint, clubId: bigint) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || user.role !== 'ADMIN') throw new ForbiddenException('Yetkiniz yok.');
     const updatedClub = await (this.prisma as any).club.update({ where: { id: clubId }, data: { adminApproval: true, status: 'APPROVED' } });
     if (updatedClub.founderId) {
-      await (this.prisma as any).clubMember.create({ data: { clubId: updatedClub.id, userId: updatedClub.founderId, role: 'ADMIN' } });
+      await (this.prisma as any).clubMember.create({ 
+        data: { 
+          id: this.snowflakeService.getNextId(),
+          clubId: updatedClub.id, 
+          userId: updatedClub.founderId, 
+          role: 'ADMIN' 
+        } 
+      });
     }
     return updatedClub;
   }
 
-  async rejectProposal(userId: number, clubId: number) {
+  async rejectProposal(userId: bigint, clubId: bigint) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user || (user.role !== 'ADMIN' && user.role !== 'ACADEMIC')) throw new ForbiddenException('Yetkiniz yok.');
     return (this.prisma as any).club.update({ where: { id: clubId }, data: { status: 'REJECTED' } });
   }
 
-  async assignBadge(userId: number, clubId: number, badgeId: number) {
+  async assignBadge(userId: bigint, clubId: bigint, badgeId: bigint) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     const club = await (this.prisma as any).club.findUnique({ where: { id: clubId } });
     const badge = await this.prisma.badge.findUnique({ where: { id: badgeId } });
@@ -120,11 +131,15 @@ export class ClubsService {
     return (this.prisma as any).clubBadge.upsert({
       where: { clubId_badgeId: { clubId, badgeId } },
       update: {},
-      create: { clubId, badgeId }
+      create: { 
+        id: this.snowflakeService.getNextId(),
+        clubId, 
+        badgeId 
+      }
     });
   }
 
-  async createProposal(userId: number, data: any) {
+  async createProposal(userId: bigint, data: any) {
     const { name, category, emoji, color, advisorEmail, description, maxMembers, deadline, requiredSkills, metadata, mainType } = data;
     const slug = name.toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
 
@@ -133,6 +148,7 @@ export class ClubsService {
 
     const club = await (this.prisma as any).club.create({
       data: {
+        id: this.snowflakeService.getNextId(),
         name,
         mainType: mainType || 'DIGITAL',
         category,
@@ -152,9 +168,9 @@ export class ClubsService {
     return club;
   }
 
-  async findOne(slugOrId: string, userId?: number) {
-    const isId = !isNaN(parseInt(slugOrId));
-    const where: any = isId ? { id: parseInt(slugOrId) } : { slug: slugOrId };
+  async findOne(slugOrId: string, userId?: bigint) {
+    const isId = this.snowflakeService.isValid(slugOrId);
+    const where: any = isId ? { id: BigInt(slugOrId) } : { slug: slugOrId };
 
     const club = await (this.prisma as any).club.findUnique({
       where,
@@ -192,7 +208,7 @@ export class ClubsService {
     };
   }
 
-  async toggleJoin(userId: number, clubId: number) {
+  async toggleJoin(userId: bigint, clubId: bigint) {
     const club = await (this.prisma as any).club.findUnique({
       where: { id: clubId, status: 'APPROVED' },
       include: { members: true, _count: { select: { members: true } } }
@@ -213,7 +229,14 @@ export class ClubsService {
       throw new ForbiddenException('Maalesef kontenjan dolu.');
     }
 
-    await (this.prisma as any).clubMember.create({ data: { clubId, userId, role: 'MEMBER' } });
+    await (this.prisma as any).clubMember.create({ 
+      data: { 
+        id: this.snowflakeService.getNextId(),
+        clubId, 
+        userId, 
+        role: 'MEMBER' 
+      } 
+    });
     return { joined: true };
   }
 
@@ -221,7 +244,7 @@ export class ClubsService {
     return (this.prisma as any).badge.findMany({ where: { type: 'CLUB' } });
   }
 
-  async remove(userId: number, clubId: number, userRole: string) {
+  async remove(userId: bigint, clubId: bigint, userRole: string) {
     const club = await (this.prisma as any).club.findUnique({ where: { id: clubId } });
     if (!club) throw new NotFoundException('Bulunamadı.');
 

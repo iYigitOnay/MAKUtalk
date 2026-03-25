@@ -1,4 +1,15 @@
-import { Controller, Get, Param, Post, Body, UseGuards, Query, BadRequestException, Delete, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Post,
+  Body,
+  UseGuards,
+  Query,
+  BadRequestException,
+  Delete,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -9,70 +20,106 @@ import { PrismaService } from '../prisma/prisma.service';
 export class ChatController {
   constructor(
     private readonly chatService: ChatService,
-    private readonly prisma: PrismaService
+    private readonly prisma: PrismaService,
   ) {}
 
   @Delete('message/:id')
-  async deleteMessage(@CurrentUser() user: any, @Param('id', ParseIntPipe) id: number) {
-    return this.chatService.removeMessage(id, Number(user.id));
+  async deleteMessage(
+    @CurrentUser() user: any,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.chatService.removeMessage(BigInt(id), BigInt(user.id));
   }
 
   @Get('conversations')
   getConversations(@CurrentUser() user: any) {
-    return this.chatService.getUserConversations(Number(user.id));
+    return this.chatService.getUserConversations(BigInt(user.id));
   }
 
   @Get('conversation/:targetUserId')
   async getConversation(
-    @CurrentUser() user: any, 
-    @Param('targetUserId') targetUserId: string, 
+    @CurrentUser() user: any,
+    @Param('targetUserId') targetUserId: string,
     @Query('fromSpot') fromSpot?: string,
-    @Query('listingId') listingId?: string
+    @Query('listingId') listingId?: string,
   ) {
     let isFromSpot = fromSpot === 'true';
 
     if (isFromSpot && listingId) {
-      const listing = await this.prisma.spotListing.findUnique({ where: { id: +listingId } });
+      const listing = await this.prisma.spotListing.findUnique({
+        where: { id: BigInt(listingId) },
+      });
       if (!listing) throw new BadRequestException('Geçersiz ilan referansı.');
-      if (listing.authorId !== +targetUserId) throw new BadRequestException('Bu ilan bu kullanıcıya ait değil.');
+      if (listing.authorId !== BigInt(targetUserId))
+        throw new BadRequestException('Bu ilan bu kullanıcıya ait değil.');
     } else if (isFromSpot && !listingId) {
-       isFromSpot = false;
+      isFromSpot = false;
     }
-
-    return this.chatService.getOrCreateConversation(Number(user.id), +targetUserId, isFromSpot);
+    return this.chatService.getOrCreateConversation(
+      BigInt(user.id),
+      BigInt(targetUserId),
+    );
   }
 
   @Get('messages/:conversationId')
-  getMessages(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
-    return this.chatService.getMessages(+conversationId, Number(user.id));
+  getMessages(
+    @CurrentUser() user: any,
+    @Param('conversationId') conversationId: string,
+  ) {
+    return this.chatService.getMessages(
+      BigInt(conversationId),
+      BigInt(user.id),
+    );
   }
 
   @Post(':id/read')
   markAsRead(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.chatService.markMessagesAsRead(+id, Number(user.id));
+    return this.chatService.markMessagesAsRead(BigInt(id), BigInt(user.id));
   }
 
   @Post('delete/:conversationId')
-  async deleteConversation(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
-    return this.chatService.removeConversation(Number(user.id), +conversationId);
+  async deleteConversation(
+    @CurrentUser() user: any,
+    @Param('conversationId') conversationId: string,
+  ) {
+    return this.chatService.removeConversation(
+      BigInt(user.id),
+      BigInt(conversationId),
+    );
   }
 
   @Post('theme/:conversationId')
   async updateThemeColor(
     @CurrentUser() user: any,
     @Param('conversationId') conversationId: string,
-    @Body('color') color: string
+    @Body('color') color: string,
   ) {
-    return this.chatService.updateThemeColor(Number(user.id), +conversationId, color);
+    return this.chatService.updateThemeColor(
+      BigInt(user.id),
+      BigInt(conversationId),
+      color,
+    );
   }
 
   @Post('accept/:conversationId')
-  acceptRequest(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
-    return this.chatService.acceptRequest(Number(user.id), +conversationId);
+  acceptRequest(
+    @CurrentUser() user: any,
+    @Param('conversationId') conversationId: string,
+  ) {
+    return this.chatService.acceptRequest(
+      BigInt(user.id),
+      BigInt(conversationId),
+    );
   }
 
   @Post('reject/:conversationId')
-  rejectRequest(@CurrentUser() user: any, @Param('conversationId') conversationId: string) {
-    return this.chatService.rejectRequest(Number(user.id), +conversationId);
+  rejectRequest(
+    @CurrentUser() user: any,
+    @Param('conversationId') conversationId: string,
+  ) {
+    return this.chatService.rejectRequest(
+      BigInt(user.id),
+      BigInt(conversationId),
+    );
   }
 }

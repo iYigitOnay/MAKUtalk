@@ -16,7 +16,7 @@ export class HashtagService {
   }
 
   // Hashtag'e göre postları getir
-  async getPostsByHashtag(hashtag: string, userId?: number) {
+  async getPostsByHashtag(hashtag: string, userId?: bigint) {
     const posts = await this.prisma.post.findMany({
       where: {
         content: {

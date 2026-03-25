@@ -4,10 +4,14 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
 
 @Injectable()
 export class SpotService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private snowflakeService: SnowflakeService
+  ) {}
 
   async findAll(category?: string) {
     return (this.prisma as any).spotListing.findMany({
@@ -23,14 +27,14 @@ export class SpotService {
     });
   }
 
-  async findMyListings(userId: number) {
+  async findMyListings(userId: bigint) {
     return (this.prisma as any).spotListing.findMany({
       where: { authorId: userId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: bigint) {
     const listing = await (this.prisma as any).spotListing.findUnique({
       where: { id },
       include: {
@@ -43,9 +47,10 @@ export class SpotService {
     return listing;
   }
 
-  async create(userId: number, data: any) {
+  async create(userId: bigint, data: any) {
     return (this.prisma as any).spotListing.create({
       data: {
+        id: this.snowflakeService.getNextId(),
         title: data.title,
         description: data.description,
         price: data.price ? parseFloat(data.price.toString()) : null,
@@ -59,7 +64,7 @@ export class SpotService {
     });
   }
 
-  async updateStatus(userId: number, id: number, status: string) {
+  async updateStatus(userId: bigint, id: bigint, status: string) {
     const listing = await (this.prisma as any).spotListing.findUnique({
       where: { id },
     });
@@ -76,7 +81,7 @@ export class SpotService {
     });
   }
 
-  async remove(userId: number, id: number) {
+  async remove(userId: bigint, id: bigint) {
     const listing = await (this.prisma as any).spotListing.findUnique({
       where: { id },
     });

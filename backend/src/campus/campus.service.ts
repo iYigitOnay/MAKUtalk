@@ -428,7 +428,7 @@ export class CampusService implements OnModuleInit {
     };
   }
 
-  async getRecentPostsByCategory(categoryId: number, interval: string = 'day') {
+  async getRecentPostsByCategory(categoryId: bigint, interval: string = 'day') {
     const now = new Date();
     const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     return this.prisma.post.findMany({

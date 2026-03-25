@@ -9,6 +9,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import { json, urlencoded } from 'express';
 import { MyLogger } from './common/logger/logger.service';
+import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -17,6 +18,9 @@ async function bootstrap() {
 
   const logger = app.get(MyLogger);
   app.useLogger(logger);
+
+  // --- KATMAN 0: BIGINT SERİALİZER ---
+  app.useGlobalInterceptors(new BigIntInterceptor());
 
   // --- KATMAN 1: IP VE ISTEK TAKIBI ---
   app.use(

@@ -15,6 +15,7 @@ import { censorContent } from '../common/utils/content-filter.util';
 import { MyLogger } from '../common/logger/logger.service';
 import { NotificationsService, NotificationType } from '../notifications/notifications.service';
 import { ChatGateway } from '../chat/chat.gateway';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
 
 @Injectable()
 export class PostsService {
@@ -24,9 +25,10 @@ export class PostsService {
     private myLogger: MyLogger,
     private notificationsService: NotificationsService,
     private chatGateway: ChatGateway,
+    private snowflakeService: SnowflakeService,
   ) {}
 
-  async create(userId: number, createPostDto: CreatePostDto, files?: { image?: Express.Multer.File[], document?: Express.Multer.File[] }) {
+  async create(userId: bigint, createPostDto: CreatePostDto, files?: { image?: Express.Multer.File[], document?: Express.Multer.File[] }) {
     const { cleanText, count } = censorContent(createPostDto.content || '');
     if (count > 0) {
       this.myLogger.warn(`Kullanıcı ID: ${userId} küfürlü içerik paylaştı (${count} kelime).`, 'Security');
@@ -36,7 +38,7 @@ export class PostsService {
     const shouldIdentifyCategory = !createPostDto.categoryId && !isReply;
     const aiAnalysis = await this.aiService.analyzePost(cleanText, shouldIdentifyCategory);
 
-    let categoryId = createPostDto.categoryId;
+    let categoryId: bigint | undefined = createPostDto.categoryId ? BigInt(createPostDto.categoryId) : undefined;
 
     if (shouldIdentifyCategory && !categoryId && aiAnalysis.suggestedCategorySlug) {
       const suggestedCategory = await this.prisma.category.findUnique({ 
@@ -45,9 +47,9 @@ export class PostsService {
       categoryId = suggestedCategory?.id;
     }
 
-    if (!categoryId) {
+    if (!categoryId && !isReply) {
       const generalCategory = await this.prisma.category.findUnique({ where: { slug: 'genel' } });
-      categoryId = generalCategory?.id || 1;
+      categoryId = generalCategory?.id;
     }
 
     let imageUrl: string | null = null;
@@ -88,25 +90,25 @@ export class PostsService {
       }
     }
 
-    // Role check for Academic posts
     let isAcademic = String(createPostDto.isAcademic) === 'true';
     if (isAcademic) {
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (user?.role !== 'ADMIN' && user?.role !== 'ACADEMIC') {
-        isAcademic = false; // Override if not allowed
+        isAcademic = false; 
       }
     }
 
     const post = await this.prisma.post.create({
       data: {
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
         content: cleanText,
         imageUrl: imageUrl,
         documentUrl: documentUrl,
         isAcademic: isAcademic,
         published: createPostDto.published ?? true,
         authorId: userId,
-        categoryId: categoryId ? Number(categoryId) : undefined,
-        parentId: createPostDto.parentId ? Number(createPostDto.parentId) : null,
+        categoryId: categoryId,
+        parentId: createPostDto.parentId ? BigInt(createPostDto.parentId) : null,
         sentiment: aiAnalysis.sentiment,
         sentimentScore: aiAnalysis.sentimentScore,
       },
@@ -124,9 +126,8 @@ export class PostsService {
       },
     });
 
-    // BİLDİRİM: Eğer bu bir yanıtsa, ana postun sahibine haber ver
     if (createPostDto.parentId) {
-      const parentIdNum = Number(createPostDto.parentId);
+      const parentIdNum = BigInt(createPostDto.parentId);
       const parentPost = await this.prisma.post.findUnique({
         where: { id: parentIdNum },
         select: { authorId: true },
@@ -142,7 +143,6 @@ export class PostsService {
       }
     }
 
-    // YENİ: Gerçek Zamanlı Akış İçin Yayınla (Sadece ana postları veya akademik duyuruları)
     if (!createPostDto.parentId) {
       this.chatGateway.broadcastNewPost(post);
     }
@@ -150,7 +150,7 @@ export class PostsService {
     return post;
   }
 
-  async toggleRepost(userId: number, postId: number) {
+  async toggleRepost(userId: bigint, postId: bigint) {
     const existingRepost = await this.prisma.post.findFirst({
       where: { authorId: userId, repostId: postId, isDeleted: false },
     });
@@ -162,7 +162,13 @@ export class PostsService {
       return { reposted: false, message: 'Remakü geri alındı.' };
     }
     const newRepost = await this.prisma.post.create({
-      data: { authorId: userId, repostId: postId, published: true, isDeleted: false },
+      data: { 
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        authorId: userId, 
+        repostId: postId, 
+        published: true, 
+        isDeleted: false 
+      },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
         category: true,
@@ -177,7 +183,6 @@ export class PostsService {
       },
     });
 
-    // BİLDİRİM: Repost edilen postun sahibine haber ver
     if (newRepost.repostOf && newRepost.repostOf.authorId !== userId) {
       await this.notificationsService.createNotification(
         NotificationType.REPOST,
@@ -187,19 +192,18 @@ export class PostsService {
       );
     }
 
-    // YENİ: Repostu da akışa anlık düşür
     this.chatGateway.broadcastNewPost(newRepost);
 
     return { reposted: true, post: newRepost, message: 'Remakülendi!' };
   }
 
-  async findAll(userId?: number) {
+  async findAll(userId?: bigint) {
     const posts = await this.prisma.post.findMany({
       where: { 
         published: true,
         isDeleted: false,
         parentId: null,
-        isAcademic: false, // Sadece normal akış
+        isAcademic: false, 
         OR: [
           { author: { isPrivate: false } },
           { authorId: userId },
@@ -223,13 +227,13 @@ export class PostsService {
     return this.mapInteractionStatus(posts, userId);
   }
 
-  async findAcademicFeed(userId?: number) {
+  async findAcademicFeed(userId?: bigint) {
     const posts = await this.prisma.post.findMany({
       where: { 
         published: true,
         isDeleted: false,
         parentId: null,
-        isAcademic: true, // Sadece akademik akış
+        isAcademic: true, 
       },
       include: {
         author: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } } },
@@ -241,7 +245,7 @@ export class PostsService {
     return this.mapInteractionStatus(posts, userId);
   }
 
-  async findBookmarks(userId: number) {
+  async findBookmarks(userId: bigint) {
     const bookmarks = await this.prisma.bookmark.findMany({
       where: { userId, post: { isDeleted: false } },
       include: {
@@ -267,7 +271,7 @@ export class PostsService {
     return this.mapInteractionStatus(posts, userId);
   }
 
-  async toggleBookmark(userId: number, postId: number) {
+  async toggleBookmark(userId: bigint, postId: bigint) {
     const existingBookmark = await this.prisma.bookmark.findUnique({
       where: { userId_postId: { userId, postId } },
     });
@@ -280,18 +284,22 @@ export class PostsService {
     }
 
     await this.prisma.bookmark.create({
-      data: { userId, postId },
+      data: { 
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        userId, 
+        postId 
+      },
     });
     return { bookmarked: true, message: 'Kaydedildi!' };
   }
 
-  async findByCategory(categoryId: number, userId?: number) {
+  async findByCategory(categoryId: bigint, userId?: bigint) {
     const posts = await this.prisma.post.findMany({
       where: { 
         categoryId, 
         published: true,
         isDeleted: false,
-        parentId: null, // Sadece ana postlar
+        parentId: null, 
         OR: [
           { author: { isPrivate: false } },
           { authorId: userId },
@@ -315,7 +323,7 @@ export class PostsService {
     return this.mapInteractionStatus(posts, userId);
   }
 
-  async findMyPosts(userId: number) {
+  async findMyPosts(userId: bigint) {
     const posts = await this.prisma.post.findMany({
       where: { authorId: userId, isDeleted: false, parentId: null },
       include: {
@@ -335,7 +343,7 @@ export class PostsService {
     return this.mapInteractionStatus(posts, userId);
   }
 
-  async getUserPosts(userId: number, currentUserId?: number) {
+  async getUserPosts(userId: bigint, currentUserId?: bigint) {
     const posts = await this.prisma.post.findMany({
       where: { authorId: userId, published: true, repostId: null, parentId: null, isDeleted: false },
       include: {
@@ -355,7 +363,7 @@ export class PostsService {
     return this.mapInteractionStatus(posts, currentUserId);
   }
 
-  async getUserReplies(userId: number, currentUserId?: number) {
+  async getUserReplies(userId: bigint, currentUserId?: bigint) {
     const posts = await this.prisma.post.findMany({
       where: { authorId: userId, published: true, NOT: { parentId: null }, isDeleted: false },
       include: {
@@ -380,11 +388,11 @@ export class PostsService {
     return this.mapInteractionStatus(posts, currentUserId);
   }
 
-  async findUserReposts(userId: number, currentUserId?: number) {
+  async findUserReposts(userId: bigint, currentUserId?: bigint) {
     const targetUser = await this.prisma.user.findUnique({ where: { id: userId } });
     if (targetUser?.isPrivate && userId !== currentUserId) {
       const isFollowing = await this.prisma.follow.findUnique({
-        where: { followerId_followingId: { followerId: currentUserId || 0, followingId: userId } }
+        where: { followerId_followingId: { followerId: currentUserId || 0n, followingId: userId } }
       });
       if (!isFollowing) return [];
     }
@@ -413,11 +421,11 @@ export class PostsService {
     return this.mapInteractionStatus(posts, currentUserId);
   }
 
-  async findLikedPosts(userId: number, currentUserId?: number) {
+  async findLikedPosts(userId: bigint, currentUserId?: bigint) {
     const targetUser = await this.prisma.user.findUnique({ where: { id: userId } });
     if (targetUser?.isPrivate && userId !== currentUserId) {
       const isFollowing = await this.prisma.follow.findUnique({
-        where: { followerId_followingId: { followerId: currentUserId || 0, followingId: userId } }
+        where: { followerId_followingId: { followerId: currentUserId || 0n, followingId: userId } }
       });
       if (!isFollowing) return [];
     }
@@ -447,7 +455,7 @@ export class PostsService {
     return this.mapInteractionStatus(posts, currentUserId);
   }
 
-  private async mapInteractionStatus(posts: any[], userId?: number) {
+  private async mapInteractionStatus(posts: any[], userId?: bigint) {
     if (!userId) return posts;
     const [userLikes, userReposts, userBookmarks] = await Promise.all([
       this.prisma.like.findMany({ where: { userId }, select: { postId: true } }),
@@ -469,7 +477,7 @@ export class PostsService {
     });
   }
 
-  async findOne(id: number, currentUserId?: number) {
+  async findOne(id: bigint, currentUserId?: bigint) {
     const post = await this.prisma.post.findFirst({
       where: { id, isDeleted: false },
       include: {
@@ -489,7 +497,7 @@ export class PostsService {
 
     if (post.author.isPrivate && post.authorId !== currentUserId) {
       const isFollowing = await this.prisma.follow.findUnique({
-        where: { followerId_followingId: { followerId: currentUserId || 0, followingId: post.authorId } }
+        where: { followerId_followingId: { followerId: currentUserId || 0n, followingId: post.authorId } }
       });
       if (!isFollowing) throw new ForbiddenException('Gizli gönderi.');
     }
@@ -512,7 +520,7 @@ export class PostsService {
     return { ...post, isLiked, isReposted, isBookmarked };
   }
 
-  async update(id: number, userId: number, updatePostDto: UpdatePostDto) {
+  async update(id: bigint, userId: bigint, updatePostDto: UpdatePostDto) {
     const post = await this.prisma.post.findFirst({ where: { id, isDeleted: false } });
     if (!post) throw new NotFoundException('Post bulunamadı.');
     if (post.authorId !== userId) throw new ForbiddenException('Yetkiniz yok.');
@@ -538,7 +546,7 @@ export class PostsService {
     });
   }
 
-  async togglePin(userId: number, id: number) {
+  async togglePin(userId: bigint, id: bigint) {
     const post = await this.prisma.post.findUnique({
       where: { id },
     });
@@ -558,20 +566,18 @@ export class PostsService {
       });
     }
 
-    // Önce bu kullanıcının diğer tüm sabitlerini kaldır
     await this.prisma.post.updateMany({
       where: { authorId: userId, isPinned: true },
       data: { isPinned: false },
     });
 
-    // Ve bu postu sabitle
     return this.prisma.post.update({
       where: { id },
       data: { isPinned: true },
     });
   }
 
-  async remove(id: number, userId: number) {
+  async remove(id: bigint, userId: bigint) {
     const post = await this.prisma.post.findFirst({ where: { id, isDeleted: false } });
     if (!post) throw new NotFoundException('Post bulunamadı.');
 
@@ -585,7 +591,7 @@ export class PostsService {
     return { message: 'Post başarıyla silindi.' };
   }
 
-  async refreshSentiment(id: number, userId: number) {
+  async refreshSentiment(id: bigint, userId: bigint) {
     const post = await this.prisma.post.findFirst({ where: { id, isDeleted: false } });
     if (!post) throw new NotFoundException('Post bulunamadı.');
 
@@ -602,12 +608,11 @@ export class PostsService {
     });
   }
 
-  async getThread(id: number, currentUserId?: number) {
+  async getThread(id: bigint, currentUserId?: bigint) {
     try {
       const post = await this.findOne(id, currentUserId);
       if (!post) throw new NotFoundException('Post bulunamadı.');
 
-      // Üst postları (Ancestors) bul - Hata korumalı
       const parents: any[] = [];
       let currentParentId = (post as any).parentId;
       
@@ -623,7 +628,6 @@ export class PostsService {
         }
       }
 
-      // Alt cevapları (Replies) bul
       const replies = await this.prisma.post.findMany({
         where: { parentId: id, isDeleted: false },
         include: {

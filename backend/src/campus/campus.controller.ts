@@ -11,14 +11,17 @@ export class CampusController {
   }
 
   @Get('analytics')
-  async getAnalytics(@Query('interval') interval: 'hour' | 'day' | 'week' | '7months' | '4years' = 'day') {
+  async getAnalytics(
+    @Query('interval')
+    interval: 'hour' | 'day' | 'week' | '7months' | '4years' = 'day',
+  ) {
     return this.campusService.getAnalytics(interval);
   }
 
   @Get('analytics/top-sentiment')
   async getTopSentimentPosts(
     @Query('sentiment') sentiment: string,
-    @Query('interval') interval: string
+    @Query('interval') interval: string,
   ) {
     return this.campusService.getTopPostsBySentiment(sentiment, interval);
   }
@@ -26,8 +29,11 @@ export class CampusController {
   @Get('analytics/category-posts')
   async getCategoryPosts(
     @Query('categoryId') categoryId: string,
-    @Query('interval') interval: string
+    @Query('interval') interval: string,
   ) {
-    return this.campusService.getRecentPostsByCategory(Number(categoryId), interval);
+    return this.campusService.getRecentPostsByCategory(
+      BigInt(categoryId),
+      interval,
+    );
   }
 }
