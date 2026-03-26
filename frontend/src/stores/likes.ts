@@ -6,20 +6,26 @@ export const useLikesStore = defineStore("likes", () => {
   const postsStore = usePostsStore();
 
   const toggleLike = async (postId: string) => {
+    console.log(`[LikesStore] toggleLike tetiklendi - PostID: ${postId}`);
     try {
       const response = await apiClient.post(`/likes/${postId}`);
-      const { liked, count } = response.data;
+      const { liked, count, targetPostId } = response.data;
 
-      // Global state'i güncelle
-      postsStore.updatePostLocally(postId, {
+      console.log(
+        `[LikesStore] Beğeni sonucu: ${liked ? 'BEĞENİLDİ' : 'KALDIRILDI'} | Backend Dönen Sayı: ${count} | Hedef PostID: ${targetPostId}`
+      );
+
+      // Backend'in dediği post'u güncelle (redirected original post)
+      postsStore.updatePostLocally(targetPostId, {
         isLiked: liked,
         _count: {
-          likes: count,
-        },
+          likes: count // Backend'in authoritative sayısını kullan
+        }
       });
 
       return response.data;
     } catch (error: any) {
+      console.error(`[LikesStore] Beğeni hatası:`, error);
       throw error.response?.data || error;
     }
   };

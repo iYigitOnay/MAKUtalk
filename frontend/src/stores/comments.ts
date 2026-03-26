@@ -29,7 +29,7 @@ export const useCommentsStore = defineStore("comments", () => {
   const createComment = async (postId: string, content: string) => {
     loading.value = true;
     try {
-      const response = await apiClient.post<Comment>(
+      const response = await apiClient.post<any>(
         `/comments/post/${postId}`,
         {
           content,
@@ -39,14 +39,14 @@ export const useCommentsStore = defineStore("comments", () => {
       comments.value.unshift(newComment);
       lastAddedCommentId.value = newComment.id;
 
-      // Global state'i güncelle (Yorum sayısını artır)
-      const post = [...postsStore.posts, ...postsStore.searchResults].find(p => p.id === postId);
-      const currentCount = post?._count?.comments || 0;
-      postsStore.updatePostLocally(postId, {
-        _count: {
-          comments: currentCount + 1
-        }
-      });
+      // Global state'i güncelle (Backend'den gelen gerçek sayıyı kullan)
+      if (newComment.commentsCount !== undefined) {
+        postsStore.updatePostLocally(postId, {
+          _count: {
+            comments: newComment.commentsCount
+          }
+        });
+      }
 
       return newComment;
     } catch (error: any) {
@@ -59,21 +59,17 @@ export const useCommentsStore = defineStore("comments", () => {
   const deleteComment = async (commentId: string) => {
     loading.value = true;
     try {
-      // Önce yorumu bulup postId'sini alalım
-      const comment = comments.value.find(c => c.id === commentId);
-      const postId = comment?.postId;
+      const response = await apiClient.delete(`/comments/${commentId}`);
+      const { commentsCount, postId } = response.data;
 
-      await apiClient.delete(`/comments/${commentId}`);
       comments.value = comments.value.filter((c) => c.id !== commentId);
       lastDeletedCommentId.value = commentId;
 
-      // Global state'i güncelle (Yorum sayısını azalt)
-      if (postId) {
-        const post = [...postsStore.posts, ...postsStore.searchResults].find(p => p.id === postId);
-        const currentCount = post?._count?.comments || 0;
+      // Global state'i güncelle (Backend'den gelen gerçek sayıyı kullan)
+      if (postId && commentsCount !== undefined) {
         postsStore.updatePostLocally(postId, {
           _count: {
-            comments: Math.max(0, currentCount - 1)
+            comments: commentsCount
           }
         });
       }

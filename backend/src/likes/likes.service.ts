@@ -34,19 +34,50 @@ export class LikesService {
       await this.prisma.like.delete({
         where: { id: existingLike.id },
       });
-      return { liked: false, message: 'Beğeni kaldırıldı.' };
+
+      // Get updated count
+      const count = await this.prisma.like.count({
+        where: { postId: targetPostId },
+      });
+
+      // Broadcast unlike event
+      const targetPost = await this.prisma.post.findUnique({
+        where: { id: targetPostId },
+      });
+      if (targetPost) {
+        await this.notificationsService.broadcastUnlike(
+          targetPostId,
+          userId,
+          targetPost.authorId,
+          count,
+        );
+      }
+
+      return {
+        liked: false,
+        count,
+        targetPostId: targetPostId.toString(),
+        message: 'Beğeni kaldırıldı.',
+      };
     } else {
       // Like
       await this.prisma.like.create({
-        data: { 
+        data: {
           id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
-          userId, 
-          postId: targetPostId 
+          userId,
+          postId: targetPostId,
         },
       });
 
+      // Get updated count
+      const count = await this.prisma.like.count({
+        where: { postId: targetPostId },
+      });
+
       // Bildirim oluştur (orijinal post sahibine)
-      const targetPost = await this.prisma.post.findUnique({ where: { id: targetPostId } });
+      const targetPost = await this.prisma.post.findUnique({
+        where: { id: targetPostId },
+      });
       if (targetPost && targetPost.authorId !== userId) {
         await this.notificationsService.createNotification(
           NotificationType.LIKE,
@@ -54,9 +85,22 @@ export class LikesService {
           userId,
           targetPostId,
         );
+
+        // Broadcast like event
+        await this.notificationsService.broadcastLike(
+          targetPostId,
+          userId,
+          targetPost.authorId,
+          count,
+        );
       }
 
-      return { liked: true, message: 'Post beğenildi.' };
+      return {
+        liked: true,
+        count,
+        targetPostId: targetPostId.toString(),
+        message: 'Post beğenildi.',
+      };
     }
   }
 

@@ -92,7 +92,9 @@ export class CommentsService {
     }
 
     const { user, ...rest } = comment;
-    return { ...rest, author: user };
+    const commentsCount = await this.prisma.comment.count({ where: { postId, isDeleted: false } });
+    
+    return { ...rest, author: user, commentsCount };
   }
 
   async findByPost(postId: bigint) {
@@ -124,15 +126,19 @@ export class CommentsService {
     if (comment.userId !== userId && !isAdmin)
       throw new ForbiddenException('Bu yorumu silme yetkiniz yok.');
 
+    const postId = comment.postId;
+
     await this.prisma.comment.update({
       where: { id: commentId },
       data: { isDeleted: true },
     });
 
+    const commentsCount = await this.prisma.comment.count({ where: { postId, isDeleted: false } });
+
     this.myLogger.log(
       `Comment Soft-Deleted: ID ${commentId} by User ${userId}`,
       'Security',
     );
-    return { message: 'Yorum silindi.' };
+    return { message: 'Yorum silindi.', commentsCount, postId: postId.toString() };
   }
 }

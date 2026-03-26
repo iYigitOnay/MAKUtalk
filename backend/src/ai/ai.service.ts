@@ -25,29 +25,34 @@ export class AiService implements OnModuleInit {
   private async listAvailableModels() {
     try {
       const apiKey = this.configService.get('GEMINI_API_KEY');
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`,
+      );
       const data = await response.json();
       const models = data.models || [];
       const modelNames = models.map((m: any) => m.name.replace('models/', ''));
-      
+
       this.logger.log('--- ERİŞİLEBİLİR MODELLER ---');
       this.logger.log(modelNames.join(', '));
       this.logger.log('-----------------------------');
 
       // Kotası yüksek olan Gemma modelini veya stabil Gemini'yi bulmaya çalış
-      let selectedModel = modelNames.find((n: string) => n.includes('gemma-3-27b')) || 
-                          modelNames.find((n: string) => n.includes('gemma-2')) ||
-                          modelNames.find((n: string) => n.includes('gemini-1.5-flash')) ||
-                          modelNames[0];
+      let selectedModel =
+        modelNames.find((n: string) => n.includes('gemma-3-27b')) ||
+        modelNames.find((n: string) => n.includes('gemma-2')) ||
+        modelNames.find((n: string) => n.includes('gemini-1.5-flash')) ||
+        modelNames[0];
 
       if (selectedModel) {
-        this.model = this.genAI.getGenerativeModel({ 
-          model: selectedModel, 
-          generationConfig: { 
+        this.model = this.genAI.getGenerativeModel({
+          model: selectedModel,
+          generationConfig: {
             temperature: 0.1,
             // Sadece Gemini modelleri JSON modunu garanti eder, Gemma için kapatıyoruz
-            ...(selectedModel.includes('gemini') ? { responseMimeType: "application/json" } : {})
-          }
+            ...(selectedModel.includes('gemini')
+              ? { responseMimeType: 'application/json' }
+              : {}),
+          },
         });
         this.logger.log(`Seçilen Model: ${selectedModel}`);
       }
@@ -56,15 +61,23 @@ export class AiService implements OnModuleInit {
     }
   }
 
-  async analyzePost(content: string, includeCategory: boolean = true): Promise<{
+  async analyzePost(
+    content: string,
+    includeCategory: boolean = true,
+  ): Promise<{
     sentiment: string;
     sentimentScore: number;
     suggestedCategorySlug: string | null;
   }> {
-    if (!this.model) return { sentiment: 'Sakin', sentimentScore: 0.5, suggestedCategorySlug: 'genel' };
+    if (!this.model)
+      return {
+        sentiment: 'Sakin',
+        sentimentScore: 0.5,
+        suggestedCategorySlug: 'genel',
+      };
 
     try {
-      const prompt = includeCategory 
+      const prompt = includeCategory
         ? `Aşağıdaki metni analiz et ve kesinlikle belirtilen JSON formatında yanıt ver.
            
            METİN: "${content}"
@@ -93,27 +106,34 @@ export class AiService implements OnModuleInit {
 
       const result = await this.model.generateContent(prompt);
       const responseText = result.response.text();
-      
-      // JSON Çıkarma: İlk { ve son } arasını bul (Gemma'nın fazladan metinlerini temizler)
+
       const jsonMatch = responseText.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
         throw new Error('Gelen yanıtta JSON verisi bulunamadı.');
       }
-      
+
       const analysis = JSON.parse(jsonMatch[0]);
 
       return {
         sentiment: analysis.sentiment || 'Sakin',
         sentimentScore: analysis.sentimentScore || 0.5,
-        suggestedCategorySlug: includeCategory ? (analysis.category || 'genel') : null,
+        suggestedCategorySlug: includeCategory
+          ? analysis.category || 'genel'
+          : null,
       };
     } catch (error) {
       if (error.message?.includes('429')) {
-        this.logger.warn('AI Kota sınırı aşıldı, varsayılan değerler kullanılıyor.');
+        this.logger.warn(
+          'AI Kota sınırı aşıldı, varsayılan değerler kullanılıyor.',
+        );
       } else {
         this.logger.error('AI Analiz Hatası:', error.message);
       }
-      return { sentiment: 'Sakin', sentimentScore: 0.5, suggestedCategorySlug: 'genel' };
+      return {
+        sentiment: 'Sakin',
+        sentimentScore: 0.5,
+        suggestedCategorySlug: 'genel',
+      };
     }
   }
 
@@ -127,7 +147,9 @@ export class AiService implements OnModuleInit {
     return { sentiment: res.sentiment, score: res.sentimentScore };
   }
 
-  async moderateContent(content: string) { return { safe: true }; }
+  async moderateContent(content: string) {
+    return { safe: true };
+  }
 
   async summarizeCampusLife(stats: {
     totalPosts: number;
@@ -136,7 +158,8 @@ export class AiService implements OnModuleInit {
     spotVolume: number;
     activeInteractions: number;
   }) {
-    if (!this.model) return "Bu hafta kampüs oldukça hareketliydi! Detaylar için grafikleri inceleyebilirsin.";
+    if (!this.model)
+      return 'Bu hafta kampüs oldukça hareketliydi! Detaylar için grafikleri inceleyebilirsin.';
 
     try {
       const prompt = `Aşağıdaki kampüs verilerine dayanarak, üniversite öğrencilerine hitap eden, samimi, biraz esprili ve ilgi çekici 2-3 cümlelik bir haftalık özet yaz.
@@ -153,7 +176,7 @@ export class AiService implements OnModuleInit {
       const result = await this.model.generateContent(prompt);
       return result.response.text().trim();
     } catch (error) {
-      return "Kampüste bu hafta etkileşim tavan yaptı! Herkes bir şeyler paylaşıyor.";
+      return 'Kampüste bu hafta etkileşim tavan yaptı! Herkes bir şeyler paylaşıyor.';
     }
   }
 }

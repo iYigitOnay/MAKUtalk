@@ -15,7 +15,10 @@ export class AuthService {
   async register(createUserDto: CreateUserDto) {
     const user = await this.usersService.create(createUserDto);
     const { password, ...result } = user;
-    return result;
+    return {
+      ...result,
+      id: result.id.toString(),
+    };
   }
 
   async verifyEmail(email: string, code: string) {
@@ -79,7 +82,7 @@ export class AuthService {
     return {
       access_token: this.jwtService.sign(payload),
       user: {
-        id: user.id,
+        id: user.id.toString(),
         email: user.email,
         username: user.username,
         fullName: user.fullName,

@@ -252,8 +252,13 @@ export const usePostsStore = defineStore("posts", () => {
   };
 
   const updatePostLocally = (postId: string, updates: any) => {
-    const updateTarget = (p: Post) => {
-      // 1. ASIL POST GUNCELLEME
+    console.log(`[PostsStore] Kusursuz Senkronizasyon Başlatıldı - Hedef PostID: ${postId}`, updates);
+    let totalUpdated = 0;
+
+    const updateRecursive = (p: Post) => {
+      let updated = false;
+
+      // 1. ASIL POST EŞLEŞMESİ (Direkt kendisi veya remakü wrapper'ı)
       if (p.id === postId) {
         if (updates.isLiked !== undefined) p.isLiked = updates.isLiked;
         if (updates.isReposted !== undefined) p.isReposted = updates.isReposted;
@@ -263,42 +268,65 @@ export const usePostsStore = defineStore("posts", () => {
         if (updates.sentiment !== undefined) p.sentiment = updates.sentiment;
         if (updates.sentimentScore !== undefined) p.sentimentScore = updates.sentimentScore;
         if (updates._count) p._count = { ...p._count, ...updates._count };
-      }
-      
-      // 2. REPOST WRAPPER'I GUNCELLEME (İçindeki post orijinalse)
-      if (p.repostOf && p.repostId === postId) {
-        const r = p.repostOf;
-        if (updates.isLiked !== undefined) { r.isLiked = updates.isLiked; p.isLiked = updates.isLiked; }
-        if (updates.isReposted !== undefined) { r.isReposted = updates.isReposted; p.isReposted = updates.isReposted; }
-        if (updates.isBookmarked !== undefined) { r.isBookmarked = updates.isBookmarked; p.isBookmarked = updates.isBookmarked; }
-        if (updates.isPinned !== undefined) { r.isPinned = updates.isPinned; p.isPinned = updates.isPinned; }
-        if (updates.isRead !== undefined) { r.isRead = updates.isRead; p.isRead = updates.isRead; }
-        if (updates.sentiment !== undefined) r.sentiment = updates.sentiment;
-        if (updates._count) { r._count = { ...r._count, ...updates._count }; p._count = { ...p._count, ...updates._count }; }
+        updated = true;
       }
 
-      // 3. PARENT (Reply) GUNCELLEME
-      if (p.parent && p.parentId === postId) {
-        if (updates.isLiked !== undefined) p.parent.isLiked = updates.isLiked;
-        if (updates.isReposted !== undefined) p.parent.isReposted = updates.isReposted;
-        if (updates.isBookmarked !== undefined) p.parent.isBookmarked = updates.isBookmarked;
-        if (updates.isPinned !== undefined) p.parent.isPinned = updates.isPinned;
-        if (updates.isRead !== undefined) p.parent.isRead = updates.isRead;
-        if (updates._count) p.parent._count = { ...p.parent._count, ...updates._count };
+      // 2. REMAKÜ İÇİNDEKİ ORİJİNAL POST EŞLEŞMESİ
+      if (p.repostOf && (p.repostId === postId || p.repostOf.id === postId)) {
+        const r = p.repostOf;
+        if (updates.isLiked !== undefined) r.isLiked = updates.isLiked;
+        if (updates.isReposted !== undefined) r.isReposted = updates.isReposted;
+        if (updates.isBookmarked !== undefined) r.isBookmarked = updates.isBookmarked;
+        if (updates.isRead !== undefined) r.isRead = updates.isRead;
+        if (updates.sentiment !== undefined) r.sentiment = updates.sentiment;
+        if (updates._count) r._count = { ...r._count, ...updates._count };
+        
+        // Remakü wrapper'ının sayaçlarını da orijinaliyle eşitlemeliyiz
+        if (updates._count) p._count = { ...p._count, ...updates._count };
+        if (updates.isLiked !== undefined) p.isLiked = updates.isLiked;
+        if (updates.isReposted !== undefined) p.isReposted = updates.isReposted;
+        
+        updated = true;
       }
+
+      // 3. PARENT (Reply) İLİŞKİSİ
+      if (p.parent && (p.parentId === postId || p.parent.id === postId)) {
+        const pr = p.parent;
+        if (updates.isLiked !== undefined) pr.isLiked = updates.isLiked;
+        if (updates.isReposted !== undefined) pr.isReposted = updates.isReposted;
+        if (updates.isBookmarked !== undefined) pr.isBookmarked = updates.isBookmarked;
+        if (updates.isRead !== undefined) pr.isRead = updates.isRead;
+        if (updates._count) pr._count = { ...pr._count, ...updates._count };
+        updated = true;
+      }
+
+      if (updated) totalUpdated++;
     };
 
-    [posts.value, myPosts.value, searchResults.value].forEach(list => list.forEach(updateTarget));
+    // Tüm listeleri derinlemesine tara
+    const allLists = [posts.value, myPosts.value, searchResults.value];
     
-    // GUNCELLEMEYI CURRENT THREAD'E DE UYGULA
-    if (currentThread.value.post) updateTarget(currentThread.value.post);
-    currentThread.value.parents.forEach(updateTarget);
-    currentThread.value.replies.forEach(updateTarget);
-
+    // Profile Store'daki listeleri de dahil et (Eğer yüklüyse)
     const profileStore = getProfileStore();
     if (profileStore) {
-      [profileStore.userPosts, profileStore.userReplies, profileStore.userReposts, profileStore.userLikedPosts].forEach(list => list.forEach(updateTarget));
+      if (Array.isArray(profileStore.userPosts)) allLists.push(profileStore.userPosts);
+      if (Array.isArray(profileStore.userReplies)) allLists.push(profileStore.userReplies);
+      if (Array.isArray(profileStore.userReposts)) allLists.push(profileStore.userReposts);
+      if (Array.isArray(profileStore.userLikedPosts)) allLists.push(profileStore.userLikedPosts);
     }
+
+    allLists.forEach(list => {
+      if (Array.isArray(list)) {
+        list.forEach(updateRecursive);
+      }
+    });
+    
+    // Mevcut Thread (Detay sayfası) verilerini de güncelle
+    if (currentThread.value.post) updateRecursive(currentThread.value.post);
+    if (Array.isArray(currentThread.value.parents)) currentThread.value.parents.forEach(updateRecursive);
+    if (Array.isArray(currentThread.value.replies)) currentThread.value.replies.forEach(updateRecursive);
+
+    console.log(`[PostsStore] Senkronizasyon Tamamlandı. Toplam ${totalUpdated} referans güncellendi.`);
   };
 
   const updateUserInPosts = (userId: string, updates: any) => {

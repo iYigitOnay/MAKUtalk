@@ -166,4 +166,124 @@ export class NotificationsService {
       where: { id: notificationId },
     });
   }
+
+  /**
+   * Broadcast like event to post author when someone likes their post
+   */
+  async broadcastLike(
+    postId: bigint,
+    userId: bigint,
+    postAuthorId: bigint,
+    likeCount: number,
+  ) {
+    if (!this.chatGateway.server) return;
+
+    const room = `user_${postAuthorId.toString()}`;
+    this.chatGateway.server.to(room).emit('new_like', {
+      postId: postId.toString(),
+      userId: userId.toString(),
+      count: likeCount,
+      liked: true,
+    });
+  }
+
+  /**
+   * Broadcast unlike event to post author
+   */
+  async broadcastUnlike(
+    postId: bigint,
+    userId: bigint,
+    postAuthorId: bigint,
+    likeCount: number,
+  ) {
+    if (!this.chatGateway.server) return;
+
+    const room = `user_${postAuthorId.toString()}`;
+    this.chatGateway.server.to(room).emit('like_removed', {
+      postId: postId.toString(),
+      userId: userId.toString(),
+      count: likeCount,
+      liked: false,
+    });
+  }
+
+  /**
+   * Broadcast new comment event to post author
+   */
+  async broadcastNewComment(
+    postId: bigint,
+    commentId: bigint,
+    userId: bigint,
+    postAuthorId: bigint,
+    commentCount: number,
+  ) {
+    if (!this.chatGateway.server) return;
+
+    const room = `user_${postAuthorId.toString()}`;
+    this.chatGateway.server.to(room).emit('new_comment', {
+      postId: postId.toString(),
+      commentId: commentId.toString(),
+      userId: userId.toString(),
+      count: commentCount,
+    });
+  }
+
+  /**
+   * Broadcast comment deleted event
+   */
+  async broadcastCommentDeleted(
+    postId: bigint,
+    commentId: bigint,
+    postAuthorId: bigint,
+    commentCount: number,
+  ) {
+    if (!this.chatGateway.server) return;
+
+    const room = `user_${postAuthorId.toString()}`;
+    this.chatGateway.server.to(room).emit('comment_deleted', {
+      postId: postId.toString(),
+      commentId: commentId.toString(),
+      count: commentCount,
+    });
+  }
+
+  /**
+   * Broadcast bookmark event
+   */
+  async broadcastBookmark(
+    postId: bigint,
+    userId: bigint,
+    postAuthorId: bigint,
+    bookmarked: boolean,
+  ) {
+    if (!this.chatGateway.server) return;
+
+    const room = `user_${postAuthorId.toString()}`;
+    this.chatGateway.server.to(room).emit('bookmark_changed', {
+      postId: postId.toString(),
+      userId: userId.toString(),
+      bookmarked,
+    });
+  }
+
+  /**
+   * Broadcast repost event
+   */
+  async broadcastRepost(
+    postId: bigint,
+    userId: bigint,
+    postAuthorId: bigint,
+    reposted: boolean,
+    repostCount: number,
+  ) {
+    if (!this.chatGateway.server) return;
+
+    const room = `user_${postAuthorId.toString()}`;
+    this.chatGateway.server.to(room).emit('repost_changed', {
+      postId: postId.toString(),
+      userId: userId.toString(),
+      reposted,
+      count: repostCount,
+    });
+  }
 }

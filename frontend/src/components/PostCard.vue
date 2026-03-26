@@ -315,16 +315,14 @@ const handleLikeToggle = async () => {
 
   likeLoading.value = true;
   try {
-    const result = await likesStore.toggleLike(targetId);
-    // Merkezi Store Güncellemesi (Tüm kopyaları etkiler)
-    postsStore.updatePostLocally(targetId, {
-      isLiked: result.liked,
-      _count: {
-        likes: result.liked
-          ? (displayPost.value._count?.likes || 0) + 1
-          : Math.max(0, (displayPost.value._count?.likes || 0) - 1),
-      },
-    });
+    await likesStore.toggleLike(targetId);
+    // NOT: Merkezi Store Güncellemesi artık LikesStore.toggleLike içinde yapılıyor!
+    // Bu sayede tüm PostCard örnekleri anında güncellenir.
+    
+    // Eğer bu bir akademik post ise ve ilk kez beğeniliyorsa, "Okundu" sayalım.
+    if (displayPost.value.isAcademic && !displayPost.value.isRead) {
+      await postsStore.markAsRead(targetId);
+    }
   } catch (error) {
     console.error("Like error:", error);
   } finally {

@@ -3,6 +3,7 @@ import { io, Socket } from "socket.io-client";
 import { useAuthStore } from "@/stores/auth";
 import { useChatStore } from "@/stores/chat";
 import { useNotificationsStore } from "@/stores/notifications";
+import { usePostsStore } from "@/stores/posts";
 
 // GLOBAL STATE - Fonksiyon dışında tanımlıyoruz ki her yerde AYNI kalsın
 let socket: Socket | null = null;
@@ -56,18 +57,18 @@ export function useSocket() {
       console.log("📥 Yeni mesaj geldi, liste güncelleniyor...");
       const normalizedMessage = {
         ...message,
-        senderId: Number(message.senderId),
-        conversationId: Number(message.conversationId),
+        senderId: message.senderId,
+        conversationId: message.conversationId,
       };
 
       // 1. Eğer mesajlaştığımız kişi ise mesaj listesine ekle
       const activeConvId = chatStore.activeConversation?.id;
-      if (activeConvId && Number(activeConvId) === Number(normalizedMessage.conversationId)) {
+      if (activeConvId && activeConvId === normalizedMessage.conversationId) {
         chatStore.addMessage(normalizedMessage);
       }
 
       // 2. Bildirim kartını göster (Benim göndermediğim mesajlar için)
-      if (Number(normalizedMessage.senderId) !== Number(authStore.userId)) {
+      if (normalizedMessage.senderId !== authStore.userId) {
         notificationsStore.pushLiveNotification({
           liveId: `msg-${message.id}-${Date.now()}`, // ID bazlı tekillik
           displayType: "MESSAGE",
@@ -105,21 +106,21 @@ export function useSocket() {
 
     socket.on("user_typing", (data: any) => {
       if (data.conversationId) {
-        chatStore.setTypingStatus(Number(data.conversationId), data.isTyping);
+        chatStore.setTypingStatus(data.conversationId, data.isTyping);
       }
     });
 
-    socket.on("online_users", (userIds: number[]) => {
+    socket.on("online_users", (userIds: string[]) => {
       console.log("👥 Mevcut çevrim içi kullanıcılar:", userIds);
       chatStore.setOnlineUsers(userIds);
     });
 
-    socket.on("user_status", (data: { userId: number; isOnline: boolean }) => {
+    socket.on("user_status", (data: { userId: string; isOnline: boolean }) => {
       console.log(`👤 Kullanıcı durumu değişti: ${data.userId} -> ${data.isOnline ? 'ONLINE' : 'OFFLINE'}`);
       chatStore.updateUserStatus(data.userId, data.isOnline);
     });
 
-    socket.on('messages_read', (data: { conversationId: number; readByUserId: number }) => {
+    socket.on('messages_read', (data: { conversationId: string; readByUserId: string }) => {
       console.log(`👁️ Okundu sinyali geldi: Conv ${data.conversationId}`);
       // Store'daki mesajları güncelle — bu konuşmadaki tüm gönderdiğim mesajlar okundu
       chatStore.markMessagesAsRead(data.conversationId);
