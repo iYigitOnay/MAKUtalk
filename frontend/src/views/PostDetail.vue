@@ -57,12 +57,12 @@
       <article
         class="p-4 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-white/[0.05] relative overflow-hidden"
         :class="{
-          'academic-unread shadow-sm z-10': post.isAcademic && !post.isLiked,
+          'academic-unread shadow-sm z-10': post.isAcademic && !post.isRead,
         }"
       >
-        <!-- Academic Decorative Pattern - Subtle watermark style -->
+        <!-- Academic Decorative Pattern -->
         <div
-          v-if="post.isAcademic && !post.isLiked"
+          v-if="post.isAcademic && !post.isRead"
           class="absolute top-0 right-0 w-64 h-64 bg-emerald-500/5 rounded-full -mr-32 -mt-32 blur-[100px] pointer-events-none"
         ></div>
         <!-- Author Info -->
@@ -766,19 +766,17 @@ const submitReply = async () => {
     return;
   commentLoading.value = true;
   try {
+    // Twitter Mantığı: Repost'a reply yapıldığında orijinal post'a reply atılır
+    const targetParentId = post.value.repostOf?.id || post.value.id;
+
     const newReply = await postsStore.createPost(
       commentContent.value,
       true,
       undefined,
       selectedImage.value || undefined,
-      post.value.id,
+      targetParentId,
     );
-    console.log(
-      "REPLY PARENT ID:",
-      post.value.id,
-      "TYPE:",
-      typeof post.value.id,
-    );
+    
     // Artık lokal 'replies' listesine değil, store'daki listeye unshift yapıyoruz
     postsStore.currentThread.replies.unshift(newReply);
     commentContent.value = "";
@@ -795,15 +793,8 @@ const submitReply = async () => {
 const handleLike = async () => {
   if (!post.value || !authStore.isAuthenticated) return;
   try {
-    const res = await likesStore.toggleLike(post.value.id);
-    postsStore.updatePostLocally(post.value.id, {
-      isLiked: res.liked,
-      _count: {
-        likes: res.liked
-          ? (post.value._count?.likes || 0) + 1
-          : Math.max(0, (post.value._count?.likes || 0) - 1),
-      },
-    });
+    await likesStore.toggleLike(post.value.id);
+    // NOT: updatePostLocally artık LikesStore.toggleLike içinde otomatik çağrılıyor!
   } catch {
     toast.error("Hata!");
   }
@@ -812,7 +803,7 @@ const handleLike = async () => {
 const handleRepost = async () => {
   if (!post.value || !authStore.isAuthenticated) return;
   try {
-    const res = await postsStore.toggleRepost(post.value.id);
+    await postsStore.toggleRepost(post.value.id);
     // toggleRepost zaten store içinde updatePostLocally tetikliyor
   } catch {
     toast.error("Hata!");
@@ -861,7 +852,7 @@ const handleShare = () => {
 const showReportModal = ref(false);
 const reportStep = ref(1);
 const selectedReportCategory = ref("");
-const reportTargetId = ref<number | null>(null);
+const reportTargetId = ref<string | null>(null);
 const reportCategories: Record<string, string[]> = {
   "Şiddet veya Tehdit": [
     "Şiddet eğilimi",
@@ -895,7 +886,7 @@ const reportCategories: Record<string, string[]> = {
   ],
 };
 
-const openReportModal = (id: number) => {
+const openReportModal = (id: string) => {
   reportTargetId.value = id;
   showReportModal.value = true;
   reportStep.value = 1;
@@ -928,7 +919,11 @@ const getBadgeComponent = (name: string) => {
     .split(/[-_]/)
     .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
     .join("");
-  return (LucideIcons as any)[pascal] || LucideIcons.HelpCircle;
+  return (
+    (LucideIcons as any)[pascal] ||
+    (LucideIcons as any)[name] ||
+    LucideIcons.HelpCircle
+  );
 };
 
 const translateSentiment = (s: string) => {
@@ -989,7 +984,8 @@ const getImageUrl = (path: string) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
-  return `${apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl}${path.startsWith("/") ? path : `/${path}`}`;
+  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
+  return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
 };
 
 const getFileExt = (path: string) => {
@@ -1004,10 +1000,10 @@ const getFileName = (path: string) => {
 };
 
 // DELETE LOGIC
-const deleteTarget = ref<number | null>(null);
+const deleteTarget = ref<string | null>(null);
 const showDeleteConfirm = ref(false);
 const isDeleting = ref(false);
-const openDeletePost = (id: number) => {
+const openDeletePost = (id: string) => {
   deleteTarget.value = id;
   showDeleteConfirm.value = true;
   showPostMenu.value = false;

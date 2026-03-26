@@ -16,15 +16,13 @@ export class CreatePostDto {
   @Transform(({ value }) => value === 'true' || value === true)
   published?: boolean;
 
-  @IsInt()
+  @IsString()
   @IsOptional()
-  @Type(() => Number)
-  categoryId?: number;
+  categoryId?: string;
 
-  @IsInt()
+  @IsString()
   @IsOptional()
-  @Type(() => Number)
-  parentId?: number;
+  parentId?: string;
 
   @IsBoolean()
   @IsOptional()

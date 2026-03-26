@@ -315,7 +315,11 @@ export class PostsService {
       );
     }
 
-    this.chatGateway.broadcastNewPost(newRepost);
+    try {
+      this.chatGateway.broadcastNewPost(newRepost);
+    } catch (err) {
+      this.myLogger.error('Socket Broadcast Error (Repost):', err.message);
+    }
 
     const count = await this.prisma.post.count({
       where: { repostId: targetPostId, isDeleted: false }
