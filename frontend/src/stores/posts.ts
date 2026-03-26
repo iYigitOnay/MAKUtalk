@@ -99,7 +99,10 @@ export const usePostsStore = defineStore("posts", () => {
     const isRepostedNow = response.data.reposted;
     
     // MEVCUT POSTU BUL VE SAYACI TUM LISTELERDE GUNCELLE
-    const existingPost = [...posts.value, ...searchResults.value, ...myPosts.value].find(p => p.id === postId || (p.repostId === postId));
+    // p.repostId === postId kontrolü, eğer bu bir remakü ise orijinal postu bulmamızı sağlar
+    const existingPost = [...posts.value, ...searchResults.value, ...myPosts.value].find(p => p.id === postId || p.repostId === postId);
+    
+    // Eğer bu bir remakü ise orijinalinin sayacını, değilse kendisininkini al
     const currentCount = existingPost?.repostOf ? existingPost.repostOf._count?.reposts : existingPost?._count?.reposts;
     
     updatePostLocally(postId, {
@@ -118,6 +121,15 @@ export const usePostsStore = defineStore("posts", () => {
     const isBookmarkedNow = response.data.bookmarked;
     updatePostLocally(postId, { isBookmarked: isBookmarkedNow });
     return response.data;
+  };
+
+  const markAsRead = async (postId: string) => {
+    try {
+      await apiClient.post(`/posts/${postId}/read`);
+      updatePostLocally(postId, { isRead: true });
+    } catch (err) {
+      console.error("Post mark as read error:", err);
+    }
   };
 
   const togglePin = async (postId: string) => {
@@ -247,6 +259,7 @@ export const usePostsStore = defineStore("posts", () => {
         if (updates.isReposted !== undefined) p.isReposted = updates.isReposted;
         if (updates.isBookmarked !== undefined) p.isBookmarked = updates.isBookmarked;
         if (updates.isPinned !== undefined) p.isPinned = updates.isPinned;
+        if (updates.isRead !== undefined) p.isRead = updates.isRead;
         if (updates.sentiment !== undefined) p.sentiment = updates.sentiment;
         if (updates.sentimentScore !== undefined) p.sentimentScore = updates.sentimentScore;
         if (updates._count) p._count = { ...p._count, ...updates._count };
@@ -259,6 +272,7 @@ export const usePostsStore = defineStore("posts", () => {
         if (updates.isReposted !== undefined) { r.isReposted = updates.isReposted; p.isReposted = updates.isReposted; }
         if (updates.isBookmarked !== undefined) { r.isBookmarked = updates.isBookmarked; p.isBookmarked = updates.isBookmarked; }
         if (updates.isPinned !== undefined) { r.isPinned = updates.isPinned; p.isPinned = updates.isPinned; }
+        if (updates.isRead !== undefined) { r.isRead = updates.isRead; p.isRead = updates.isRead; }
         if (updates.sentiment !== undefined) r.sentiment = updates.sentiment;
         if (updates._count) { r._count = { ...r._count, ...updates._count }; p._count = { ...p._count, ...updates._count }; }
       }
@@ -269,6 +283,7 @@ export const usePostsStore = defineStore("posts", () => {
         if (updates.isReposted !== undefined) p.parent.isReposted = updates.isReposted;
         if (updates.isBookmarked !== undefined) p.parent.isBookmarked = updates.isBookmarked;
         if (updates.isPinned !== undefined) p.parent.isPinned = updates.isPinned;
+        if (updates.isRead !== undefined) p.parent.isRead = updates.isRead;
         if (updates._count) p.parent._count = { ...p.parent._count, ...updates._count };
       }
     };
@@ -326,7 +341,7 @@ export const usePostsStore = defineStore("posts", () => {
 
   return {
     posts, myPosts, searchResults, currentCategory, currentThread, loading, error, activeFeedTab,
-    fetchPosts, fetchAcademicPosts, fetchBookmarks, fetchPostsByCategory, fetchMyPosts, toggleRepost, toggleBookmark, togglePin, createPost,
+    fetchPosts, fetchAcademicPosts, fetchBookmarks, fetchPostsByCategory, fetchMyPosts, toggleRepost, toggleBookmark, markAsRead, togglePin, createPost,
     fetchThread, deletePost, updatePostLocally, updateUserInPosts, refreshSentiment,
     resetCategory, onPostCreated, sharePost, isShareModalOpen, openShareModal, closeShareModal
   };
