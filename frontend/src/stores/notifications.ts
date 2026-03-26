@@ -44,12 +44,12 @@ export const useNotificationsStore = defineStore("notifications", () => {
   const pushLiveNotification = (notif: LiveNotification) => {
     console.log("📣 pushLiveNotification tetiklendi:", notif.type, notif.content);
 
-    // Mükerrer kontrolü (Aynı liveId veya son eklenen bildirimle aynı içerikse engelle)
-    const lastNotif = activeNotifications.value[activeNotifications.value.length - 1];
-    const isDuplicate = lastNotif && 
-                        lastNotif.type === notif.type && 
-                        lastNotif.content === notif.content &&
-                        lastNotif.senderId === notif.senderId;
+    // Mükerrer kontrolü (Aynı liveId veya son 2 saniye içinde gelen birebir aynı bildirim)
+    const isDuplicate = activeNotifications.value.some(n => 
+                        n.type === notif.type && 
+                        n.content === notif.content &&
+                        n.senderId === notif.senderId &&
+                        n.liveId.split('-').pop() === notif.liveId.split('-').pop()); // Zamana dayalı kontrol
 
     if (isDuplicate) {
       console.warn("⚠️ Mükerrer bildirim engellendi.");
@@ -66,11 +66,7 @@ export const useNotificationsStore = defineStore("notifications", () => {
     }
 
     activeNotifications.value.push(notif);
-    
-    // 8 saniye sonra otomatik kaldır
-    setTimeout(() => {
-      removeLiveNotification(notif.liveId);
-    }, 8000);
+    // Not: Silme işlemi GlobalNotification.vue içerisindeki timerlar ile yönetiliyor.
   };
 
   const removeLiveNotification = (liveId: string) => {

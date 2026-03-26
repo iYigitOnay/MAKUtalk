@@ -76,15 +76,31 @@ export class NotificationsService {
       },
     });
 
+    const serializedNotification = this.convertBigIntToString(newNotification);
+
     if (this.chatGateway.server) {
       const room = `user_${recipientId.toString()}`;
-      this.chatGateway.server.to(room).emit('new_notification', newNotification);
+      this.chatGateway.server.to(room).emit('new_notification', serializedNotification);
       console.log(`🚀 [Notifications] Bildirim gönderildi: Tip=${type}, AlıcıRoom=${room}, GönderenID=${senderId.toString()}`);
     } else {
       console.error('❌ [Notifications] Hata: ChatGateway server hazır değil!');
     }
 
     return newNotification;
+  }
+
+  private convertBigIntToString(obj: any): any {
+    if (obj === null || obj === undefined) return obj;
+    if (typeof obj === 'bigint') return obj.toString();
+    if (Array.isArray(obj))
+      return obj.map((item) => this.convertBigIntToString(item));
+    if (typeof obj === 'object') {
+      return Object.keys(obj).reduce((acc, key) => {
+        acc[key] = this.convertBigIntToString(obj[key]);
+        return acc;
+      }, {});
+    }
+    return obj;
   }
 
   async getUserNotifications(userId: bigint, limit = 20) {

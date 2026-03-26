@@ -230,17 +230,17 @@ const resumeTimer = (liveId: string) => {
 };
 
 // Reaktif İzleme
-watch(() => activeNotifications.value.length, (newLen, oldLen) => {
-  if (newLen > oldLen) {
-    const latestNotif = activeNotifications.value[activeNotifications.value.length - 1];
-    if (latestNotif && !timers.has(latestNotif.liveId)) {
-      if (latestNotif.displayType === 'MESSAGE' && route.path === '/messages') {
-        notificationsStore.removeLiveNotification(latestNotif.liveId);
+watch(activeNotifications, (newList) => {
+  newList.forEach(notif => {
+    if (!timers.has(notif.liveId)) {
+      // Eğer mesaj sayfasındaysak ve gelen bildirim o konuşmaya aitse gösterme
+      if (notif.displayType === 'MESSAGE' && route.path === '/messages' && route.query.conversationId === notif.conversationId) {
+        notificationsStore.removeLiveNotification(notif.liveId);
         return;
       }
-      startTimer(latestNotif.liveId, 6000);
+      startTimer(notif.liveId, 4000);
     }
-  }
+  });
 }, { deep: true });
 
 onUnmounted(() => {
