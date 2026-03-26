@@ -95,25 +95,24 @@ export const usePostsStore = defineStore("posts", () => {
   };
 
   const toggleRepost = async (postId: string) => {
-    const response = await apiClient.post(`/posts/${postId}/repost`);
-    const isRepostedNow = response.data.reposted;
-    
-    // MEVCUT POSTU BUL VE SAYACI TUM LISTELERDE GUNCELLE
-    // p.repostId === postId kontrolü, eğer bu bir remakü ise orijinal postu bulmamızı sağlar
-    const existingPost = [...posts.value, ...searchResults.value, ...myPosts.value].find(p => p.id === postId || p.repostId === postId);
-    
-    // Eğer bu bir remakü ise orijinalinin sayacını, değilse kendisininkini al
-    const currentCount = existingPost?.repostOf ? existingPost.repostOf._count?.reposts : existingPost?._count?.reposts;
-    
-    updatePostLocally(postId, {
-      isReposted: isRepostedNow,
-      _count: {
-        reposts: isRepostedNow 
-          ? (currentCount || 0) + 1 
-          : Math.max(0, (currentCount || 0) - 1)
-      }
-    });
-    return response.data;
+    console.log(`[PostsStore] toggleRepost tetiklendi - PostID: ${postId}`);
+    try {
+      const response = await apiClient.post(`/posts/${postId}/repost`);
+      const { reposted, count } = response.data;
+      
+      console.log(`[PostsStore] Remakü sonucu: ${reposted ? 'REMAKÜLENDİ' : 'GERİ ALINDI'} | Backend Dönen Sayı: ${count}`);
+
+      updatePostLocally(postId, {
+        isReposted: reposted,
+        _count: {
+          reposts: count
+        }
+      });
+      return response.data;
+    } catch (error: any) {
+      console.error(`[PostsStore] Remakü hatası:`, error.response?.data || error);
+      throw error;
+    }
   };
 
   const toggleBookmark = async (postId: string) => {

@@ -40,17 +40,21 @@ export class LikesService {
         where: { postId: targetPostId },
       });
 
-      // Broadcast unlike event
-      const targetPost = await this.prisma.post.findUnique({
-        where: { id: targetPostId },
-      });
-      if (targetPost) {
-        await this.notificationsService.broadcastUnlike(
-          targetPostId,
-          userId,
-          targetPost.authorId,
-          count,
-        );
+      // Broadcast unlike event (Try-catch içinde çünkü socket hatası işlemi bozmamalı)
+      try {
+        const targetPost = await this.prisma.post.findUnique({
+          where: { id: targetPostId },
+        });
+        if (targetPost) {
+          await this.notificationsService.broadcastUnlike(
+            targetPostId,
+            userId,
+            targetPost.authorId,
+            count,
+          );
+        }
+      } catch (err) {
+        console.error('Socket Broadcast Error (Unlike):', err);
       }
 
       return {
@@ -74,25 +78,32 @@ export class LikesService {
         where: { postId: targetPostId },
       });
 
-      // Bildirim oluştur (orijinal post sahibine)
-      const targetPost = await this.prisma.post.findUnique({
-        where: { id: targetPostId },
-      });
-      if (targetPost && targetPost.authorId !== userId) {
-        await this.notificationsService.createNotification(
-          NotificationType.LIKE,
-          targetPost.authorId,
-          userId,
-          targetPostId,
-        );
+      // Bildirim ve Broadcast işlemleri
+      try {
+        const targetPost = await this.prisma.post.findUnique({
+          where: { id: targetPostId },
+        });
+        
+        if (targetPost) {
+          if (targetPost.authorId !== userId) {
+            await this.notificationsService.createNotification(
+              NotificationType.LIKE,
+              targetPost.authorId,
+              userId,
+              targetPostId,
+            );
+          }
 
-        // Broadcast like event
-        await this.notificationsService.broadcastLike(
-          targetPostId,
-          userId,
-          targetPost.authorId,
-          count,
-        );
+          // Broadcast like event
+          await this.notificationsService.broadcastLike(
+            targetPostId,
+            userId,
+            targetPost.authorId,
+            count,
+          );
+        }
+      } catch (err) {
+        console.error('Bildirim/Broadcast Hatası (Like):', err);
       }
 
       return {

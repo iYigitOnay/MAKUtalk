@@ -85,7 +85,7 @@ export class PostsController {
 
   @Post(':id/repost')
   @UseGuards(JwtAuthGuard)
-  @Throttle({ medium: { limit: 5, ttl: 60000 } })
+  @Throttle({ medium: { limit: 20, ttl: 30000 } })
   toggleRepost(@Param('id') id: string, @CurrentUser() user) {
     return this.postsService.toggleRepost(BigInt(user.id), BigInt(id));
   }
