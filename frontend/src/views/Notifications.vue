@@ -159,7 +159,7 @@
 
           <!-- Content -->
           <div class="flex-1 min-w-0">
-            <p class="text-sm text-slate-900 dark:text-white">
+            <div class="text-sm text-slate-900 dark:text-white">
               <span
                 @click.stop="
                   router.push(`/profile/${notification.sender?.username}`)
@@ -188,21 +188,36 @@
               >
                 gönderine yorum yaptı
               </span>
-            </p>
+              <span
+                v-else-if="notification.type === 'REPOST'"
+                class="text-gray-600 dark:text-gray-400 ml-1"
+              >
+                gönderini remaküledi
+              </span>
+              <span
+                v-else-if="notification.type === 'MENTION'"
+                class="text-gray-600 dark:text-gray-400 ml-1"
+              >
+                bir gönderide senden bahsetti
+              </span>
+            </div>
 
             <!-- Post & Comment Preview (Simplified) -->
-            <div v-if="notification.post || notification.comment" class="mt-1 space-y-1">
+            <div
+              v-if="notification.post || notification.comment"
+              class="mt-1 space-y-1"
+            >
               <!-- Post content as context -->
-              <p 
-                v-if="notification.post" 
+              <p
+                v-if="notification.post"
                 class="text-[11px] text-gray-500 dark:text-gray-400 italic line-clamp-1 opacity-70"
               >
                 "{{ notification.post.content }}"
               </p>
-              
+
               <!-- Real comment content -->
-              <p 
-                v-if="notification.type === 'COMMENT' && notification.comment" 
+              <p
+                v-if="notification.type === 'COMMENT' && notification.comment"
                 class="text-sm font-bold text-indigo-600 dark:text-indigo-400 mt-0.5"
               >
                 {{ notification.comment.content }}
@@ -293,11 +308,14 @@ const formatTime = (date: string) => {
 };
 
 const handleNotificationClick = async (notification: any) => {
-  // Mark as read if unread
-  if (!notification.read) {
+  // Mark as read locally first (Optimistic UI)
+  const wasUnread = !notification.read;
+  if (wasUnread) {
+    notification.read = true;
     try {
       await notificationsStore.markAsRead(notification.id);
     } catch (error) {
+      notification.read = false; // Rollback on error
       console.error("Error marking notification as read:", error);
     }
   }
