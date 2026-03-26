@@ -239,8 +239,8 @@ const toast = useToast();
 
 const searchQuery = ref("");
 const shareComment = ref("");
-const sendingTo = ref<number | null>(null);
-const sentTo = ref<number[]>([]);
+const sendingTo = ref<string | null>(null);
+const sentTo = ref<string[]>([]);
 const secretKey =
   "fcb49253e8a693454e8d2309c1cdbdff5ccc1405ffbb5c48e93820d03f9628dc08b8e68b15c35f2186b6202008aac2f4417f025788fbc36772c2a0cfa7570cac";
 
@@ -326,10 +326,10 @@ const sendToConversation = (conv: any) => {
     const encryptedContent = text ? CryptoJS.AES.encrypt(text, secretKey).toString() : "";
 
     sendMessage(
-      Number(conv.id),
+      conv.id,
       encryptedContent,
-      Number(conv.otherParticipant.id),
-      Number(props.post.id),
+      conv.otherParticipant.id,
+      props.post.id,
     );
 
     sentTo.value.push(conv.id);

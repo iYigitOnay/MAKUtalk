@@ -6,10 +6,10 @@ import type { Comment } from "@/types";
 export const useCommentsStore = defineStore("comments", () => {
   const comments = ref<Comment[]>([]);
   const loading = ref(false);
-  const lastAddedCommentId = ref<number | null>(null);
-  const lastDeletedCommentId = ref<number | null>(null);
+  const lastAddedCommentId = ref<string | null>(null);
+  const lastDeletedCommentId = ref<string | null>(null);
 
-  const fetchComments = async (postId: number) => {
+  const fetchComments = async (postId: string) => {
     loading.value = true;
     try {
       const response = await apiClient.get<Comment[]>(
@@ -24,7 +24,7 @@ export const useCommentsStore = defineStore("comments", () => {
     }
   };
 
-  const createComment = async (postId: number, content: string) => {
+  const createComment = async (postId: string, content: string) => {
     loading.value = true;
     try {
       const response = await apiClient.post<Comment>(
@@ -43,7 +43,7 @@ export const useCommentsStore = defineStore("comments", () => {
     }
   };
 
-  const deleteComment = async (commentId: number) => {
+  const deleteComment = async (commentId: string) => {
     loading.value = true;
     try {
       await apiClient.delete(`/comments/${commentId}`);

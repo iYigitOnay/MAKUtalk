@@ -1,5 +1,5 @@
 export interface User {
-  id: number;
+  id: string;
   email: string;
   username: string;
   fullName?: string;
@@ -21,7 +21,7 @@ export interface User {
 }
 
 export interface Category {
-  id: number;
+  id: string;
   name: string;
   slug: string;
   description?: string;
@@ -31,14 +31,14 @@ export interface Category {
 }
 
 export interface Post {
-  id: number;
+  id: string;
   content: string;
   published: boolean;
-  authorId: number;
-  categoryId?: number;
-  repostId?: number;
+  authorId: string;
+  categoryId?: string;
+  repostId?: string;
   repostOf?: Post;
-  parentId?: number; // TWITTER MANTIĞI: Yanıt verilen postun ID'si
+  parentId?: string; // TWITTER MANTIĞI: Yanıt verilen postun ID'si
   parent?: Post;     // TWITTER MANTIĞI: Yanıt verilen ana post verisi
   isAcademic: boolean;
   documentUrl?: string;
@@ -47,7 +47,7 @@ export interface Post {
   createdAt: string;
   updatedAt: string;
   author: {
-    id: number;
+    id: string;
     username: string;
     fullName?: string;
     avatarUrl?: string;
@@ -68,21 +68,21 @@ export interface Post {
 }
 
 export interface Like {
-  id: number;
-  userId: number;
-  postId: number;
+  id: string;
+  userId: string;
+  postId: string;
   createdAt: string;
 }
 
 export interface Comment {
-  id: number;
+  id: string;
   content: string;
-  userId: number;
-  postId: number;
+  userId: string;
+  postId: string;
   createdAt: string;
   updatedAt: string;
   user: {
-    id: number;
+    id: string;
     username: string;
     fullName?: string;
     avatarUrl?: string;
@@ -90,9 +90,9 @@ export interface Comment {
 }
 
 export interface Follow {
-  id: number;
-  followerId: number;
-  followingId: number;
+  id: string;
+  followerId: string;
+  followingId: string;
   createdAt: string;
 }
 
@@ -123,5 +123,5 @@ export interface ApiError {
 export interface CreatePostData {
   content: string;
   published?: boolean;
-  categoryId?: number;
+  categoryId?: string;
 }

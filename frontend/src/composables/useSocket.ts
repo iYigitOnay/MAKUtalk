@@ -148,7 +148,7 @@ export function useSocket() {
     }
   };
 
-  const sendMessage = (conversationId: number, content: string, receiverId: number, postId?: number, isForwarded: boolean = false, mediaUrl?: string, mediaType?: string) => {
+  const sendMessage = (conversationId: string, content: string, receiverId: string, postId?: string, isForwarded: boolean = false, mediaUrl?: string, mediaType?: string) => {
     if (!socket?.connected) {
       console.error("❌ Mesaj gönderilemedi: Soket bağlı değil.");
       return;
@@ -156,12 +156,12 @@ export function useSocket() {
     socket.emit("send_message", { conversationId, content, receiverId, postId, isForwarded, mediaUrl, mediaType });
   };
 
-  const sendTyping = (conversationId: number, receiverId: number, isTyping: boolean) => {
+  const sendTyping = (conversationId: string, receiverId: string, isTyping: boolean) => {
     if (!socket?.connected) return;
     socket.emit("typing", { conversationId, receiverId, isTyping });
   };
 
-  const sendMarkRead = (conversationId: number) => {
+  const sendMarkRead = (conversationId: string) => {
     if (!socket?.connected) return;
     socket.emit('mark_read', { conversationId });
   };

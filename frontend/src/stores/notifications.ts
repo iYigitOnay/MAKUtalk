@@ -3,27 +3,27 @@ import { ref } from "vue";
 import apiClient from "@/api/client";
 
 export interface Notification {
-  id: number;
+  id: string;
   type: "LIKE" | "COMMENT" | "FOLLOW" | "MESSAGE" | "MENTION"; // MESSAGE eklendi
-  recipientId: number;
-  senderId: number;
-  postId?: number;
+  recipientId: string;
+  senderId: string;
+  postId?: string;
   read: boolean;
   content?: string; // Mesaj önizlemesi için eklendi
-  conversationId?: number; // Mesaj yönlendirmesi için eklendi
+  conversationId?: string; // Mesaj yönlendirmesi için eklendi
   createdAt: string;
   sender: {
-    id: number;
+    id: string;
     username: string;
     fullName?: string;
     avatarUrl?: string;
   };
   post?: {
-    id: number;
+    id: string;
     content: string;
   };
   comment?: {
-    id: number;
+    id: string;
     content: string;
   };
 }
@@ -101,7 +101,7 @@ export const useNotificationsStore = defineStore("notifications", () => {
     }
   };
 
-  const markAsRead = async (notificationId: number) => {
+  const markAsRead = async (notificationId: string) => {
     try {
       await apiClient.patch(`/notifications/${notificationId}/read`);
       const notification = notifications.value.find(
@@ -128,7 +128,7 @@ export const useNotificationsStore = defineStore("notifications", () => {
     }
   };
 
-  const deleteNotification = async (notificationId: number) => {
+  const deleteNotification = async (notificationId: string) => {
     try {
       await apiClient.delete(`/notifications/${notificationId}`);
       notifications.value = notifications.value.filter(
@@ -140,9 +140,9 @@ export const useNotificationsStore = defineStore("notifications", () => {
   };
 
   // Bildirimlerdeki kullanıcı bilgilerini tazele (Canlı profil güncellemesi için)
-  const updateUserInNotifications = (userId: number, updates: any) => {
+  const updateUserInNotifications = (userId: string, updates: any) => {
     notifications.value = notifications.value.map(notification => {
-      if (Number(notification.senderId) === userId && notification.sender) {
+      if (notification.senderId === userId && notification.sender) {
         notification.sender = { ...notification.sender, ...updates };
       }
       return notification;

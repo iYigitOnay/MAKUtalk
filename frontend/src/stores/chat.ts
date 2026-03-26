@@ -9,15 +9,15 @@ export const useChatStore = defineStore("chat", () => {
   const activeConversation = ref<any | null>(null);
   const messages = ref<any[]>([]);
   const loading = ref(false);
-  const typingUsers = ref<Record<number, boolean>>({});
-  const onlineUsers = ref<Set<number>>(new Set());
+  const typingUsers = ref<Record<string, boolean>>({});
+  const onlineUsers = ref<Set<string>>(new Set());
   const latestIncomingMessage = ref<any | null>(null);
 
-  const setOnlineUsers = (userIds: number[]) => {
+  const setOnlineUsers = (userIds: string[]) => {
     onlineUsers.value = new Set(userIds);
   };
 
-  const updateUserStatus = (userId: number, isOnline: boolean) => {
+  const updateUserStatus = (userId: string, isOnline: boolean) => {
     if (isOnline) {
       onlineUsers.value.add(userId);
     } else {
@@ -25,9 +25,9 @@ export const useChatStore = defineStore("chat", () => {
     }
   };
 
-  const isUserOnline = (userId: number) => onlineUsers.value.has(Number(userId));
+  const isUserOnline = (userId: string) => onlineUsers.value.has(userId);
 
-  const setTypingStatus = (conversationId: number, isTyping: boolean) => {
+  const setTypingStatus = (conversationId: string, isTyping: boolean) => {
     typingUsers.value[conversationId] = isTyping;
   };
 
@@ -35,7 +35,7 @@ export const useChatStore = defineStore("chat", () => {
     return conversations.value.filter(conv => {
       const lastMsg = conv.lastMessage;
       if (!lastMsg) return false;
-      return !lastMsg.isRead && Number(lastMsg.senderId) !== Number(authStore.userId);
+      return !lastMsg.isRead && lastMsg.senderId !== authStore.userId;
     }).length;
   });
 
@@ -59,8 +59,8 @@ export const useChatStore = defineStore("chat", () => {
     }
   };
 
-  const selectConversation = async (targetUserId: number, fromSpot: boolean = false, listingId?: number) => {
-    if (!targetUserId || isNaN(targetUserId)) {
+  const selectConversation = async (targetUserId: string, fromSpot: boolean = false, listingId?: string) => {
+    if (!targetUserId) {
       console.warn("⚠️ Geçersiz targetUserId ile selectConversation çağrıldı.");
       return;
     }
@@ -76,18 +76,14 @@ export const useChatStore = defineStore("chat", () => {
       const convRes = await apiClient.get(url);
       activeConversation.value = convRes.data;
 
-      // Eğer id 0 gelirse (Gizli hesap engeli), mesajları çekmeye çalışma
-      if (activeConversation.value.id === 0) {
+      // Eğer id "0" gelirse (Gizli hesap engeli), mesajları çekmeye çalışma
+      if (activeConversation.value.id === "0" || activeConversation.value.id === 0) {
         loading.value = false;
         return;
       }
 
       const msgRes = await apiClient.get(`/chat/messages/${activeConversation.value.id}`);
-      messages.value = msgRes.data.map((msg: any) => ({
-        ...msg,
-        senderId: Number(msg.senderId),
-        conversationId: Number(msg.conversationId),
-      }));
+      messages.value = msgRes.data;
 
       await apiClient.post(`/chat/${activeConversation.value.id}/read`);
       
@@ -103,19 +99,14 @@ export const useChatStore = defineStore("chat", () => {
   };
 
   const addMessage = (message: any) => {
-    const normalizedMessage = {
-      ...message,
-      senderId: Number(message.senderId),
-      conversationId: Number(message.conversationId),
-    };
-    const exists = messages.value.some(m => m.id === normalizedMessage.id);
+    const exists = messages.value.some(m => m.id === message.id);
     if (!exists) {
-      messages.value.push(normalizedMessage);
+      messages.value.push(message);
       
       // ✅ KONUŞMA LİSTESİNİ ANLIK GÜNCELLE (State Management)
-      const convIndex = conversations.value.findIndex(c => c.id === normalizedMessage.conversationId);
+      const convIndex = conversations.value.findIndex(c => c.id === message.conversationId);
       if (convIndex !== -1) {
-        conversations.value[convIndex].lastMessage = normalizedMessage;
+        conversations.value[convIndex].lastMessage = message;
         // Konuşmayı listenin en üstüne taşı
         const [updatedConv] = conversations.value.splice(convIndex, 1);
         conversations.value.unshift(updatedConv);
@@ -123,10 +114,10 @@ export const useChatStore = defineStore("chat", () => {
     }
   };
 
-  const markMessagesAsRead = (conversationId: number) => {
+  const markMessagesAsRead = (conversationId: string) => {
     // Aktif sohbetin mesajlarını güncelle
     messages.value = messages.value.map(msg => {
-      if (Number(msg.conversationId) === Number(conversationId)) {
+      if (msg.conversationId === conversationId) {
         return { ...msg, isRead: true };
       }
       return msg;
@@ -139,7 +130,7 @@ export const useChatStore = defineStore("chat", () => {
     }
   };
 
-  const deleteConversation = async (conversationId: number) => {
+  const deleteConversation = async (conversationId: string) => {
     try {
       await apiClient.post(`/chat/delete/${conversationId}`);
       conversations.value = conversations.value.filter(c => c.id !== conversationId);
@@ -150,21 +141,21 @@ export const useChatStore = defineStore("chat", () => {
     } catch (error) { console.error(error); throw error; }
   };
 
-  const updateUserInChat = (userId: number, updates: any) => {
+  const updateUserInChat = (userId: string, updates: any) => {
     conversations.value = conversations.value.map(conv => {
       if (conv.participants) {
-        conv.participants = conv.participants.map((p: any) => Number(p.id) === userId ? { ...p, ...updates } : p);
+        conv.participants = conv.participants.map((p: any) => p.id === userId ? { ...p, ...updates } : p);
       }
-      if (conv.lastMessage && Number(conv.lastMessage.senderId) === userId) {
+      if (conv.lastMessage && conv.lastMessage.senderId === userId) {
         conv.lastMessage.sender = { ...conv.lastMessage.sender, ...updates };
       }
       return conv;
     });
     if (activeConversation.value && activeConversation.value.participants) {
-      activeConversation.value.participants = activeConversation.value.participants.map((p: any) => Number(p.id) === userId ? { ...p, ...updates } : p);
+      activeConversation.value.participants = activeConversation.value.participants.map((p: any) => p.id === userId ? { ...p, ...updates } : p);
     }
     messages.value = messages.value.map(msg => {
-      if (Number(msg.senderId) === userId && msg.sender) msg.sender = { ...msg.sender, ...updates };
+      if (msg.senderId === userId && msg.sender) msg.sender = { ...msg.sender, ...updates };
       return msg;
     });
   };

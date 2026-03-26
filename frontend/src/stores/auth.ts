@@ -16,8 +16,8 @@ export const useAuthStore = defineStore("auth", () => {
   // Computed
   const isAuthenticated = computed(() => !!token.value && !!user.value);
   
-  // KRITIK: ID'yi number olarak garanti et
-  const userId = computed(() => user.value?.id ? Number(user.value.id) : null);
+  // Snowflake ID'ler string olarak saklanmalı
+  const userId = computed(() => user.value?.id || null);
 
   // Initialize - localStorage'dan token ve user'ı yükle
   const initialize = () => {
@@ -28,11 +28,8 @@ export const useAuthStore = defineStore("auth", () => {
       token.value = storedToken;
       try {
         const parsedUser = JSON.parse(storedUser);
-        // ID'yi number'a çevir
-        user.value = {
-          ...parsedUser,
-          id: Number(parsedUser.id),
-        };
+        // Snowflake ID'ler string olarak kalmalı
+        user.value = parsedUser;
       } catch (error) {
         console.error("Error parsing user from localStorage:", error);
         localStorage.removeItem("user");
@@ -52,11 +49,8 @@ export const useAuthStore = defineStore("auth", () => {
       const { access_token, user: userData } = response.data;
 
       token.value = access_token;
-      // ID'yi number olarak kaydet
-      user.value = {
-        ...userData,
-        id: Number(userData.id),
-      };
+      // Snowflake ID'ler string olarak gelmeli ve saklanmalı
+      user.value = userData;
 
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("user", JSON.stringify(user.value));

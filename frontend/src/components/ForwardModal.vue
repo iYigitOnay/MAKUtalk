@@ -114,8 +114,8 @@ const { sendMessage, isConnected } = useSocket();
 const toast = useToast();
 
 const searchQuery = ref("");
-const sendingTo = ref<number | null>(null);
-const sentTo = ref<number[]>([]);
+const sendingTo = ref<string | null>(null);
+const sentTo = ref<string[]>([]);
 
 const close = () => {
   sentTo.value = [];
@@ -151,9 +151,9 @@ const forwardTo = async (conv: any) => {
     // Messages.vue'dan bize content olarak decrypt edilmemiş hali geçilmeli.
     
     sendMessage(
-      Number(conv.id),
+      conv.id,
       props.content, // Şifreli içerik
-      Number(conv.otherParticipant.id),
+      conv.otherParticipant.id,
       undefined,
       true, // isForwarded
       props.mediaUrl,

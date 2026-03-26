@@ -9,7 +9,7 @@ export const usePostsStore = defineStore("posts", () => {
   const posts = ref<Post[]>([]);
   const myPosts = ref<Post[]>([]);
   const searchResults = ref<Post[]>([]);
-  const currentCategory = ref<number | null>(null);
+  const currentCategory = ref<string | null>(null);
   const currentThread = ref<{ parents: Post[], post: Post | null, replies: Post[] }>({ parents: [], post: null, replies: [] });
   const loading = ref(false);
   const error = ref<string | null>(null);
@@ -30,7 +30,7 @@ export const usePostsStore = defineStore("posts", () => {
   const authStore = useAuthStore();
   const getProfileStore = () => useProfileStore();
 
-  const fetchPosts = async (currentUserId?: number) => {
+  const fetchPosts = async (currentUserId?: string) => {
     loading.value = true;
     try {
       const params = currentUserId ? { currentUserId } : {};
@@ -43,7 +43,7 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const fetchAcademicPosts = async (currentUserId?: number) => {
+  const fetchAcademicPosts = async (currentUserId?: string) => {
     loading.value = true;
     try {
       const params = currentUserId ? { currentUserId } : {};
@@ -68,7 +68,7 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const fetchPostsByCategory = async (categoryId: number, currentUserId?: number) => {
+  const fetchPostsByCategory = async (categoryId: string, currentUserId?: string) => {
     loading.value = true;
     currentCategory.value = categoryId;
     try {
@@ -94,7 +94,7 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const toggleRepost = async (postId: number) => {
+  const toggleRepost = async (postId: string) => {
     const response = await apiClient.post(`/posts/${postId}/repost`);
     const isRepostedNow = response.data.reposted;
     
@@ -113,14 +113,14 @@ export const usePostsStore = defineStore("posts", () => {
     return response.data;
   };
 
-  const toggleBookmark = async (postId: number) => {
+  const toggleBookmark = async (postId: string) => {
     const response = await apiClient.post(`/posts/${postId}/bookmark`);
     const isBookmarkedNow = response.data.bookmarked;
     updatePostLocally(postId, { isBookmarked: isBookmarkedNow });
     return response.data;
   };
 
-  const togglePin = async (postId: number) => {
+  const togglePin = async (postId: string) => {
     try {
       const response = await apiClient.patch(`/posts/${postId}/pin`);
       const isPinnedNow = response.data.isPinned;
@@ -145,9 +145,9 @@ export const usePostsStore = defineStore("posts", () => {
   const createPost = async (
     content: string,
     published = true,
-    categoryId?: number,
+    categoryId?: string,
     image?: File,
-    parentId?: number,
+    parentId?: string,
     isAcademic: boolean = false,
     document?: File,
   ) => {
@@ -156,8 +156,8 @@ export const usePostsStore = defineStore("posts", () => {
       const formData = new FormData();
       if (content) formData.append("content", content);
       formData.append("published", String(published));
-      if (categoryId) formData.append("categoryId", String(categoryId));
-      if (parentId) formData.append("parentId", String(parentId));
+      if (categoryId) formData.append("categoryId", categoryId);
+      if (parentId) formData.append("parentId", parentId);
       if (isAcademic) formData.append("isAcademic", String(isAcademic));
       if (image) formData.append("image", image);
       if (document) formData.append("document", document);
@@ -187,7 +187,7 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const fetchThread = async (postId: number, currentUserId?: number) => {
+  const fetchThread = async (postId: string, currentUserId?: string) => {
     loading.value = true;
     try {
       const params = currentUserId ? { currentUserId } : {};
@@ -205,7 +205,7 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const deletePost = async (postId: number) => {
+  const deletePost = async (postId: string) => {
     loading.value = true;
     try {
       await apiClient.delete(`/posts/${postId}`);
@@ -239,7 +239,7 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const updatePostLocally = (postId: number, updates: any) => {
+  const updatePostLocally = (postId: string, updates: any) => {
     const updateTarget = (p: Post) => {
       // 1. ASIL POST GUNCELLEME
       if (p.id === postId) {
@@ -286,7 +286,7 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const updateUserInPosts = (userId: number, updates: any) => {
+  const updateUserInPosts = (userId: string, updates: any) => {
     const updateAuthor = (p: Post) => {
       // Direkt yazar ise
       if (p.authorId === userId) { p.author = { ...p.author, ...updates }; }
@@ -310,7 +310,7 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
-  const refreshSentiment = async (postId: number) => {
+  const refreshSentiment = async (postId: string) => {
     const response = await apiClient.post(`/posts/${postId}/refresh-sentiment`);
     updatePostLocally(postId, response.data);
     return response.data;

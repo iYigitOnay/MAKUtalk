@@ -27,9 +27,9 @@
           </div>
           <div class="flex-1 min-w-0">
             <h3 class="text-sm font-bold text-slate-900 dark:text-white truncate tracking-tight">{{ conv.otherParticipant?.fullName || conv.otherParticipant?.username }}</h3>
-            <p class="text-[11px] truncate mt-0.5"><span v-if="chatStore.typingUsers[conv.id]" class="text-indigo-500 font-bold animate-pulse italic">yazıyor...</span><span v-else class="text-slate-500 dark:text-slate-400"><template v-if="conv.lastMessage"><template v-if="Number(conv.lastMessage.senderId) === currentUserId"><span class="font-bold opacity-50 text-[9px]">SİZ:</span> {{ conv.lastMessage.content ? decrypt(conv.lastMessage.content) : (conv.lastMessage.mediaUrl ? '📎 Medya' : '🖼️ Gönderi') }}</template><template v-else-if="!conv.lastMessage.isRead"><span class="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] font-black animate-pulse uppercase text-[9px]">Yeni mesaj</span></template><template v-else>{{ conv.lastMessage.content ? decrypt(conv.lastMessage.content) : (conv.lastMessage.mediaUrl ? '📎 Medya' : '🖼️ Gönderi') }}</template></template><template v-else>Sohbeti başlat...</template></span></p>
+            <p class="text-[11px] truncate mt-0.5"><span v-if="chatStore.typingUsers[conv.id]" class="text-indigo-500 font-bold animate-pulse italic">yazıyor...</span><span v-else class="text-slate-500 dark:text-slate-400"><template v-if="conv.lastMessage"><template v-if="conv.lastMessage.senderId === currentUserId"><span class="font-bold opacity-50 text-[9px]">SİZ:</span> {{ conv.lastMessage.content ? decrypt(conv.lastMessage.content) : (conv.lastMessage.mediaUrl ? '📎 Medya' : '🖼️ Gönderi') }}</template><template v-else-if="!conv.lastMessage.isRead"><span class="text-white drop-shadow-[0_0_8px_rgba(255,255,255,0.8)] font-black animate-pulse uppercase text-[9px]">Yeni mesaj</span></template><template v-else>{{ conv.lastMessage.content ? decrypt(conv.lastMessage.content) : (conv.lastMessage.mediaUrl ? '📎 Medya' : '🖼️ Gönderi') }}</template></template><template v-else>Sohbeti başlat...</template></span></p>
           </div>
-          <div v-if="!conv.isAccepted && !conv.isRejected && Number(conv.lastMessage?.senderId) !== currentUserId" class="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-lg"></div>
+          <div v-if="!conv.isAccepted && !conv.isRejected && conv.lastMessage?.senderId !== currentUserId" class="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse shadow-lg"></div>
         </button>
       </div>
     </aside>
@@ -242,8 +242,8 @@ const APP_SECRET_KEY = "fcb49253e8a693454e8d2309c1cdbdff5ccc1405ffbb5c48e93820d0
 const activeTab = ref('chats');
 const searchQuery = ref("");
 const messageInput = ref("");
-const activeMsgMenu = ref<number | null>(null);
-const toggleMsgMenu = (id: number) => { activeMsgMenu.value = activeMsgMenu.value === id ? null : id; };
+const activeMsgMenu = ref<string | null>(null);
+const toggleMsgMenu = (id: string) => { activeMsgMenu.value = activeMsgMenu.value === id ? null : id; };
 
 // SPEC: Fix Decryption logic
 const decrypt = (text: string) => {
@@ -310,11 +310,11 @@ const formatTime = (dateStr: string) => { if (!dateStr) return ""; try { return 
 const filteredConversations = computed(() => chatStore.conversations.filter(conv => {
   const name = (conv.otherParticipant?.fullName || conv.otherParticipant?.username || '').toLowerCase();
   const matchesSearch = name.includes(searchQuery.value.toLowerCase());
-  const isIncomingRequest = !conv.isAccepted && !conv.isRejected && Number(conv.lastMessage?.senderId) !== currentUserId.value;
+  const isIncomingRequest = !conv.isAccepted && !conv.isRejected && conv.lastMessage?.senderId !== currentUserId.value;
   return activeTab.value === 'chats' ? (matchesSearch && (conv.isAccepted || !isIncomingRequest)) : (matchesSearch && isIncomingRequest);
 }));
 
-const pendingRequestsCount = computed(() => chatStore.conversations.filter(conv => !conv.isAccepted && !conv.isRejected && Number(conv.lastMessage?.senderId) !== currentUserId.value).length);
+const pendingRequestsCount = computed(() => chatStore.conversations.filter(conv => !conv.isAccepted && !conv.isRejected && conv.lastMessage?.senderId !== currentUserId.value).length);
 
 const showMoreMenu = ref(false);
 const showDeleteModal = ref(false);
@@ -357,7 +357,7 @@ const getBubbleStyle = (isMe: boolean) => {
 const loadTheme = () => { if (chatStore.activeConversation?.themeColor) currentThemeColor.value = chatStore.activeConversation.themeColor; };
 const setTheme = async (color: string) => { if (!chatStore.activeConversation) return; try { await apiClient.post(`/chat/theme/${chatStore.activeConversation.id}`, { color }); currentThemeColor.value = color; chatStore.activeConversation.themeColor = color; showMoreMenu.value = false; toast.success("Tema güncellendi ✨"); } catch { toast.error("Hata!"); } };
 
-const isMyMessage = (senderId: number | string) => Number(senderId) === authStore.userId;
+const isMyMessage = (senderId: string) => senderId === authStore.userId;
 const currentUserId = computed(() => authStore.userId);
 const otherUser = computed(() => chatStore.activeConversation?.otherParticipant);
 
@@ -410,7 +410,7 @@ const handleSendMessage = async (customText?: string) => {
   
   // Encrypt message content before sending
   const encrypted = text.trim() ? CryptoJS.AES.encrypt(text.trim(), APP_SECRET_KEY).toString() : undefined;
-  sendMessage(chatStore.activeConversation.id, encrypted as any, Number(otherUser.value?.id), undefined, false, mediaUrl, mediaType);
+  sendMessage(chatStore.activeConversation.id, encrypted as any, otherUser.value?.id, undefined, false, mediaUrl, mediaType);
   
   if (typeof customText !== 'string') messageInput.value = "";
   clearFile(); 
@@ -420,9 +420,9 @@ const handleSendMessage = async (customText?: string) => {
 let typingTimeout: any = null;
 const handleTyping = () => { 
   if (!chatStore.activeConversation || !otherUser.value) return; 
-  sendTyping(chatStore.activeConversation.id, Number(otherUser.value.id), true); 
+  sendTyping(chatStore.activeConversation.id, otherUser.value.id, true); 
   if (typingTimeout) clearTimeout(typingTimeout); 
-  typingTimeout = setTimeout(() => sendTyping(chatStore.activeConversation.id, Number(otherUser.value.id), false), 2000); 
+  typingTimeout = setTimeout(() => sendTyping(chatStore.activeConversation.id, otherUser.value.id, false), 2000); 
 };
 
 const openDeleteConfirm = () => { showMoreMenu.value = false; showDeleteModal.value = true; };
@@ -433,10 +433,10 @@ const viewProfile = () => { if (otherUser.value?.username) router.push(`/profile
 onMounted(async () => {
   await chatStore.fetchConversations();
   if (route.query.conversationId) {
-    const conv = chatStore.conversations.find(c => c.id === Number(route.query.conversationId));
+    const conv = chatStore.conversations.find(c => c.id === route.query.conversationId);
     if (conv?.otherParticipant) await chatStore.selectConversation(conv.otherParticipant.id);
   } else if (route.query.userId) {
-    await chatStore.selectConversation(Number(route.query.userId), route.query.fromSpot === 'true', Number(route.query.listingId));
+    await chatStore.selectConversation(route.query.userId as string, route.query.fromSpot === 'true', route.query.listingId as string);
   }
   loadTheme(); 
   scrollToBottom(false);
@@ -452,7 +452,7 @@ watch(() => chatStore.messages.length, (newLen, oldLen) => {
   const activeId = chatStore.activeConversation?.id; 
   if (activeId) { 
     const lastMsg = chatStore.messages[chatStore.messages.length - 1]; 
-    if (lastMsg && Number(lastMsg.senderId) !== currentUserId.value) sendMarkRead(activeId); 
+    if (lastMsg && lastMsg.senderId !== currentUserId.value) sendMarkRead(activeId); 
   } 
 });
 

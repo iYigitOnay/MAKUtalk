@@ -72,7 +72,7 @@ import * as LucideIcons from 'lucide-vue-next';
 
 const props = defineProps<{
   isOpen: boolean;
-  userId: number;
+  userId: string;
   type: 'followers' | 'following';
 }>();
 

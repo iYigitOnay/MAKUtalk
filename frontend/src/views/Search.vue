@@ -531,19 +531,19 @@ watch(
   (newUser) => {
     if (!newUser || !hasResults.value) return;
 
-    const userId = Number(newUser.id);
+    const userId = newUser.id;
 
     // 1. Kullanıcılar listesindeki kendimizi güncelle
     if (results.value.users) {
       results.value.users = results.value.users.map((u) =>
-        Number(u.id) === userId ? { ...u, ...newUser } : u,
+        u.id === userId ? { ...u, ...newUser } : u,
       );
     }
 
     // 2. Postlardaki yazar bilgilerimizi güncelle
     if (postsStore.searchResults) {
       postsStore.searchResults = postsStore.searchResults.map((p) => {
-        if (Number(p.authorId) === userId) {
+        if (p.authorId === userId) {
           return { ...p, author: { ...p.author, ...newUser } };
         }
         return p;

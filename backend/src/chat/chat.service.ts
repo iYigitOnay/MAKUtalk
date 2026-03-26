@@ -26,10 +26,10 @@ export class ChatService {
   async getOrCreateConversation(userId: bigint, targetUserId: bigint) {
     if (userId === targetUserId) throw new ForbiddenException('Kendinizle sohbet edemezsiniz.');
 
-    // ✅ Önce her iki user'ın var olduğunu kontrol et
+    // Her iki user'ın da var olup olmadığını kontrol et
     const [currentUser, targetUser] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: userId } }),
-      this.prisma.user.findUnique({ where: { id: targetUserId } })
+      this.prisma.user.findUnique({ where: { id: targetUserId } }),
     ]);
 
     if (!currentUser || !targetUser) {
@@ -58,16 +58,16 @@ export class ChatService {
     if (!existing) {
       const convId = this.snowflakeService.getNextId();
       existing = await this.prisma.conversation.create({
-        data: {
+        data: { 
           id: convId, // SNOWFLAKE ID
-          isAccepted: !!targetFollowsMe,
-          isRejected: false,
-          participants: {
+          isAccepted: !!targetFollowsMe, 
+          isRejected: false, 
+          participants: { 
             create: [
               { id: this.snowflakeService.getNextId(), userId: userId }, // SNOWFLAKE ID
               { id: this.snowflakeService.getNextId(), userId: targetUserId } // SNOWFLAKE ID
-            ]
-          }
+            ] 
+          } 
         },
         include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'desc' } } }
       });

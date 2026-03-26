@@ -226,7 +226,7 @@ async function fetchHashtags() {
   }
 }
 
-function selectCategory(id: number | null) {
+function selectCategory(id: string | null) {
   activeCategory.value = id;
   if (id) {
     postsStore.fetchPostsByCategory(id, authStore.user?.id);

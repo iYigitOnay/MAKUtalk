@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import apiClient from "@/api/client";
 
 export const useLikesStore = defineStore("likes", () => {
-  const toggleLike = async (postId: number) => {
+  const toggleLike = async (postId: string) => {
     try {
       const response = await apiClient.post(`/likes/post/${postId}`);
       return response.data;
@@ -11,7 +11,7 @@ export const useLikesStore = defineStore("likes", () => {
     }
   };
 
-  const getPostLikes = async (postId: number) => {
+  const getPostLikes = async (postId: string) => {
     try {
       const response = await apiClient.get(`/likes/post/${postId}`);
       return response.data;
@@ -20,7 +20,7 @@ export const useLikesStore = defineStore("likes", () => {
     }
   };
 
-  const checkIfLiked = async (postId: number) => {
+  const checkIfLiked = async (postId: string) => {
     try {
       const response = await apiClient.get(`/likes/post/${postId}/check`);
       return response.data.liked;

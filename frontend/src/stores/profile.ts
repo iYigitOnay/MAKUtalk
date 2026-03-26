@@ -35,7 +35,7 @@ export const useProfileStore = defineStore("profile", () => {
   };
 
   // Kullanıcının postlarını, yanıtlarını, repostlarını ve beğenilerini getir
-  const fetchProfileContent = async (userId: number) => {
+  const fetchProfileContent = async (userId: string) => {
     loadingPosts.value = true;
     try {
       const [postsRes, repliesRes, repostsRes, likesRes] = await Promise.all([
@@ -83,7 +83,7 @@ export const useProfileStore = defineStore("profile", () => {
   };
 
   // ADMIN & PROFILE ACTIONS
-  const blockUser = async (userId: number) => {
+  const blockUser = async (userId: string) => {
     const res = await apiClient.post(`/users/${userId}/block`);
     if (profileUser.value && profileUser.value.id === userId) {
       profileUser.value.isBlocked = !profileUser.value.isBlocked;
@@ -91,7 +91,7 @@ export const useProfileStore = defineStore("profile", () => {
     return res.data;
   };
 
-  const banUser = async (userId: number) => {
+  const banUser = async (userId: string) => {
     const res = await apiClient.post(`/users/${userId}/ban`);
     if (profileUser.value && profileUser.value.id === userId) {
       profileUser.value.isBanned = !profileUser.value.isBanned;
@@ -99,7 +99,7 @@ export const useProfileStore = defineStore("profile", () => {
     return res.data;
   };
 
-  const deleteUser = async (userId: number) => {
+  const deleteUser = async (userId: string) => {
     await apiClient.delete(`/users/${userId}`);
     if (profileUser.value && profileUser.value.id === userId) {
       clearProfile();
@@ -111,12 +111,12 @@ export const useProfileStore = defineStore("profile", () => {
     return res.data;
   };
 
-  const toggleBadge = async (userId: number, badgeId: number) => {
+  const toggleBadge = async (userId: string, badgeId: string) => {
     const res = await apiClient.post(`/users/${userId}/badges/${badgeId}`);
     return res.data; // { assigned: boolean }
   };
 
-  const reportUser = async (data: { reportedUserId?: number, reportedPostId?: number, reportedCommentId?: number, reason: string, subReason?: string }) => {
+  const reportUser = async (data: { reportedUserId?: string, reportedPostId?: string, reportedCommentId?: string, reason: string, subReason?: string }) => {
     const res = await apiClient.post("/users/report", data);
     return res.data;
   };
