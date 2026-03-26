@@ -43,7 +43,7 @@
 
           <!-- Follow Button -->
           <button
-            v-if="debugCheckUser()"
+            v-if="!isMyProfile"
             @click="handleFollowToggle"
             :disabled="followLoading"
             :class="[
@@ -119,8 +119,8 @@
           :is-profile-view="true"
           @delete="handleDeletePost"
           @report="openPostReport"
+          @showComments="handleShowComments"
         />
-        @showComments="handleShowComments" />
       </div>
     </div>
 
@@ -335,16 +335,12 @@ const submitPostReport = async (subReason: string) => {
   }
 };
 
-const debugCheckUser = () => {
-  console.log(
-    "MY ID:",
-    authStore.user?.id,
-    "- TYPE:",
-    typeof authStore.user?.id,
-  );
-  console.log("USER ID:", user.value?.id, "- TYPE:", typeof user.value?.id);
-  return String(authStore.user?.id) !== String(user.value?.id);
-};
+const isMyProfile = computed(() => {
+  const myId = authStore.user?.id;
+  const targetId = user.value?.id;
+  if (!myId || !targetId) return false;
+  return String(myId) === String(targetId);
+});
 
 const reportCategories: Record<string, string[]> = {
   Nefret: [
@@ -374,7 +370,6 @@ const reportCategories: Record<string, string[]> = {
   ],
 };
 
-// Yorum sayısı senkronizasyonu
 watch(
   () => commentsStore.lastAddedCommentId,
   (newId) => {
@@ -404,7 +399,9 @@ const fetchUserProfile = async () => {
       params.currentUserId = authStore.user.id;
     }
 
-    const response = await apiClient.get(`/users/username/${userId.value}`, { params });
+    const response = await apiClient.get(`/users/username/${userId.value}`, {
+      params,
+    });
     user.value = response.data;
   } catch (err: any) {
     error.value = err.response?.data?.message?.[0] || "Kullanıcı bulunamadı.";
@@ -421,9 +418,12 @@ const fetchUserPosts = async () => {
       params.currentUserId = authStore.user.id;
     }
 
-    const response = await apiClient.get(`/users/username/${userId.value}/posts`, {
-      params,
-    });
+    const response = await apiClient.get(
+      `/users/username/${userId.value}/posts`,
+      {
+        params,
+      },
+    );
     userPosts.value = response.data;
   } catch (err) {
     console.error("Failed to fetch user posts:", err);

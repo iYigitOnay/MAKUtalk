@@ -737,9 +737,12 @@ const currentTabPosts = computed(() => {
   return profileStore.userLikedPosts;
 });
 
-const isMyProfile = computed(
-  () => authStore.user?.id === displayedUser.value?.id,
-);
+const isMyProfile = computed(() => {
+  const myId = authStore.user?.id;
+  const targetId = displayedUser.value?.id;
+  if (!myId || !targetId) return false;
+  return String(myId) === String(targetId);
+});
 const isFollowing = computed(() => displayedUser.value?.isFollowing);
 const canViewContent = computed(
   () =>
