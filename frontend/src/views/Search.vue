@@ -285,18 +285,7 @@
               class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-between"
             >
               <div class="flex items-center gap-3">
-                <img
-                  v-if="user.avatarUrl"
-                  :src="getImageUrl(user.avatarUrl)"
-                  :alt="user.username"
-                  class="w-12 h-12 rounded-full object-cover"
-                />
-                <div
-                  v-else
-                  class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg"
-                >
-                  {{ user.username?.charAt(0).toUpperCase() }}
-                </div>
+                <UserAvatar :user="user" size="lg" />
                 <div>
                   <p class="font-semibold text-gray-900 dark:text-white">
                     {{ user.fullName || user.username }}
@@ -342,18 +331,7 @@
           class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-between"
         >
           <div class="flex items-center gap-3">
-            <img
-              v-if="user.avatarUrl"
-              :src="user.avatarUrl"
-              :alt="user.username"
-              class="w-12 h-12 rounded-full object-cover"
-            />
-            <div
-              v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg"
-            >
-              {{ user.username?.charAt(0).toUpperCase() }}
-            </div>
+            <UserAvatar :user="user" size="lg" />
             <div>
               <p class="font-semibold text-gray-900 dark:text-white">
                 {{ user.fullName || user.username }}
@@ -392,6 +370,7 @@ import { useProfileStore } from "@/stores/profile";
 import { useToast } from "vue-toastification";
 import apiClient from "@/api/client";
 import PostCard from "@/components/PostCard.vue";
+import UserAvatar from "@/components/UserAvatar.vue";
 import type { Post, User } from "@/types";
 
 const route = useRoute();

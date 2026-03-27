@@ -19,14 +19,14 @@
       <div class="card dark:bg-gray-900 dark:border-primary-900/20 mb-6">
         <div class="flex items-start justify-between mb-6">
           <div class="flex items-center space-x-4">
-            <div
-              class="w-20 h-20 bg-primary-100 dark:bg-primary-900/30 rounded-full flex items-center justify-center"
+            <!-- Profil Resmi Büyütme Sarmalayıcısı -->
+            <div 
+              @click="user.avatarUrl && openImage(user.avatarUrl)" 
+              class="relative group"
+              :class="{ 'cursor-zoom-in': user.avatarUrl }"
             >
-              <span
-                class="text-primary-700 dark:text-primary-400 font-bold text-3xl"
-              >
-                {{ userInitials }}
-              </span>
+              <UserAvatar :user="user" size="profile" />
+              <div v-if="user.avatarUrl" class="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors rounded-full"></div>
             </div>
             <div>
               <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
@@ -273,6 +273,7 @@ import apiClient from "@/api/client";
 import PostCard from "@/components/PostCard.vue";
 import FollowModal from "@/components/FollowModal.vue";
 import CommentsModal from "@/components/CommentsModal.vue";
+import UserAvatar from "@/components/UserAvatar.vue";
 import type { Post } from "@/types";
 
 const route = useRoute();
@@ -383,6 +384,17 @@ watch(
       commentsStore.lastAddedCommentId = null;
     }
   },
+);
+
+// CANLI SENKRONÄ°ZASYON: Kendi bilgilerimiz deÄŸiÅŸirse profil sayfasÄ±nÄ± anlÄ±k gÃ¼ncelle
+watch(
+  () => authStore.user,
+  (newUser) => {
+    if (newUser && user.value && String(newUser.id) === String(user.value.id)) {
+      user.value = { ...user.value, ...newUser };
+    }
+  },
+  { deep: true }
 );
 
 const userInitials = computed(() => {
@@ -496,6 +508,11 @@ const formatDate = (date: string) => {
     month: "long",
     year: "numeric",
   });
+};
+
+const openImage = (url: string) => {
+  if (!url) return;
+  window.open(getImageUrl(url), "_blank");
 };
 
 onMounted(async () => {

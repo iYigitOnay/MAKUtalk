@@ -20,9 +20,8 @@
       </div>
       <div class="flex-1 overflow-y-auto px-3 pb-6 space-y-1 custom-scrollbar text-left">
         <button v-for="conv in filteredConversations" :key="conv.id" @click="conv.otherParticipant?.id && chatStore.selectConversation(conv.otherParticipant.id)" class="w-full p-4 flex items-center gap-4 rounded-2xl transition-all border border-transparent group text-left" :class="chatStore.activeConversation?.id === conv.id ? 'bg-indigo-50 dark:bg-indigo-500/10 border-indigo-100 dark:border-indigo-500/20 shadow-sm' : 'hover:bg-slate-50 dark:hover:bg-white/5'">
-          <div class="relative flex-shrink-0 w-12 h-12">
-            <img v-if="conv.otherParticipant?.avatarUrl" :src="getImageUrl(conv.otherParticipant.avatarUrl)" class="w-full h-full rounded-full object-cover shadow-sm" />
-            <div v-else class="w-full h-full rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold">{{ conv.otherParticipant?.username?.charAt(0).toUpperCase() }}</div>
+          <div class="relative flex-shrink-0">
+            <UserAvatar :user="conv.otherParticipant" size="lg" />
             <div v-if="chatStore.isUserOnline(conv.otherParticipant?.id)" class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-white dark:border-gray-900 rounded-full shadow-sm z-10"></div>
           </div>
           <div class="flex-1 min-w-0">
@@ -42,8 +41,7 @@
             <button @click="chatStore.activeConversation = null" class="md:hidden p-2 bg-slate-100 dark:bg-white/5 rounded-xl"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" stroke-width="3" /></svg></button>
             <div class="flex items-center gap-3 cursor-pointer" @click="viewProfile">
               <div class="relative">
-                <img v-if="otherUser?.avatarUrl" :src="getImageUrl(otherUser.avatarUrl)" class="w-10 h-10 md:w-11 md:h-11 rounded-full object-cover shadow-sm" />
-                <div v-else class="w-10 h-10 md:w-11 md:h-11 rounded-full bg-indigo-500 text-white flex items-center justify-center font-bold">{{ otherUser?.username?.charAt(0).toUpperCase() }}</div>
+                <UserAvatar :user="otherUser" size="md" />
                 <div v-if="chatStore.isUserOnline(otherUser?.id)" class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></div>
               </div>
               <div class="flex flex-col">
@@ -227,6 +225,7 @@ import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import SharedPostCard from "@/components/SharedPostCard.vue";
 import ForwardModal from "@/components/ForwardModal.vue";
 import VideoPlayer from "@/components/VideoPlayer.vue";
+import UserAvatar from "@/components/UserAvatar.vue";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 

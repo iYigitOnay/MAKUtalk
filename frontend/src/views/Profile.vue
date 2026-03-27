@@ -1,4 +1,3 @@
-<!-- src/views/Profile.vue -->
 <template>
   <div class="max-w-4xl mx-auto pb-20 text-left">
     <!-- Loading & Error States -->
@@ -44,25 +43,15 @@
         <div class="absolute -bottom-10 sm:-bottom-16 left-4 sm:left-6">
           <div
             @click="displayedUser.avatarUrl ? (showAvatarZoom = true) : null"
-            class="relative group p-1 rounded-full bg-gradient-to-br from-blue-400 to-purple-400 shadow-xl overflow-hidden transition-transform duration-300 hover:scale-105 active:scale-95"
+            class="relative group rounded-full shadow-xl transition-transform duration-300 hover:scale-105 active:scale-95"
             :class="[displayedUser.avatarUrl ? 'cursor-pointer' : '']"
           >
-            <img
-              v-if="displayedUser.avatarUrl"
-              :src="getImageUrl(displayedUser.avatarUrl)"
-              alt="Avatar"
-              class="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-950 object-cover transition-all duration-300 group-hover:brightness-110"
-              :class="{ 'grayscale opacity-50': displayedUser.isBanned }"
+            <UserAvatar
+              :user="displayedUser"
+              size="profile"
+              customClass="border-4 border-white dark:border-gray-950"
             />
-            <div
-              v-else
-              class="w-20 h-20 sm:w-32 sm:h-32 rounded-full border-4 border-white dark:border-gray-950 bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center"
-            >
-              <span class="text-white font-bold text-2xl sm:text-4xl">{{
-                userInitials
-              }}</span>
-            </div>
-            <!-- BANNED OVERLAY ICON -->
+
             <div
               v-if="displayedUser.isBanned"
               class="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full"
@@ -651,6 +640,7 @@ import CommentsModal from "@/components/CommentsModal.vue";
 import FollowListModal from "@/components/FollowListModal.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import * as LucideIcons from "lucide-vue-next";
+import UserAvatar from "@/components/UserAvatar.vue";
 
 const authStore = useAuthStore();
 const postsStore = usePostsStore();
@@ -898,7 +888,6 @@ const handleToggleBadge = async (badgeId: number) => {
     await profileStore.toggleBadge(displayedUser.value!.id, badgeId);
     await fetchProfile();
 
-    // YENİ: Rozetleri postlarda da anında güncelle
     if (displayedUser.value) {
       postsStore.updateUserInPosts(displayedUser.value.id, {
         badges: displayedUser.value.badges,
@@ -924,7 +913,6 @@ const handleSaveProfile = async (data: any) => {
     profileStore.profileUser = { ...profileStore.profileUser, ...res.data };
     if (isMyProfile.value) authStore.updateUser(res.data);
 
-    // YENİ: Profil bilgilerini (avatar, isim vb.) tüm postlarda anında güncelle
     postsStore.updateUserInPosts(res.data.id, {
       fullName: res.data.fullName,
       avatarUrl: res.data.avatarUrl,

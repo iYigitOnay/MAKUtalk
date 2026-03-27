@@ -141,20 +141,7 @@
             "
             class="cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <img
-              v-if="notification.sender?.avatarUrl"
-              :src="getImageUrl(notification.sender.avatarUrl)"
-              :alt="notification.sender.username"
-              class="w-12 h-12 rounded-full object-cover flex-shrink-0"
-            />
-            <div
-              v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0"
-            >
-              {{
-                notification.sender?.username?.charAt(0).toUpperCase() || "?"
-              }}
-            </div>
+            <UserAvatar :user="notification.sender" size="lg" />
           </div>
 
           <!-- Content -->
@@ -271,6 +258,7 @@ import { useRouter } from "vue-router";
 import { useNotificationsStore } from "@/stores/notifications";
 import { useAuthStore } from "@/stores/auth";
 import { useFollowStore } from "@/stores/follow";
+import UserAvatar from "@/components/UserAvatar.vue";
 
 const router = useRouter();
 const notificationsStore = useNotificationsStore();

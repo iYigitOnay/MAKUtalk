@@ -225,23 +225,8 @@
         class="w-full flex items-center gap-3 p-3 rounded-full hover:bg-slate-100 dark:hover:bg-gray-800 transition-all duration-200 group relative z-[70]"
         :class="{ 'bg-slate-100 dark:bg-gray-800': showUserMenu }"
       >
-        <div class="relative flex-shrink-0">
-          <div
-            class="p-[2px] rounded-full bg-gradient-to-tr from-blue-400 to-purple-400 shadow-sm group-hover:scale-105 transition-transform"
-          >
-            <img
-              v-if="authStore.user?.avatarUrl"
-              :src="getImageUrl(authStore.user.avatarUrl)"
-              class="w-10 h-10 rounded-full object-cover border-2 border-white dark:border-gray-950"
-            />
-            <div
-              v-else
-              class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white dark:border-gray-950 flex items-center justify-center text-white font-black text-sm"
-            >
-              {{ authStore.user?.username?.charAt(0).toUpperCase() }}
-            </div>
-          </div>
-        </div>
+        <UserAvatar :user="authStore.user" size="md" />
+        
         <div v-if="isExpanded" class="flex-1 min-w-0 text-left">
           <p class="text-sm font-black text-slate-900 dark:text-white truncate">
             {{ authStore.user?.fullName || authStore.user?.username }}
@@ -285,6 +270,7 @@ import { useNotificationsStore } from "@/stores/notifications";
 import { useFollowStore } from "@/stores/follow";
 import { usePostsStore } from "@/stores/posts";
 import { useToast } from "vue-toastification";
+import UserAvatar from "./UserAvatar.vue";
 
 const route = useRoute();
 const router = useRouter();

@@ -51,10 +51,7 @@
         <!-- Avatar -->
         <div class="flex flex-col items-center">
           <router-link v-if="displayPost.author" :to="`/profile/${displayPost.author.username}`" @click.stop class="flex-shrink-0 relative z-10">
-            <img v-if="displayPost.author.avatarUrl" :src="getImageUrl(displayPost.author.avatarUrl)" class="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover shadow-sm" />
-            <div v-else class="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-primary-400 to-primary-600 flex items-center justify-center text-white font-semibold shadow-sm text-sm">
-              {{ displayPost.author.username?.charAt(0).toUpperCase() }}
-            </div>
+            <UserAvatar :user="displayPost.author" size="lg" />
           </router-link>
           <div v-if="isThreadParent" class="w-0.5 flex-1 bg-gray-200 dark:bg-gray-800 mt-2 mb-[-1rem] rounded-full"></div>
         </div>
@@ -221,6 +218,7 @@ import { usePostsStore } from "@/stores/posts";
 import { useToast } from "vue-toastification";
 import HashtagText from "./HashtagText.vue";
 import VideoPlayer from "./VideoPlayer.vue";
+import UserAvatar from "./UserAvatar.vue";
 import type { Post } from "@/types";
 import * as LucideIcons from "lucide-vue-next";
 

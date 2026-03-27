@@ -31,10 +31,10 @@
         >
           <!-- Left: Avatar -->
           <div class="relative flex-shrink-0">
-            <img
-              :src="getAvatarUrl(notif)"
-              alt="Avatar"
-              class="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl object-cover shadow-lg ring-2 ring-white/50 dark:ring-slate-700/50"
+            <UserAvatar 
+              :user="notif.sender" 
+              size="xl" 
+              customClass="rounded-2xl shadow-lg ring-2 ring-white/50 dark:ring-slate-700/50" 
             />
             <div 
               class="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 shadow-sm"
@@ -45,7 +45,7 @@
           </div>
 
           <!-- Middle: Content -->
-          <div class="ml-3 sm:ml-4 flex-1 min-w-0">
+          <div class="ml-3 sm:ml-4 flex-1 min-w-0 text-left">
             <div class="flex items-center justify-between">
               <span class="text-[10px] sm:text-[11px] font-bold uppercase tracking-widest opacity-50 dark:text-slate-400">
                 {{ getLabel(notif) }}
@@ -79,6 +79,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { useNotificationsStore } from '@/stores/notifications';
 import { storeToRefs } from 'pinia';
 import CryptoJS from "crypto-js";
+import UserAvatar from './UserAvatar.vue';
 import { 
   MessageCircle as MessageIcon, 
   Heart as HeartIcon, 
@@ -183,13 +184,6 @@ const getDisplayContent = (notif: any) => {
   }
 };
 
-const getAvatarUrl = (notif: any) => {
-  if (notif.sender?.avatarUrl) {
-    return (import.meta.env.VITE_API_URL?.replace('/api', '') || '') + notif.sender.avatarUrl;
-  }
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(getSenderName(notif))}&background=random&size=128`;
-};
-
 const handleClick = (notif: any) => {
   removeNotification(notif.liveId);
   if (notif.displayType === 'MESSAGE') {
@@ -233,7 +227,6 @@ const resumeTimer = (liveId: string) => {
 watch(activeNotifications, (newList) => {
   newList.forEach(notif => {
     if (!timers.has(notif.liveId)) {
-      // Eğer mesaj sayfasındaysak ve gelen bildirim o konuşmaya aitse gösterme
       if (notif.displayType === 'MESSAGE' && route.path === '/messages' && route.query.conversationId === notif.conversationId) {
         notificationsStore.removeLiveNotification(notif.liveId);
         return;
@@ -241,7 +234,7 @@ watch(activeNotifications, (newList) => {
       startTimer(notif.liveId, 4000);
     }
   });
-}, { deep: true });
+}, { deep: true, immediate: true });
 
 onUnmounted(() => {
   timers.forEach(t => clearTimeout(t.timeout));

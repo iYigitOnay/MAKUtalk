@@ -69,10 +69,7 @@
         <div class="flex items-center justify-between mb-3">
           <div class="flex items-center gap-3">
             <router-link :to="`/profile/${post.author.username}`">
-              <img
-                :src="getImageUrl(post.author.avatarUrl)"
-                class="w-11 h-11 rounded-full object-cover border border-gray-100 dark:border-white/10 shadow-sm"
-              />
+              <UserAvatar :user="post.author" size="lg" />
             </router-link>
             <div class="flex flex-col">
               <div
@@ -447,10 +444,7 @@
         class="p-4 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-white/[0.05]"
       >
         <div class="flex gap-3">
-          <img
-            :src="getImageUrl(authStore.user?.avatarUrl)"
-            class="w-10 h-10 rounded-full object-cover"
-          />
+          <UserAvatar :user="authStore.user" size="md" />
           <div class="flex-1">
             <textarea
               ref="commentInput"
@@ -700,6 +694,7 @@ import { useToast } from "vue-toastification";
 import PostCard from "@/components/PostCard.vue";
 import HashtagText from "@/components/HashtagText.vue";
 import VideoPlayer from "@/components/VideoPlayer.vue";
+import UserAvatar from "@/components/UserAvatar.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
 import type { Post } from "@/types";
