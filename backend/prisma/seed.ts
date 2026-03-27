@@ -15,23 +15,53 @@ function getNextId(): bigint {
 }
 
 async function main() {
-  console.log('🌱 Seed işlemi başlıyor (Snowflake ID uyumlu)...');
+  console.log(
+    '🌱 Seed işlemi başlıyor (Snowflake ID uyumlu & ID Koruma Aktif)...',
+  );
 
-  // 1. KATEGORİLER (Senin belirttiğin liste + Spor & Sanat)
+  // 1. KATEGORİLER
   const categories = [
+    {
+      name: 'Duyuru',
+      slug: 'duyuru',
+      description: 'Kampüs ve kulüp duyuruları',
+      icon: 'Megaphone',
+      color: '#DC2626',
+    },
     {
       name: 'Arıza/Kayıp',
       slug: 'ariza-kayip',
       description: 'Kampüs içi teknik arızalar veya kayıp eşya duyuruları',
       icon: 'Wrench',
-      color: '#F59E0B',
+      color: '#F43F5E',
     },
     {
-      name: 'Etkinlik',
-      slug: 'etkinlik',
-      description: 'Kampüs içi sosyal ve akademik etkinlikler',
-      icon: 'Calendar',
-      color: '#8B5CF6',
+      name: 'Satılık',
+      slug: 'satilik',
+      description: 'İkinci el eşya, kitap vb. alım-satım',
+      icon: 'ShoppingBag',
+      color: '#D97706',
+    },
+    {
+      name: 'Sanat',
+      slug: 'sanat',
+      description: 'Müzik, resim, tiyatro ve sanatsal paylaşımlar',
+      icon: 'Palette',
+      color: '#0D9488',
+    },
+    {
+      name: 'Spor',
+      slug: 'spor',
+      description: 'Spor turnuvaları, takımlar ve aktivite eşleşmeleri',
+      icon: 'Trophy',
+      color: '#16A34A',
+    },
+    {
+      name: 'Soru/Cevap',
+      slug: 'soru-cevap',
+      description: 'Yardımlaşma ve merak edilen sorular',
+      icon: 'HelpCircle',
+      color: '#1E3A8A',
     },
     {
       name: 'Genel',
@@ -41,47 +71,25 @@ async function main() {
       color: '#6B7280',
     },
     {
-      name: 'Satılık',
-      slug: 'satilik',
-      description: 'İkinci el eşya, kitap vb. alım-satım',
-      icon: 'ShoppingBag',
-      color: '#EC4899',
-    },
-    {
-      name: 'Soru/Cevap',
-      slug: 'soru-cevap',
-      description: 'Yardımlaşma ve merak edilen sorular',
-      icon: 'HelpCircle',
-      color: '#06B6D4',
-    },
-    {
-      name: 'Spor',
-      slug: 'spor',
-      description: 'Spor turnuvaları, takımlar ve aktivite eşleşmeleri',
-      icon: 'Trophy',
-      color: '#3B82F6',
-    },
-    {
-      name: 'Duyuru',
-      slug: 'duyuru',
-      description: 'Önemli kampüs ve kulüp duyuruları',
-      icon: 'Megaphone',
-      color: '#DC2626',
-    },
-    {
-      name: 'Sanat',
-      slug: 'sanat',
-      description: 'Müzik, resim, tiyatro ve sanatsal paylaşımlar',
-      icon: 'Palette',
-      color: '#F43F5E',
+      name: 'Etkinlik',
+      slug: 'etkinlik',
+      description: 'Kampüs içi sosyal ve akademik etkinlikler',
+      icon: 'Calendar',
+      color: '#7C3AED',
     },
   ];
 
-  console.log('📁 Kategoriler temizleniyor ve yeniden oluşturuluyor...');
-  await prisma.category.deleteMany({});
+  console.log('📁 Kategoriler güncelleniyor (ID Koruma Modu)...');
   for (const c of categories) {
-    await prisma.category.create({
-      data: {
+    await prisma.category.upsert({
+      where: { slug: c.slug },
+      update: {
+        name: c.name,
+        description: c.description,
+        icon: c.icon,
+        color: c.color,
+      },
+      create: {
         id: getNextId(),
         ...c,
       },
@@ -184,13 +192,17 @@ async function main() {
     },
   ];
 
-  console.log('🛡️ Rozetler mühürleniyor...');
-  await prisma.userBadge.deleteMany({});
-  await prisma.badge.deleteMany({ where: { type: BadgeType.USER } });
-
+  console.log('🛡️ Rozetler güncelleniyor (ID Koruma Modu)...');
   for (const b of badges) {
-    await prisma.badge.create({
-      data: {
+    await prisma.badge.upsert({
+      where: { name: b.name },
+      update: {
+        icon: b.icon,
+        color: b.color,
+        description: b.description,
+        type: b.type,
+      },
+      create: {
         id: getNextId(),
         ...b,
       },

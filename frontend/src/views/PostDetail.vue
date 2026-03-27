@@ -230,11 +230,17 @@
 
         <div
           v-if="post.imageUrl"
-          class="mb-4 rounded-2xl overflow-hidden border border-gray-100 dark:border-white/[0.05]"
+          class="mb-4 rounded-2xl overflow-hidden border border-gray-100 dark:border-white/[0.05] bg-slate-50 dark:bg-gray-800 flex justify-center"
         >
           <img
             :src="getImageUrl(post.imageUrl)"
-            class="w-full h-auto max-h-[550px] object-cover"
+            class="w-full h-auto max-h-[1080px] object-contain cursor-zoom-in hover:opacity-95 transition-opacity"
+            @click="showImageModal = true"
+          />
+          <ImageModal 
+            :is-open="showImageModal" 
+            :image-url="getImageUrl(post.imageUrl)" 
+            @close="showImageModal = false" 
           />
         </div>
 
@@ -695,6 +701,7 @@ import PostCard from "@/components/PostCard.vue";
 import HashtagText from "@/components/HashtagText.vue";
 import VideoPlayer from "@/components/VideoPlayer.vue";
 import UserAvatar from "@/components/UserAvatar.vue";
+import ImageModal from "@/components/ImageModal.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
 import type { Post } from "@/types";
@@ -719,6 +726,7 @@ const commentContent = ref("");
 const commentLoading = ref(false);
 const commentInput = ref<HTMLTextAreaElement | null>(null);
 const showPostMenu = ref(false);
+const showImageModal = ref(false);
 
 // IMAGE UPLOAD STATE
 const fileInput = ref<HTMLInputElement | null>(null);

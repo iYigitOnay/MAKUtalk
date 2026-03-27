@@ -119,8 +119,18 @@
             <HashtagText :text="displayPost.content || ''" />
           </p>
 
-          <div v-if="displayPost.imageUrl" class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 bg-slate-50 dark:bg-gray-800">
-            <img :src="getImageUrl(displayPost.imageUrl)" class="w-full h-auto max-h-[512px] object-cover" loading="lazy" />
+          <div v-if="displayPost.imageUrl" class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 bg-slate-50 dark:bg-gray-800 flex justify-center">
+            <img 
+              :src="getImageUrl(displayPost.imageUrl)" 
+              class="w-full h-auto max-h-[720px] object-contain cursor-zoom-in hover:opacity-95 transition-opacity" 
+              loading="lazy" 
+              @click.stop="showImageModal = true"
+            />
+            <ImageModal 
+              :is-open="showImageModal" 
+              :image-url="getImageUrl(displayPost.imageUrl)" 
+              @close="showImageModal = false" 
+            />
           </div>
 
           <!-- Video Attachment -->
@@ -219,6 +229,7 @@ import { useToast } from "vue-toastification";
 import HashtagText from "./HashtagText.vue";
 import VideoPlayer from "./VideoPlayer.vue";
 import UserAvatar from "./UserAvatar.vue";
+import ImageModal from "./ImageModal.vue";
 import type { Post } from "@/types";
 import * as LucideIcons from "lucide-vue-next";
 
@@ -250,6 +261,7 @@ const likeLoading = ref(false);
 const repostLoading = ref(false);
 const bookmarkLoading = ref(false);
 const showMenu = ref(false);
+const showImageModal = ref(false);
 
 const handleTogglePin = async () => {
   if (!displayPost.value) return;
