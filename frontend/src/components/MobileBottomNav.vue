@@ -67,15 +67,25 @@ const isActive = (id: string): boolean => {
 };
 
 const handleNavClick = async (item: any) => {
-  if (item.id === 'home' && route.path === '/') {
-    // Zaten anasayfadaysak: En üste çık ve yenile
-    const mainArea = document.querySelector('main');
-    if (mainArea) {
-      mainArea.scrollTo({ top: 0, behavior: 'smooth' });
+  if (item.id === "home" && route.path === "/") {
+    // 1. Global Scroll (En üste yumuşak kaydır)
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // 2. Görsel Feedback: Listeyi anlık boşalt (Loading spinner tetiklenir)
+    postsStore.posts = [];
+
+    // 3. Mevcut sekmeyi koruyarak yenile
+    if (postsStore.activeFeedTab === 'academic') {
+      await postsStore.fetchAcademicPosts(authStore.user?.id);
+    } else {
+      postsStore.resetCategory();
+      await postsStore.fetchPosts(authStore.user?.id);
     }
-    // Verileri yeniden çek
-    await postsStore.fetchPosts(authStore.user?.id);
   } else {
+    if (item.id === "home") {
+      postsStore.activeFeedTab = 'main';
+      postsStore.resetCategory();
+    }
     router.push(item.path);
   }
 };
