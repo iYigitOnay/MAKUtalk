@@ -1,6 +1,7 @@
 <template>
   <div
-    class="relative group rounded-2xl overflow-hidden bg-black flex items-center justify-center cursor-pointer select-none border border-white/5 shadow-2xl mx-auto"
+    class="relative group rounded-2xl overflow-hidden bg-black flex items-center justify-center cursor-pointer select-none border border-white/5 shadow-2xl mx-auto focus:outline-none"
+    tabindex="0"
     :style="
       videoRatio
         ? {
@@ -14,6 +15,9 @@
     @mouseenter="showControlsTemporarily"
     @mousemove="showControlsTemporarily"
     @mouseleave="handleMouseLeave"
+    @keydown.space.prevent="togglePlay"
+    @keydown.right.prevent="seek(5)"
+    @keydown.left.prevent="seek(-5)"
   >
     <!-- Video Element -->
     <video
@@ -24,7 +28,7 @@
       @click.stop="togglePlay"
       @timeupdate="updateProgress"
       @loadedmetadata="onMetadataLoaded"
-      @ended="isPlaying = false"
+      @ended="onEnded"
       @enterpictureinpicture="isPiP = true"
       @leavepictureinpicture="isPiP = false"
     >
@@ -98,7 +102,7 @@
             ></div>
           </div>
           <div
-            class="absolute w-3 h-3 bg-white rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-[0_0_10px_rgba(255,255,255,0.5)] z-10"
+            class="absolute w-3 h-3 bg-white rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-[0_0_100px_rgba(255,255,255,0.5)] z-10"
             :style="{ left: `calc(${progress}% - 6px)` }"
           ></div>
         </div>
@@ -109,7 +113,8 @@
               @click="togglePlay"
               class="text-white hover:opacity-80 transition-all active:scale-90"
             >
-              <PlayIcon v-if="!isPlaying" class="w-6 h-6 fill-current" />
+              <ReplayIcon v-if="isEnded" class="w-6 h-6" />
+              <PlayIcon v-else-if="!isPlaying" class="w-6 h-6 fill-current" />
               <PauseIcon v-else class="w-6 h-6 fill-current" />
             </button>
 
@@ -200,6 +205,7 @@ import { useVideoStore } from "@/stores/video";
 import {
   Play as PlayIcon,
   Pause as PauseIcon,
+  RotateCcw as ReplayIcon,
   Volume2 as Volume2Icon,
   VolumeX as VolumeXIcon,
   Settings as SettingsIcon,
@@ -216,6 +222,7 @@ const props = defineProps<{
 const videoStore = useVideoStore();
 const videoRef = ref<HTMLVideoElement | null>(null);
 const isPlaying = ref(false);
+const isEnded = ref(false);
 const isMuted = ref(false);
 const volume = ref(0.7);
 const isControlsVisible = ref(false);
@@ -249,13 +256,31 @@ const handleClickOutside = (event: MouseEvent) => {
   }
 };
 
+const handleGlobalKeyDown = (e: KeyboardEvent) => {
+  // Eğer bu video şu an oynatılıyorsa global kısayolları dinle
+  if (videoStore.currentlyPlayingId === props.videoUrl) {
+    if (e.key === "ArrowRight") {
+      e.preventDefault();
+      seek(5);
+    } else if (e.key === "ArrowLeft") {
+      e.preventDefault();
+      seek(-5);
+    } else if (e.key === " ") {
+      e.preventDefault();
+      togglePlay();
+    }
+  }
+};
+
 onMounted(() => {
   window.addEventListener("click", handleClickOutside);
+  window.addEventListener("keydown", handleGlobalKeyDown);
   supportsPiP.value = !!document.pictureInPictureEnabled;
 });
 
 onUnmounted(() => {
   window.removeEventListener("click", handleClickOutside);
+  window.removeEventListener("keydown", handleGlobalKeyDown);
 });
 
 const playbackRate = ref(1);
@@ -274,7 +299,11 @@ const getImageUrl = (path: string | undefined) => {
 
 const togglePlay = () => {
   if (!videoRef.value) return;
-  isPlaying.value ? pauseVideo() : playVideo();
+  if (isEnded.value) {
+    replayVideo();
+  } else {
+    isPlaying.value ? pauseVideo() : playVideo();
+  }
   showControlsTemporarily();
 };
 
@@ -282,6 +311,7 @@ const playVideo = () => {
   if (!videoRef.value) return;
   videoRef.value.play();
   isPlaying.value = true;
+  isEnded.value = false;
   videoStore.setCurrentlyPlaying(props.videoUrl);
 };
 
@@ -289,6 +319,26 @@ const pauseVideo = () => {
   if (!videoRef.value) return;
   videoRef.value.pause();
   isPlaying.value = false;
+};
+
+const replayVideo = () => {
+  if (!videoRef.value) return;
+  videoRef.value.currentTime = 0;
+  playVideo();
+};
+
+const seek = (seconds: number) => {
+  if (!videoRef.value) return;
+  videoRef.value.currentTime += seconds;
+  showControlsTemporarily();
+};
+
+const onEnded = () => {
+  isPlaying.value = false;
+  isEnded.value = true;
+  if (videoStore.currentlyPlayingId === props.videoUrl) {
+    videoStore.setCurrentlyPlaying(null);
+  }
 };
 
 const toggleMute = () => {
