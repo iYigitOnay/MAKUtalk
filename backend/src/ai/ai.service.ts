@@ -87,6 +87,8 @@ export class AiService implements OnModuleInit {
 
            GÖREV 2: Metin için en uygun kategori slug'ını seç. 
            KATEGORİ SEÇİM KURALLARI:
+           - "spor": Her türlü sportif aktivite, branş (futbol, basketbol, tenis vb.), antrenman, maç skorları, turnuva veya sporcu başarıları ile ilgili içerikler.
+           - "sanat": Resim, müzik, tiyatro, sinema, sergi, heykel, fotoğrafçılık, dans gibi sanatsal ve kültürel etkinlik veya paylaşımlar.
            - "soru-cevap": Bir soru soruluyorsa, "ne düşünüyorsunuz", "nasıl", "nerede" gibi ifadeler varsa veya topluluğun fikri isteniyorsa (Örn: "Burası hakkında ne düşünüyorsunuz?").
            - "satilik": Bir ürün satışı, takas veya satın alma isteği varsa.
            - "ariza-kayip": Bir eşya kayıpsa, bulunduysa veya bir teknik arıza bildiriliyorsa.
