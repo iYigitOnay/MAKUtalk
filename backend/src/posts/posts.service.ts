@@ -263,6 +263,38 @@ export class PostsService {
       this.chatGateway.broadcastNewPost(post);
     }
 
+    // --- MENTION RADARI: @username tespiti ve bildirim gönderimi ---
+    if (cleanText) {
+      const mentionRegex = /@(\w+)/g;
+      const matches = [...cleanText.matchAll(mentionRegex)];
+      const mentionedUsernames = [...new Set(matches.map(m => m[1]))]; // Tekilleştir
+
+      if (mentionedUsernames.length > 0) {
+        // Bahsedilen kullanıcıları DB'den bul (Toplu Sorgu)
+        const mentionedUsers = await this.prisma.user.findMany({
+          where: { 
+            username: { in: mentionedUsernames },
+            id: { not: userId } // Kendisini etiketlemişse bildirim gitmesin
+          },
+          select: { id: true }
+        });
+
+        // Her birine bildirim gönder
+        for (const targetUser of mentionedUsers) {
+          try {
+            await this.notificationsService.createNotification(
+              NotificationType.MENTION,
+              targetUser.id,
+              userId,
+              post.id
+            );
+          } catch (err) {
+            this.myLogger.error(`Mention bildirimi gönderilemedi: ${err.message}`);
+          }
+        }
+      }
+    }
+
     return post;
   }
 
