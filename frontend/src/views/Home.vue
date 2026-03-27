@@ -1069,6 +1069,16 @@ const handleShowComments = (id: number) => {
   commentsModalOpen.value = true;
 };
 
+// CANLI SENKRONÄ°ZASYON: Yan panelden kategori seÃ§ilirse Ã§arkÄ± merkezle
+watch(() => postsStore.currentCategory, (newCatId) => {
+  const index = allItems.value.findIndex(item => item.id === newCatId);
+  if (index !== -1) {
+    nextTick(() => {
+      centerCarouselItem(index);
+    });
+  }
+}, { immediate: true });
+
 onMounted(() => {
   postsStore.resetCategory();
 

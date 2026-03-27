@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import * as path from 'path';
 import * as fs from 'fs';
 
-// TypeScript'in tÃ¼m modÃ¼lÃ¼ obje olarak gÃ¶rmesini engellemek iÃ§in require kullanÄ±yoruz.
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegStatic = require('ffmpeg-static');
 
@@ -11,7 +10,6 @@ export class MediaProcessingService {
   private readonly logger = new Logger(MediaProcessingService.name);
 
   constructor() {
-    // FFmpeg yolunu ayarla - ffmpegStatic doÄŸrudan string dÃ¶ner (yol dÃ¶ner).
     if (ffmpegStatic) {
       this.logger.log(`FFmpeg yolu ayarlanÄ±yor: ${ffmpegStatic}`);
       ffmpeg.setFfmpegPath(ffmpegStatic);
@@ -33,10 +31,11 @@ export class MediaProcessingService {
 
     return new Promise((resolve, reject) => {
       ffmpeg(inputPath)
-        .size('1280x720')
+        .size('?x720')
         .videoCodec('libx264')
-        .addOption('-crf', '28')
-        .addOption('-preset', 'veryfast')
+        .videoBitrate('2500k')
+        .addOption('-crf', '24')
+        .addOption('-preset', 'slow')
         .audioCodec('aac')
         .audioBitrate('128k')
         .on('start', (commandLine: string) => {
@@ -71,7 +70,6 @@ export class MediaProcessingService {
           timestamps: ['00:00:01'],
           filename: thumbnailName,
           folder: outputDir,
-          size: '1280x720',
         })
         .on('end', () => {
           const outputPath = path.join(outputDir, thumbnailName);

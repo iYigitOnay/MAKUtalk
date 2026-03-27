@@ -41,10 +41,11 @@
       </div>
       
       <div class="p-2 space-y-2">
-        <div
+        <button
           v-for="cat in categoriesStore.trendingCategories.slice(0, 3)"
           :key="cat.id"
-          class="relative px-4 py-3 rounded-xl border border-gray-100 dark:border-primary-900/10 transition-all hover:shadow-md hover:-translate-y-0.5 overflow-hidden group"
+          @click="selectTrendingCategory(cat.id)"
+          class="w-full text-left relative px-4 py-3 rounded-xl border border-gray-100 dark:border-primary-900/10 transition-all hover:shadow-md hover:-translate-y-0.5 overflow-hidden group bg-white dark:bg-gray-900"
         >
           <!-- Kategori Renk Şeridi -->
           <div 
@@ -75,7 +76,6 @@
               </div>
             </div>
             
-            <!-- Küçük bir trend göstergesi (Sadece Yanıp Sönen) -->
             <div class="relative group-hover:scale-110 transition-transform duration-300">
               <div 
                 class="absolute inset-0 blur-md opacity-25 animate-pulse"
@@ -95,7 +95,7 @@
               </svg>
             </div>
           </div>
-        </div>
+        </button>
       </div>
     </div>
 
@@ -157,13 +157,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, computed } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { useCategoriesStore } from "@/stores/categories";
 import { usePostsStore } from "@/stores/posts";
 import { useAuthStore } from "@/stores/auth";
 import apiClient from "@/api/client";
 
 const router = useRouter();
+const route = useRoute();
 const categoriesStore = useCategoriesStore();
 const postsStore = usePostsStore();
 const authStore = useAuthStore();
@@ -202,7 +203,6 @@ onMounted(async () => {
   await categoriesStore.fetchCategories();
   await refreshData();
   
-  // Canlı Güncelleme: Her post atıldığında trendleri hemen tazele
   postsStore.onPostCreated(() => {
     console.log("🔥 Yeni post algılandı, trendler güncelleniyor...");
     refreshData();
@@ -226,14 +226,19 @@ async function fetchHashtags() {
   }
 }
 
-function selectCategory(id: string | null) {
-  activeCategory.value = id;
-  if (id) {
-    postsStore.fetchPostsByCategory(id, authStore.user?.id);
-  } else {
-    postsStore.resetCategory();
-    postsStore.fetchPosts(authStore.user?.id);
+async function selectTrendingCategory(categoryId: string) {
+  // 1. Eğer anasayfada değilsek yönlendir
+  if (route.path !== "/") {
+    await router.push("/");
   }
+  
+  // 2. Sayfayı en üste kaydır
+  window.scrollTo({ top: 0, behavior: "smooth" });
+
+  // 3. Kategoriyi seç ve verileri çek
+  postsStore.activeCategory = categoryId;
+  postsStore.posts = []; 
+  await postsStore.fetchPostsByCategory(categoryId, authStore.user?.id);
 }
 
 function handleSearch() {
