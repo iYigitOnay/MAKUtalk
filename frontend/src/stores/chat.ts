@@ -99,12 +99,13 @@ export const useChatStore = defineStore("chat", () => {
   };
 
   const addMessage = (message: any) => {
-    const exists = messages.value.some(m => m.id === message.id);
+    // Snowflake ID Güvenliği: Karşılaştırmayı her zaman string olarak yap
+    const exists = messages.value.some(m => String(m.id) === String(message.id));
     if (!exists) {
       messages.value.push(message);
       
       // ✅ KONUŞMA LİSTESİNİ ANLIK GÜNCELLE (State Management)
-      const convIndex = conversations.value.findIndex(c => c.id === message.conversationId);
+      const convIndex = conversations.value.findIndex(c => String(c.id) === String(message.conversationId));
       if (convIndex !== -1) {
         conversations.value[convIndex].lastMessage = message;
         // Konuşmayı listenin en üstüne taşı

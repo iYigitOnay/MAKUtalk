@@ -291,21 +291,44 @@ const isNewDay = (index: number) => {
   const current = chatStore.messages[index];
   const previous = chatStore.messages[index - 1];
   if (!current?.createdAt || !previous?.createdAt) return false;
-  return new Date(current.createdAt).toDateString() !== new Date(previous.createdAt).toDateString();
+  
+  const currDate = new Date(current.createdAt);
+  const prevDate = new Date(previous.createdAt);
+  
+  if (isNaN(currDate.getTime()) || isNaN(prevDate.getTime())) return false;
+  
+  return currDate.toDateString() !== prevDate.toDateString();
 };
 
 const formatDateLabel = (dateStr: string) => {
-  if (!dateStr) return "";
+  if (!dateStr) return "Şimdi";
   const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return "Şimdi";
+  
   const today = new Date();
   const yesterday = new Date();
   yesterday.setDate(today.getDate() - 1);
+  
   if (date.toDateString() === today.toDateString()) return "Bugün";
   if (date.toDateString() === yesterday.toDateString()) return "Dün";
-  return format(date, 'd MMMM EEEE', { locale: tr });
+  
+  try {
+    return format(date, 'd MMMM EEEE', { locale: tr });
+  } catch (e) {
+    return "Eski bir tarih";
+  }
 };
 
-const formatTime = (dateStr: string) => { if (!dateStr) return ""; try { return format(new Date(dateStr), 'HH:mm', { locale: tr }); } catch { return ""; } };
+const formatTime = (dateStr: string) => { 
+  if (!dateStr) return format(new Date(), 'HH:mm'); 
+  try { 
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return format(new Date(), 'HH:mm');
+    return format(date, 'HH:mm', { locale: tr }); 
+  } catch { 
+    return format(new Date(), 'HH:mm'); 
+  } 
+};
 
 const filteredConversations = computed(() => chatStore.conversations.filter(conv => {
   const name = (conv.otherParticipant?.fullName || conv.otherParticipant?.username || '').toLowerCase();

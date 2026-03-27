@@ -1,22 +1,26 @@
-import { IsString, IsNumber, IsNotEmpty, IsBoolean, IsOptional, MaxLength } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsNotEmpty,
+  IsBoolean,
+  IsOptional,
+  MaxLength,
+} from 'class-validator';
 
 export class SendMessageDto {
-  @IsNumber()
   @IsNotEmpty()
-  conversationId: number;
+  conversationId: string | number;
 
   @IsString()
   @IsOptional()
   @MaxLength(1000, { message: 'Mesaj en fazla 1000 karakter olabilir.' })
   content?: string;
 
-  @IsNumber()
   @IsNotEmpty()
-  receiverId: number;
+  receiverId: string | number;
 
-  @IsNumber()
   @IsOptional()
-  postId?: number;
+  postId?: string | number;
 
   @IsString()
   @IsOptional()
@@ -32,13 +36,11 @@ export class SendMessageDto {
 }
 
 export class TypingDto {
-  @IsNumber()
   @IsNotEmpty()
-  conversationId: number;
+  conversationId: string | number;
 
-  @IsNumber()
   @IsNotEmpty()
-  receiverId: number;
+  receiverId: string | number;
 
   @IsBoolean()
   @IsNotEmpty()

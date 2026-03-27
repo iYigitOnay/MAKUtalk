@@ -54,17 +54,28 @@ export function useSocket() {
     });
 
     socket.on("new_message", (message: any) => {
-      console.log("📥 Yeni mesaj geldi, liste güncelleniyor...");
+      console.log("📥 Yeni mesaj socketten geldi:", message);
+      
+      // TÜM ID'leri string'e zorla (Snowflake Güvenliği)
       const normalizedMessage = {
         ...message,
-        senderId: message.senderId,
-        conversationId: message.conversationId,
+        id: String(message.id),
+        senderId: String(message.senderId),
+        conversationId: String(message.conversationId),
       };
 
       // 1. Eğer mesajlaştığımız kişi ise mesaj listesine ekle
-      const activeConvId = chatStore.activeConversation?.id;
-      if (activeConvId && activeConvId === normalizedMessage.conversationId) {
+      // Karşılaştırmayı her zaman string olarak ve trimleyerek yapıyoruz.
+      const activeConvId = chatStore.activeConversation?.id ? String(chatStore.activeConversation.id).trim() : null;
+      const incomingConvId = normalizedMessage.conversationId.trim();
+      
+      console.log(`🧐 Karşılaştırma: Aktif=${activeConvId} | Gelen=${incomingConvId}`);
+      
+      if (activeConvId && activeConvId === incomingConvId) {
+        console.log("✅ Aktif sohbete mesaj eklendi.");
         chatStore.addMessage(normalizedMessage);
+      } else {
+        console.log("ℹ️ Mesaj aktif olmayan bir sohbete geldi veya karşılaştırma başarısız.");
       }
 
       // 2. Bildirim kartını göster (Benim göndermediğim mesajlar için)

@@ -363,8 +363,16 @@ const isActive = (id: string): boolean => {
 
 const handleNavClick = async (item: any) => {
   if (item.id === "home" && route.path === "/") {
+    // Reset tab to main (Ana Akış)
+    postsStore.activeFeedTab = 'main';
+    postsStore.posts = [];
+    postsStore.resetCategory();
+
+    // Scroll to top with smooth animation
     const mainArea = document.querySelector("main");
     if (mainArea) mainArea.scrollTo({ top: 0, behavior: "smooth" });
+
+    // Fetch main feed
     await postsStore.fetchPosts(authStore.user?.id);
   } else {
     router.push(item.path);

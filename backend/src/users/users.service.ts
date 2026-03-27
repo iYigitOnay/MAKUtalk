@@ -40,7 +40,6 @@ export class UsersService {
       100000 + Math.random() * 900000,
     ).toString();
 
-    // AKADEMİSYEN OTOMATIK ROL ATAMASI (@mehmetakif.edu.tr)
     let role: any = 'USER';
     if (
       createUserDto.email.endsWith('@mehmetakif.edu.tr') &&
@@ -51,7 +50,7 @@ export class UsersService {
 
     const user = await this.prisma.user.create({
       data: {
-        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        id: this.snowflakeService.getNextId(),
         ...createUserDto,
         password: hashedPassword,
         role: role,
@@ -59,17 +58,16 @@ export class UsersService {
       },
     });
 
-    // AKADEMİSYEN ROZETİ OTOMATIK ATAMA
     if (role === 'ACADEMIC') {
       const academicBadge = await this.prisma.badge.findFirst({
         where: { name: 'Akademisyen' },
       });
       if (academicBadge) {
         await this.prisma.userBadge.create({
-          data: { 
+          data: {
             id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
-            userId: user.id, 
-            badgeId: academicBadge.id 
+            userId: user.id,
+            badgeId: academicBadge.id,
           },
         });
       }
@@ -100,7 +98,13 @@ export class UsersService {
       where: { username },
       include: {
         badges: { include: { badge: true } },
-        _count: { select: { posts: { where: { isDeleted: false } }, followers: true, following: true } },
+        _count: {
+          select: {
+            posts: { where: { isDeleted: false } },
+            followers: true,
+            following: true,
+          },
+        },
       },
     });
 
@@ -133,7 +137,13 @@ export class UsersService {
       where: { id },
       include: {
         badges: { include: { badge: true } },
-        _count: { select: { posts: { where: { isDeleted: false } }, followers: true, following: true } },
+        _count: {
+          select: {
+            posts: { where: { isDeleted: false } },
+            followers: true,
+            following: true,
+          },
+        },
       },
     });
     if (!user) throw new NotFoundException();
@@ -286,12 +296,12 @@ export class UsersService {
       await this.prisma.block.delete({ where: { id: existing.id } });
       return { blocked: false };
     }
-    await this.prisma.block.create({ 
-      data: { 
+    await this.prisma.block.create({
+      data: {
         id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
-        blockerId, 
-        blockedId 
-      } 
+        blockerId,
+        blockedId,
+      },
     });
     await this.prisma.follow.deleteMany({
       where: {
@@ -401,11 +411,11 @@ export class UsersService {
   async createFeedback(userId: bigint, type: string, message: string) {
     if (!userId) throw new Error('UserId gerekli.');
     return this.prisma.feedback.create({
-      data: { 
+      data: {
         id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
-        userId, 
-        type, 
-        message 
+        userId,
+        type,
+        message,
       },
     });
   }
@@ -439,12 +449,12 @@ export class UsersService {
       await this.prisma.userBadge.delete({ where: { id: ex.id } });
       return { assigned: false };
     } else {
-      await this.prisma.userBadge.create({ 
-        data: { 
+      await this.prisma.userBadge.create({
+        data: {
           id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
-          userId, 
-          badgeId 
-        } 
+          userId,
+          badgeId,
+        },
       });
       return { assigned: true };
     }

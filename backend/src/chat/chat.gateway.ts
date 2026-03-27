@@ -89,6 +89,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     try {
       const senderId = client.data.userId;
+      this.logger.log(`📩 [SOCKET] send_message tetiklendi. SenderID: ${senderId?.toString()}, ConvID: ${data.conversationId}`);
+
       if (!senderId) throw new Error('Yetkisiz erişim!');
 
       const conversationId = BigInt(data.conversationId);
@@ -98,12 +100,15 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         include: { participants: true },
       });
 
-      if (!conversation) throw new Error('Sohbet bulunamadı.');
+      if (!conversation) {
+        this.logger.error(`❌ [SOCKET] Sohbet bulunamadı: ${conversationId.toString()}`);
+        throw new Error('Sohbet bulunamadı.');
+      }
+
       const isParticipant = conversation.participants.some(
         (p) => p.userId === senderId,
       );
-      if (!isParticipant)
-        throw new Error('Bu sohbete mesaj gönderme yetkiniz yok.');
+      if (!isParticipant) throw new Error('Bu sohbete mesaj gönderme yetkiniz yok.');
 
       const actualReceiver = conversation.participants.find(
         (p) => p.userId !== senderId,
@@ -120,18 +125,21 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         data.mediaType,
       );
 
-      client.emit('new_message', message);
+      const serializedMessage = this.convertBigIntToString(message);
+      this.logger.log(`✅ [SOCKET] Mesaj DB'ye kaydedildi ve serileştirildi. ID: ${serializedMessage.id}`);
 
+      // Kendine gönder (Sender)
+      client.emit('new_message', serializedMessage);
+
+      // Alıcıya gönder (Receiver)
       const receiverRoom = `user_${actualReceiver.userId.toString()}`;
-      this.server.to(receiverRoom).emit('new_message', message);
+      this.server.to(receiverRoom).emit('new_message', serializedMessage);
 
-      this.logger.log(
-        `📤 Mesaj iletildi: ${senderId.toString()} -> ${actualReceiver.userId.toString()}`,
-      );
+      this.logger.log(`🚀 [SOCKET] Mesaj odalara dağıtıldı: SenderRoom=${client.id}, ReceiverRoom=${receiverRoom}`);
 
-      return message;
+      return serializedMessage;
     } catch (error) {
-      this.logger.error(`❌ Mesaj Gönderme Hatası: ${error.message}`);
+      this.logger.error(`❌ [SOCKET] Mesaj Gönderme Hatası: ${error.message}`, error.stack);
       client.emit('error', {
         message: 'Mesaj gönderilemedi: ' + error.message,
       });
@@ -226,16 +234,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private convertBigIntToString(obj: any): any {
     if (obj === null || obj === undefined) return obj;
-    if (typeof obj === 'bigint') return obj.toString();
-    if (Array.isArray(obj))
-      return obj.map((item) => this.convertBigIntToString(item));
-    if (typeof obj === 'object') {
-      return Object.keys(obj).reduce((acc, key) => {
-        acc[key] = this.convertBigIntToString(obj[key]);
-        return acc;
-      }, {});
-    }
-    return obj;
+    // BigInt'leri güvenli bir şekilde string'e çevirmek için JSON stringify/parse kullanıyoruz.
+    return JSON.parse(
+      JSON.stringify(obj, (key, value) =>
+        typeof value === 'bigint' ? value.toString() : value,
+      ),
+    );
   }
 
   broadcastNewPost(post: any) {

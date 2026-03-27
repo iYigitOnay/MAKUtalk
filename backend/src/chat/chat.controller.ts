@@ -26,7 +26,7 @@ export class ChatController {
   @Delete('message/:id')
   async deleteMessage(
     @CurrentUser() user: any,
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
   ) {
     return this.chatService.removeMessage(BigInt(id), BigInt(user.id));
   }
