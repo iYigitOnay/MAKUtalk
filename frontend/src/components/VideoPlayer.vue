@@ -1,6 +1,6 @@
 <template>
-  <div 
-    class="relative group rounded-2xl overflow-hidden bg-gray-950 aspect-video flex items-center justify-center cursor-pointer select-none border border-white/5 shadow-2xl"
+  <div
+    class="relative group rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center cursor-pointer select-none border border-white/5 shadow-2xl"
     @mouseenter="showControlsTemporarily"
     @mousemove="showControlsTemporarily"
     @mouseleave="handleMouseLeave"
@@ -15,157 +15,178 @@
       @timeupdate="updateProgress"
       @loadedmetadata="onMetadataLoaded"
       @ended="isPlaying = false"
+      @enterpictureinpicture="isPiP = true"
+      @leavepictureinpicture="isPiP = false"
     >
       <source :src="getImageUrl(videoUrl)" type="video/mp4" />
     </video>
 
-    <!-- Professional Center Play Button -->
+    <!-- Top Settings Menu -->
     <transition name="fade">
-      <div 
-        v-if="!isPlaying"
-        class="absolute inset-0 flex items-center justify-center pointer-events-none"
-      >
-        <div class="w-16 h-16 flex items-center justify-center rounded-full bg-white/10 backdrop-blur-xl border border-white/20 text-white shadow-2xl">
-          <svg class="w-8 h-8 fill-current ml-1" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        </div>
-      </div>
-    </transition>
-
-    <!-- Top Settings Menu (Repositioned to Bottom-up) -->
-    <transition name="fade">
-      <div 
-        v-if="isSettingsOpen" 
+      <div
+        v-if="isSettingsOpen"
         ref="settingsRef"
-        class="absolute bottom-16 right-4 w-36 bg-gray-900/90 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 animate-in slide-in-from-bottom-2 duration-200"
+        class="absolute bottom-16 right-4 w-36 bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl overflow-hidden shadow-2xl z-50 animate-in slide-in-from-bottom-2 duration-200"
         @click.stop
       >
-        <div class="p-2 border-b border-white/5 text-[10px] font-black text-white/40 uppercase tracking-widest text-center">Video Ayarları</div>
-        
-        <!-- Speed Selection -->
-        <div class="p-2 text-[9px] font-bold text-white/30 uppercase tracking-wider ml-2">Oynatma Hızı</div>
+        <div
+          class="p-2 border-b border-white/5 text-[10px] font-black text-white/40 uppercase tracking-widest text-center"
+        >
+          Video Ayarları
+        </div>
+        <div
+          class="p-2 text-[9px] font-bold text-white/30 uppercase tracking-wider ml-2"
+        >
+          Oynatma Hızı
+        </div>
         <div class="grid grid-cols-2 gap-1 px-2 pb-2">
-          <button 
-            v-for="speed in [0.5, 1, 1.5, 2]" 
+          <button
+            v-for="speed in [0.5, 1, 1.5, 2]"
             :key="speed"
             @click="setPlaybackSpeed(speed)"
             class="px-2 py-1.5 text-[10px] font-black rounded-lg transition-all"
-            :class="playbackRate === speed ? 'bg-white text-black shadow-lg' : 'text-white/60 hover:bg-white/5'"
+            :class="
+              playbackRate === speed
+                ? 'bg-white text-black shadow-lg'
+                : 'text-white/60 hover:bg-white/5'
+            "
           >
-            {{ speed === 1 ? '1x' : speed + 'x' }}
+            {{ speed === 1 ? "1x" : speed + "x" }}
           </button>
         </div>
-
         <div class="h-px bg-white/5 mx-2"></div>
-
-        <!-- Download Action -->
-        <button 
+        <button
           @click="handleDownload"
           class="w-full px-4 py-3 text-[11px] font-black text-white/80 hover:bg-white/10 transition-colors flex items-center justify-center gap-2 group"
         >
-          <svg class="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1h16v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-          </svg>
-          İNDİR
+          <DownloadIcon
+            class="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform"
+          />
+          İndir
         </button>
       </div>
     </transition>
 
     <!-- Professional Control Bar -->
     <transition name="control-fade">
-      <div 
+      <div
         v-if="isControlsVisible || !isPlaying || isSettingsOpen"
-        class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/20 to-transparent pt-10"
+        class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/90 via-black/10 to-transparent pt-12"
         @click.stop
       >
-        <!-- Custom Progress Bar -->
-        <div 
-          class="relative w-full h-1.5 bg-white/10 rounded-full mb-4 cursor-pointer group/progress overflow-hidden"
+        <!-- Twitter Style Dynamic Progress Bar -->
+        <div
+          class="relative w-full mb-4 cursor-pointer group/progress flex items-center h-4"
           @mousedown="startDragging"
         >
-          <div 
-            class="absolute top-0 left-0 h-full bg-white transition-all duration-100"
-            :style="{ width: `${progress}%` }"
+          <div
+            class="relative w-full h-0.5 bg-white/20 rounded-full group-hover/progress:h-1.5 transition-all duration-200 overflow-hidden"
+          >
+            <div
+              class="absolute top-0 left-0 h-full bg-white"
+              :style="{ width: `${progress}%` }"
+            ></div>
+          </div>
+          <!-- Knob: Perfectly centered above the bar -->
+          <div
+            class="absolute w-3 h-3 bg-white rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-[0_0_10px_rgba(255,255,255,0.5)] z-10"
+            :style="{ left: `calc(${progress}% - 6px)` }"
           ></div>
         </div>
 
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
             <!-- Play/Pause -->
-            <button @click="togglePlay" class="text-white hover:scale-110 transition-transform">
-              <svg v-if="!isPlaying" class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z" />
-              </svg>
-              <svg v-else class="w-6 h-6 fill-current" viewBox="0 0 24 24">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-              </svg>
+            <button
+              @click="togglePlay"
+              class="text-white hover:opacity-80 transition-all active:scale-90"
+            >
+              <PlayIcon v-if="!isPlaying" class="w-6 h-6 fill-current" />
+              <PauseIcon v-else class="w-6 h-6 fill-current" />
             </button>
 
-            <!-- Volume Control (Pro Slider) -->
+            <!-- Volume Control -->
             <div class="flex items-center group/volume gap-3">
-              <button @click="toggleMute" class="text-white/80 hover:text-white transition-colors">
-                <svg v-if="volume === 0 || isMuted" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                </svg>
-                <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                </svg>
+              <button
+                @click="toggleMute"
+                class="text-white/80 hover:text-white transition-colors"
+              >
+                <VolumeXIcon v-if="volume === 0 || isMuted" class="w-5 h-5" />
+                <Volume2Icon v-else class="w-5 h-5" />
               </button>
-              
-              <div class="w-0 group-hover/volume:w-20 sm:group-hover/volume:w-24 transition-all duration-500 ease-out overflow-hidden flex items-center h-6">
-                <div class="relative w-full h-1 bg-white/20 rounded-full flex items-center">
-                  <input 
-                    type="range" min="0" max="1" step="0.05" 
+              <div
+                class="w-0 group-hover/volume:w-20 sm:group-hover/volume:w-24 transition-all duration-500 ease-out overflow-hidden flex items-center h-6"
+              >
+                <div
+                  class="relative w-full h-1 bg-white/20 rounded-full flex items-center"
+                >
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.05"
                     v-model="volume"
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     @input="onVolumeChange"
                   />
-                  <div class="h-full bg-white rounded-full" :style="{ width: `${volume * 100}%` }"></div>
-                  <div class="w-2.5 h-2.5 bg-white rounded-full shadow-lg -ml-1"></div>
+                  <div
+                    class="h-full bg-white rounded-full"
+                    :style="{ width: `${volume * 100}%` }"
+                  ></div>
+                  <div
+                    class="w-2.5 h-2.5 bg-white rounded-full shadow-lg -ml-1"
+                  ></div>
                 </div>
               </div>
             </div>
 
             <!-- Time Display -->
-            <div class="text-[10px] font-black text-white/60 tracking-widest tabular-nums uppercase">
-              {{ formatTime(currentTime) }} <span class="mx-1 opacity-30">/</span> {{ formatTime(duration) }}
+            <div
+              class="text-[10px] font-black text-white/60 tracking-widest tabular-nums uppercase"
+            >
+              {{ formatTime(currentTime) }}
+              <span class="mx-1 opacity-30">/</span> {{ formatTime(duration) }}
             </div>
           </div>
 
-          <div class="flex items-center gap-3">
-            <!-- Settings Toggle -->
-            <button 
-              ref="settingsBtnRef"
-              @click="isSettingsOpen = !isSettingsOpen" 
-              class="p-2 text-white/70 hover:text-white transition-all"
-              :class="{ 'rotate-45 text-blue-400': isSettingsOpen }"
+          <!-- Right Side Controls -->
+          <div class="flex items-center gap-1 sm:gap-2">
+            <!-- Picture-in-Picture -->
+            <button
+              v-if="supportsPiP"
+              @click="togglePiP"
+              class="p-2 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95"
+              title="Pencere Ä°Ã§inde Oynat"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
+              <PiPIcon class="w-5 h-5" />
             </button>
 
-            <!-- Fullscreen Icon Only -->
-            <button 
-              @click="openFullscreen" 
-              class="p-2 text-white/70 hover:text-white transition-all hover:scale-110"
+            <!-- Settings -->
+            <button
+              ref="settingsBtnRef"
+              @click="isSettingsOpen = !isSettingsOpen"
+              class="p-2 text-white/70 hover:text-white transition-all active:scale-90"
+              :class="{ 'rotate-45 text-blue-400': isSettingsOpen }"
             >
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-              </svg>
+              <SettingsIcon class="w-5 h-5" />
+            </button>
+
+            <!-- Fullscreen -->
+            <button
+              @click="openFullscreen"
+              class="p-2 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95"
+            >
+              <FullscreenIcon class="w-5 h-5" />
             </button>
           </div>
         </div>
       </div>
     </transition>
 
-    <VideoModal 
-      :is-open="isModalOpen" 
-      :video-url="videoUrl" 
-      :thumbnail-url="thumbnailUrl" 
+    <VideoModal
+      :is-open="isModalOpen"
+      :video-url="videoUrl"
+      :thumbnail-url="thumbnailUrl"
       :initial-time="currentTime"
       @close="onModalClose"
     />
@@ -173,9 +194,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, watch } from 'vue';
-import VideoModal from './VideoModal.vue';
-import { useVideoStore } from '@/stores/video';
+import { ref, onMounted, onUnmounted, watch } from "vue";
+import VideoModal from "./VideoModal.vue";
+import { useVideoStore } from "@/stores/video";
+import {
+  Play as PlayIcon,
+  Pause as PauseIcon,
+  Volume2 as Volume2Icon,
+  VolumeX as VolumeXIcon,
+  Settings as SettingsIcon,
+  Maximize as FullscreenIcon,
+  PictureInPicture2 as PiPIcon,
+  Download as DownloadIcon,
+} from "lucide-vue-next";
 
 const props = defineProps<{
   videoUrl: string;
@@ -190,21 +221,26 @@ const volume = ref(0.7);
 const isControlsVisible = ref(false);
 const isModalOpen = ref(false);
 const isSettingsOpen = ref(false);
+const isPiP = ref(false);
+const supportsPiP = ref(false);
 const settingsRef = ref<HTMLElement | null>(null);
 const settingsBtnRef = ref<HTMLElement | null>(null);
 
-// Global kontrol: BaÅŸka bir video oynamaya baÅŸlarsa durdur
-watch(() => videoStore.currentlyPlayingId, (newId) => {
-  if (newId !== props.videoUrl && isPlaying.value) {
-    pauseVideo();
-  }
-});
+// Global sync: Stop if another video starts
+watch(
+  () => videoStore.currentlyPlayingId,
+  (newId) => {
+    if (newId !== props.videoUrl && isPlaying.value) {
+      pauseVideo();
+    }
+  },
+);
 
 // Click Outside Logic
 const handleClickOutside = (event: MouseEvent) => {
   if (
-    isSettingsOpen.value && 
-    settingsRef.value && 
+    isSettingsOpen.value &&
+    settingsRef.value &&
     !settingsRef.value.contains(event.target as Node) &&
     settingsBtnRef.value &&
     !settingsBtnRef.value.contains(event.target as Node)
@@ -214,11 +250,12 @@ const handleClickOutside = (event: MouseEvent) => {
 };
 
 onMounted(() => {
-  window.addEventListener('click', handleClickOutside);
+  window.addEventListener("click", handleClickOutside);
+  supportsPiP.value = !!document.pictureInPictureEnabled;
 });
 
 onUnmounted(() => {
-  window.removeEventListener('click', handleClickOutside);
+  window.removeEventListener("click", handleClickOutside);
 });
 
 const playbackRate = ref(1);
@@ -237,11 +274,7 @@ const getImageUrl = (path: string | undefined) => {
 
 const togglePlay = () => {
   if (!videoRef.value) return;
-  if (isPlaying.value) {
-    pauseVideo();
-  } else {
-    playVideo();
-  }
+  isPlaying.value ? pauseVideo() : playVideo();
   showControlsTemporarily();
 };
 
@@ -272,6 +305,19 @@ const onVolumeChange = () => {
   videoRef.value.muted = isMuted.value;
 };
 
+const togglePiP = async () => {
+  if (!videoRef.value) return;
+  try {
+    if (document.pictureInPictureElement) {
+      await document.exitPictureInPicture();
+    } else {
+      await videoRef.value.requestPictureInPicture();
+    }
+  } catch (error) {
+    console.error("PiP HatasÄ±:", error);
+  }
+};
+
 const setPlaybackSpeed = (speed: number) => {
   if (!videoRef.value) return;
   playbackRate.value = speed;
@@ -296,7 +342,7 @@ const formatTime = (seconds: number) => {
   if (!seconds) return "0:00";
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
+  return `${mins}:${secs.toString().padStart(2, "0")}`;
 };
 
 const showControlsTemporarily = () => {
@@ -325,7 +371,7 @@ const openFullscreen = () => {
 
 const handleDownload = () => {
   const url = getImageUrl(props.videoUrl);
-  const link = document.createElement('a');
+  const link = document.createElement("a");
   link.href = url;
   link.target = "_blank";
   link.download = `makutalk-video-${Date.now()}.mp4`;
@@ -344,8 +390,8 @@ const onModalClose = (timeAtClose: number) => {
 
 const startDragging = (e: MouseEvent) => {
   const bar = e.currentTarget as HTMLElement;
+  const rect = bar.getBoundingClientRect();
   const update = (moveEvent: MouseEvent) => {
-    const rect = bar.getBoundingClientRect();
     const pos = (moveEvent.clientX - rect.left) / rect.width;
     const clampedPos = Math.max(0, Math.min(1, pos));
     if (videoRef.value) {
@@ -353,11 +399,11 @@ const startDragging = (e: MouseEvent) => {
     }
   };
   const stop = () => {
-    window.removeEventListener('mousemove', update);
-    window.removeEventListener('mouseup', stop);
+    window.removeEventListener("mousemove", update);
+    window.removeEventListener("mouseup", stop);
   };
-  window.addEventListener('mousemove', update);
-  window.addEventListener('mouseup', stop);
+  window.addEventListener("mousemove", update);
+  window.addEventListener("mouseup", stop);
   update(e);
 };
 </script>
@@ -373,10 +419,21 @@ const startDragging = (e: MouseEvent) => {
   transform: translateY(15px);
 }
 
-.fade-enter-active, .fade-leave-active {
+.fade-enter-active,
+.fade-leave-active {
   transition: opacity 0.3s ease;
 }
-.fade-enter-from, .fade-leave-to {
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
+}
+
+/* Range input removal of native appearance for volume */
+input[type="range"] {
+  -webkit-appearance: none;
+  background: transparent;
+}
+input[type="range"]:focus {
+  outline: none;
 }
 </style>
