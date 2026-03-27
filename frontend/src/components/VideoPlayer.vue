@@ -1,6 +1,16 @@
 <template>
   <div
-    class="relative group rounded-2xl overflow-hidden bg-black aspect-video flex items-center justify-center cursor-pointer select-none border border-white/5 shadow-2xl"
+    class="relative group rounded-2xl overflow-hidden bg-black flex items-center justify-center cursor-pointer select-none border border-white/5 shadow-2xl mx-auto"
+    :style="
+      videoRatio
+        ? {
+            aspectRatio: videoRatio,
+            maxHeight: '720px',
+            width: videoRatio > 1 ? '100%' : 'auto',
+            maxWidth: '100%',
+          }
+        : { maxHeight: '720px', width: '100%', aspectRatio: '16/9' }
+    "
     @mouseenter="showControlsTemporarily"
     @mousemove="showControlsTemporarily"
     @mouseleave="handleMouseLeave"
@@ -8,8 +18,8 @@
     <!-- Video Element -->
     <video
       ref="videoRef"
-      class="w-full h-full object-contain"
-      :poster="thumbnailUrl ? getImageUrl(thumbnailUrl) : ''"
+      class="w-full h-full object-contain block"
+      preload="metadata"
       playsinline
       @click.stop="togglePlay"
       @timeupdate="updateProgress"
@@ -87,7 +97,6 @@
               :style="{ width: `${progress}%` }"
             ></div>
           </div>
-          <!-- Knob: Perfectly centered above the bar -->
           <div
             class="absolute w-3 h-3 bg-white rounded-full opacity-0 group-hover/progress:opacity-100 transition-opacity shadow-[0_0_10px_rgba(255,255,255,0.5)] z-10"
             :style="{ left: `calc(${progress}% - 6px)` }"
@@ -96,7 +105,6 @@
 
         <div class="flex items-center justify-between">
           <div class="flex items-center gap-4">
-            <!-- Play/Pause -->
             <button
               @click="togglePlay"
               class="text-white hover:opacity-80 transition-all active:scale-90"
@@ -105,7 +113,6 @@
               <PauseIcon v-else class="w-6 h-6 fill-current" />
             </button>
 
-            <!-- Volume Control -->
             <div class="flex items-center group/volume gap-3">
               <button
                 @click="toggleMute"
@@ -140,7 +147,6 @@
               </div>
             </div>
 
-            <!-- Time Display -->
             <div
               class="text-[10px] font-black text-white/60 tracking-widest tabular-nums uppercase"
             >
@@ -149,19 +155,15 @@
             </div>
           </div>
 
-          <!-- Right Side Controls -->
           <div class="flex items-center gap-1 sm:gap-2">
-            <!-- Picture-in-Picture -->
             <button
               v-if="supportsPiP"
               @click="togglePiP"
               class="p-2 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95"
-              title="Pencere Ä°Ã§inde Oynat"
+              title="Pencere İçinde Oynat"
             >
               <PiPIcon class="w-5 h-5" />
             </button>
-
-            <!-- Settings -->
             <button
               ref="settingsBtnRef"
               @click="isSettingsOpen = !isSettingsOpen"
@@ -170,8 +172,6 @@
             >
               <SettingsIcon class="w-5 h-5" />
             </button>
-
-            <!-- Fullscreen -->
             <button
               @click="openFullscreen"
               class="p-2 text-white/70 hover:text-white transition-all hover:scale-110 active:scale-95"
@@ -223,10 +223,11 @@ const isModalOpen = ref(false);
 const isSettingsOpen = ref(false);
 const isPiP = ref(false);
 const supportsPiP = ref(false);
+const videoRatio = ref<number | null>(null);
 const settingsRef = ref<HTMLElement | null>(null);
 const settingsBtnRef = ref<HTMLElement | null>(null);
 
-// Global sync: Stop if another video starts
+// Global sync
 watch(
   () => videoStore.currentlyPlayingId,
   (newId) => {
@@ -236,7 +237,6 @@ watch(
   },
 );
 
-// Click Outside Logic
 const handleClickOutside = (event: MouseEvent) => {
   if (
     isSettingsOpen.value &&
@@ -314,7 +314,7 @@ const togglePiP = async () => {
       await videoRef.value.requestPictureInPicture();
     }
   } catch (error) {
-    console.error("PiP HatasÄ±:", error);
+    console.error("PiP Hatası:", error);
   }
 };
 
@@ -335,6 +335,9 @@ const onMetadataLoaded = () => {
   if (videoRef.value) {
     duration.value = videoRef.value.duration;
     videoRef.value.volume = volume.value;
+    if (videoRef.value.videoWidth && videoRef.value.videoHeight) {
+      videoRatio.value = videoRef.value.videoWidth / videoRef.value.videoHeight;
+    }
   }
 };
 
@@ -418,7 +421,6 @@ const startDragging = (e: MouseEvent) => {
   opacity: 0;
   transform: translateY(15px);
 }
-
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
@@ -427,8 +429,6 @@ const startDragging = (e: MouseEvent) => {
 .fade-leave-to {
   opacity: 0;
 }
-
-/* Range input removal of native appearance for volume */
 input[type="range"] {
   -webkit-appearance: none;
   background: transparent;
