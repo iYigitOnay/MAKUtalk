@@ -11,8 +11,10 @@ export interface User {
   role: 'USER' | 'ADMIN' | 'ACADEMIC';
   isBanned: boolean;
   isPrivate: boolean;
-  createdAt: string;
-  updatedAt: string;
+  isFollowing?: boolean;
+  followStatus?: 'FOLLOWING' | 'PENDING' | 'NONE';
+  isBlocked?: boolean;
+  createdAt: string;  updatedAt: string;
   _count?: {
     posts: number;
     followers: number;

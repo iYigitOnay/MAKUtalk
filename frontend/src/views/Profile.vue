@@ -145,12 +145,20 @@
                 :disabled="followLoading"
                 class="px-5 py-2 sm:py-2.5 rounded-full font-black text-xs sm:text-sm transition-all shadow-sm active:scale-95 disabled:opacity-50"
                 :class="[
-                  isFollowing
-                    ? 'bg-slate-100 dark:bg-gray-800 text-slate-900 dark:text-white'
-                    : 'bg-blue-600 text-white shadow-blue-500/20',
+                  displayedUser.followStatus === 'FOLLOWING'
+                    ? 'bg-slate-100 dark:bg-gray-800 text-slate-900 dark:text-white border border-slate-200 dark:border-white/10'
+                    : displayedUser.followStatus === 'PENDING'
+                      ? 'bg-slate-50 dark:bg-gray-900/50 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-gray-800'
+                      : 'bg-blue-600 text-white shadow-blue-500/20',
                 ]"
               >
-                {{ isFollowing ? "Takipten Çık" : "Takip Et" }}
+                {{ 
+                  displayedUser.followStatus === 'FOLLOWING' 
+                    ? 'Takipten Çık' 
+                    : displayedUser.followStatus === 'PENDING' 
+                      ? 'İstek Gönderildi' 
+                      : 'Takip Et' 
+                }}
               </button>
               <button
                 @click="handleMessageUser"
@@ -774,12 +782,22 @@ const openFollowModal = (type: "followers" | "following") => {
 const fetchProfile = async () => {
   const username = (route.params.id as string) || authStore.user?.username;
   if (!username) return;
+
+  // F5 anında authStore'un localStorage'dan yüklenmesini bekle (çok kısa bir süre)
+  if (!authStore.user && localStorage.getItem("access_token")) {
+    let retryCount = 0;
+    while (!authStore.user && retryCount < 10) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+      retryCount++;
+    }
+  }
+
   profileStore.clearProfile();
   error.value = "";
   try {
-    await profileStore.fetchProfileByUsername(username);
-    if (displayedUser.value && canViewContent.value) {
-      await profileStore.fetchProfileContent(displayedUser.value.id);
+    const fetchedUser = await profileStore.fetchProfileByUsername(username);
+    if (fetchedUser && canViewContent.value) {
+      await profileStore.fetchProfileContent(fetchedUser.id);
     }
     if (authStore.user?.role === "ADMIN") {
       allBadges.value = await profileStore.fetchAllBadges();
@@ -795,12 +813,9 @@ const handleFollowToggle = async () => {
   try {
     const res = await followStore.toggleFollow(displayedUser.value.id);
     profileStore.updateFollowStateLocally(
-      res.status === "FOLLOWING",
+      res.status,
       displayedUser.value.isPrivate,
     );
-    if (profileStore.profileUser) {
-      profileStore.profileUser.isFollowing = res.status === "FOLLOWING";
-    }
     toast.success(res.message);
   } finally {
     followLoading.value = false;

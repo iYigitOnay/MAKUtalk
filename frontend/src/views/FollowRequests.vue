@@ -64,17 +64,7 @@
             :to="`/profile/${request.sender.username}`"
             class="relative flex-shrink-0"
           >
-            <img
-              v-if="request.sender.avatarUrl"
-              :src="request.sender.avatarUrl"
-              class="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-900"
-            />
-            <div
-              v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black border-2 border-white dark:border-gray-900"
-            >
-              {{ request.sender.username.charAt(0).toUpperCase() }}
-            </div>
+            <UserAvatar :user="request.sender" size="lg" />
           </router-link>
           <div class="min-w-0">
             <router-link
@@ -118,6 +108,7 @@
 import { onMounted } from "vue";
 import { useFollowStore } from "@/stores/follow";
 import { useToast } from "vue-toastification";
+import UserAvatar from "@/components/UserAvatar.vue";
 
 const followStore = useFollowStore();
 const toast = useToast();

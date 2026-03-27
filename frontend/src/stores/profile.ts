@@ -66,22 +66,31 @@ export const useProfileStore = defineStore("profile", () => {
   };
 
   // Takip Etme / Takipten Çıkma anında lokal state güncellemesi
-  const updateFollowStateLocally = (isFollowingNow: boolean, isPrivate: boolean) => {
+  const updateFollowStateLocally = (status: 'FOLLOWING' | 'PENDING' | 'NONE', isPrivate: boolean) => {
     if (!profileUser.value) return;
-    
+
+    const oldStatus = profileUser.value.followStatus || (profileUser.value.isFollowing ? 'FOLLOWING' : 'NONE');
+
+    // Takipçi sayısını sadece GERÇEK takip gerçekleştiğinde (FOLLOWING) güncelle
     if (profileUser.value._count) {
-       profileUser.value._count.followers += isFollowingNow ? 1 : -1;
-       profileUser.value._count.followers = Math.max(0, profileUser.value._count.followers);
+      if (status === 'FOLLOWING' && oldStatus !== 'FOLLOWING') {
+        profileUser.value._count.followers++;
+      } else if (status !== 'FOLLOWING' && oldStatus === 'FOLLOWING') {
+        profileUser.value._count.followers--;
+      }
+      profileUser.value._count.followers = Math.max(0, profileUser.value._count.followers);
     }
-    
-    if (!isFollowingNow && isPrivate) {
+
+    profileUser.value.followStatus = status;
+    profileUser.value.isFollowing = (status === 'FOLLOWING');
+
+    if (status !== 'FOLLOWING' && isPrivate) {
        userPosts.value = [];
        userReplies.value = [];
        userReposts.value = [];
        userLikedPosts.value = [];
     }
   };
-
   // ADMIN & PROFILE ACTIONS
   const blockUser = async (userId: string) => {
     const res = await apiClient.post(`/users/${userId}/block`);

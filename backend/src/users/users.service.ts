@@ -110,22 +110,34 @@ export class UsersService {
 
     if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
 
+    let followStatus: 'FOLLOWING' | 'PENDING' | 'NONE' = 'NONE';
     let isFollowing = false;
     let isBlocked = false;
 
     if (currentUserId) {
-      const follow = await this.prisma.follow.findFirst({
-        where: { followerId: currentUserId, followingId: user.id },
-      });
-      isFollowing = !!follow;
+      const [follow, request, block] = await Promise.all([
+        this.prisma.follow.findFirst({
+          where: { followerId: currentUserId, followingId: user.id },
+        }),
+        this.prisma.followRequest.findFirst({
+          where: { senderId: currentUserId, receiverId: user.id },
+        }),
+        this.prisma.block.findFirst({
+          where: { blockerId: currentUserId, blockedId: user.id },
+        }),
+      ]);
 
-      const block = await this.prisma.block.findFirst({
-        where: { blockerId: currentUserId, blockedId: user.id },
-      });
+      if (follow) {
+        followStatus = 'FOLLOWING';
+        isFollowing = true;
+      } else if (request) {
+        followStatus = 'PENDING';
+      }
+
       isBlocked = !!block;
     }
 
-    return { ...user, isFollowing, isBlocked };
+    return { ...user, isFollowing, followStatus, isBlocked };
   }
 
   async findById(id: bigint) {
