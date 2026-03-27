@@ -173,14 +173,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import VideoModal from './VideoModal.vue';
+import { useVideoStore } from '@/stores/video';
 
 const props = defineProps<{
   videoUrl: string;
   thumbnailUrl?: string;
 }>();
 
+const videoStore = useVideoStore();
 const videoRef = ref<HTMLVideoElement | null>(null);
 const isPlaying = ref(false);
 const isMuted = ref(false);
@@ -190,6 +192,13 @@ const isModalOpen = ref(false);
 const isSettingsOpen = ref(false);
 const settingsRef = ref<HTMLElement | null>(null);
 const settingsBtnRef = ref<HTMLElement | null>(null);
+
+// Global kontrol: BaÅŸka bir video oynamaya baÅŸlarsa durdur
+watch(() => videoStore.currentlyPlayingId, (newId) => {
+  if (newId !== props.videoUrl && isPlaying.value) {
+    pauseVideo();
+  }
+});
 
 // Click Outside Logic
 const handleClickOutside = (event: MouseEvent) => {
@@ -228,9 +237,25 @@ const getImageUrl = (path: string | undefined) => {
 
 const togglePlay = () => {
   if (!videoRef.value) return;
-  isPlaying.value ? videoRef.value.pause() : videoRef.value.play();
-  isPlaying.value = !isPlaying.value;
+  if (isPlaying.value) {
+    pauseVideo();
+  } else {
+    playVideo();
+  }
   showControlsTemporarily();
+};
+
+const playVideo = () => {
+  if (!videoRef.value) return;
+  videoRef.value.play();
+  isPlaying.value = true;
+  videoStore.setCurrentlyPlaying(props.videoUrl);
+};
+
+const pauseVideo = () => {
+  if (!videoRef.value) return;
+  videoRef.value.pause();
+  isPlaying.value = false;
 };
 
 const toggleMute = () => {
