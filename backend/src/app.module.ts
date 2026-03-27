@@ -25,6 +25,7 @@ import { SpotModule } from './spot/spot.module';
 import { EventsModule } from './events/events.module';
 import { LoggerModule } from './common/logger/logger.module';
 import { SnowflakeModule } from './common/snowflake/snowflake.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SnowflakeModule } from './common/snowflake/snowflake.module';
     }),
     LoggerModule,
     SnowflakeModule,
+    CommonModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',

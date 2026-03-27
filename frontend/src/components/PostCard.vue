@@ -126,6 +126,14 @@
             <img :src="getImageUrl(displayPost.imageUrl)" class="w-full h-auto max-h-[512px] object-cover" loading="lazy" />
           </div>
 
+          <!-- Video Attachment -->
+          <div v-if="displayPost.videoUrl" class="mb-3" @click.stop>
+            <VideoPlayer 
+              :video-url="displayPost.videoUrl" 
+              :thumbnail-url="displayPost.thumbnailUrl" 
+            />
+          </div>
+
           <!-- Document Attachment (Academic) -->
           <div v-if="displayPost.documentUrl" class="mb-3">
             <a 
@@ -212,6 +220,7 @@ import { useLikesStore } from "@/stores/likes";
 import { usePostsStore } from "@/stores/posts";
 import { useToast } from "vue-toastification";
 import HashtagText from "./HashtagText.vue";
+import VideoPlayer from "./VideoPlayer.vue";
 import type { Post } from "@/types";
 import * as LucideIcons from "lucide-vue-next";
 

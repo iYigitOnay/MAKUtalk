@@ -27,13 +27,18 @@ export class PostsController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileFieldsInterceptor([
     { name: 'image', maxCount: 1 },
-    { name: 'document', maxCount: 1 }
+    { name: 'document', maxCount: 1 },
+    { name: 'video', maxCount: 1 }
   ]))
   @Throttle({ medium: { limit: 2, ttl: 60000 } })
   create(
     @CurrentUser() user,
     @Body() createPostDto: CreatePostDto,
-    @UploadedFiles() files?: { image?: Express.Multer.File[], document?: Express.Multer.File[] },
+    @UploadedFiles() files?: { 
+      image?: Express.Multer.File[], 
+      document?: Express.Multer.File[],
+      video?: Express.Multer.File[] 
+    },
   ) {
     return this.postsService.create(BigInt(user.id), createPostDto, files);
   }

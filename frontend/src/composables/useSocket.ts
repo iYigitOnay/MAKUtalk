@@ -160,12 +160,12 @@ export function useSocket() {
     }
   };
 
-  const sendMessage = (conversationId: string, content: string, receiverId: string, postId?: string, isForwarded: boolean = false, mediaUrl?: string, mediaType?: string) => {
+  const sendMessage = (conversationId: string, content: string, receiverId: string, postId?: string, isForwarded: boolean = false, mediaUrl?: string, mediaType?: string, thumbnailUrl?: string) => {
     if (!socket?.connected) {
       console.error("❌ Mesaj gönderilemedi: Soket bağlı değil.");
       return;
     }
-    socket.emit("send_message", { conversationId, content, receiverId, postId, isForwarded, mediaUrl, mediaType });
+    socket.emit("send_message", { conversationId, content, receiverId, postId, isForwarded, mediaUrl, mediaType, thumbnailUrl });
   };
 
   const sendTyping = (conversationId: string, receiverId: string, isTyping: boolean) => {

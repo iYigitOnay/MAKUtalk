@@ -240,6 +240,33 @@
             </button>
           </div>
 
+          <!-- Video Preview -->
+          <div v-if="selectedVideoPreview" class="relative mt-4 group">
+            <video
+              :src="selectedVideoPreview"
+              class="w-full max-h-80 object-cover rounded-2xl border border-gray-100 dark:border-primary-900/20 shadow-sm"
+              controls
+            />
+            <button
+              @click="removeSelectedVideo"
+              class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
           <div
             v-if="selectedDocument"
             class="relative mt-4 p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-between"
@@ -400,6 +427,33 @@
                     stroke-linejoin="round"
                     stroke-width="2"
                     d="M4 16l4.586-4.414a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
+                </svg>
+              </button>
+
+              <input
+                type="file"
+                ref="videoInputRef"
+                class="hidden"
+                accept="video/*"
+                @change="handleVideoSelect"
+              />
+              <button
+                @click="videoInputRef?.click()"
+                class="p-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
+                title="Video Ekle"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                   />
                 </svg>
               </button>
@@ -650,7 +704,10 @@ const newPostContent = ref("");
 const selectedCategoryId = ref<number | null>(null);
 const selectedImage = ref<File | null>(null);
 const selectedImagePreview = ref<string | null>(null);
+const selectedVideo = ref<File | null>(null);
+const selectedVideoPreview = ref<string | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
+const videoInputRef = ref<HTMLInputElement | null>(null);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
 
 const activeFeedTab = computed({
@@ -851,6 +908,9 @@ const selectCategory = (id: number | null) => {
 const handleImageSelect = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (file) {
+    // Diğer medyaları temizle
+    removeSelectedVideo();
+    removeSelectedDocument();
     selectedImage.value = file;
     selectedImagePreview.value = URL.createObjectURL(file);
   }
@@ -861,10 +921,33 @@ const removeSelectedImage = () => {
   selectedImagePreview.value = null;
   if (imageInputRef.value) imageInputRef.value.value = "";
 };
+
+const handleVideoSelect = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (file) {
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("Video boyutu 25MB'dan büyük olamaz.");
+      return;
+    }
+    // Diğer medyaları temizle
+    removeSelectedImage();
+    removeSelectedDocument();
+    selectedVideo.value = file;
+    selectedVideoPreview.value = URL.createObjectURL(file);
+  }
+};
+
+const removeSelectedVideo = () => {
+  selectedVideo.value = null;
+  selectedVideoPreview.value = null;
+  if (videoInputRef.value) videoInputRef.value.value = "";
+};
+
 const handleCreatePost = async () => {
   if (
     !newPostContent.value.trim() &&
     !selectedImage.value &&
+    !selectedVideo.value &&
     !selectedDocument.value
   )
     return;
@@ -880,11 +963,13 @@ const handleCreatePost = async () => {
       undefined, // parentId
       isAcademicPost,
       selectedDocument.value || undefined,
+      selectedVideo.value || undefined,
     );
 
     newPostContent.value = "";
     selectedCategoryId.value = null;
     removeSelectedImage();
+    removeSelectedVideo();
     removeSelectedDocument();
     nextTick(adjustTextareaHeight);
     toast.success("Paylaşıldı!");

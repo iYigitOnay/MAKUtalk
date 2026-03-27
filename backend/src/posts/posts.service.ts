@@ -20,6 +20,7 @@ import {
 } from '../notifications/notifications.service';
 import { ChatGateway } from '../chat/chat.gateway';
 import { SnowflakeService } from '../common/snowflake/snowflake.service';
+import { MediaProcessingService } from '../common/utils/media-processing.service';
 
 @Injectable()
 export class PostsService {
@@ -30,12 +31,17 @@ export class PostsService {
     private notificationsService: NotificationsService,
     private chatGateway: ChatGateway,
     private snowflakeService: SnowflakeService,
+    private mediaProcessingService: MediaProcessingService,
   ) {}
 
   async create(
     userId: bigint,
     createPostDto: CreatePostDto,
-    files?: { image?: Express.Multer.File[]; document?: Express.Multer.File[] },
+    files?: { 
+      image?: Express.Multer.File[]; 
+      document?: Express.Multer.File[];
+      video?: Express.Multer.File[];
+    },
   ) {
     const { cleanText, count } = censorContent(createPostDto.content || '');
     if (count > 0) {
@@ -76,6 +82,8 @@ export class PostsService {
 
     let imageUrl: string | null = null;
     let documentUrl: string | null = null;
+    let videoUrl: string | null = null;
+    let thumbnailUrl: string | null = null;
 
     if (files?.image?.[0]) {
       const uploadDir = path.join(process.cwd(), 'uploads', 'posts');
@@ -97,6 +105,33 @@ export class PostsService {
           error.stack,
           'PostsService',
         );
+      }
+    }
+
+    if (files?.video?.[0]) {
+      const uploadDir = path.join(process.cwd(), 'uploads', 'posts');
+      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+
+      const fileName = `post-video-${Date.now()}-${files.video[0].originalname.replace(/\s+/g, '_')}`;
+      const tempPath = path.join(uploadDir, `temp-${fileName}`);
+      
+      try {
+        // 1. Videoyu geçici olarak kaydet
+        fs.writeFileSync(tempPath, files.video[0].buffer);
+
+        // 2. Sıkıştır
+        const compressedPath = await this.mediaProcessingService.compressVideo(tempPath, fileName);
+        videoUrl = `/uploads/chat/${path.basename(compressedPath)}`; // MediaProcessingService 'uploads/chat' kullanıyor
+
+        // 3. Thumbnail üret
+        const thumbPath = await this.mediaProcessingService.generateThumbnail(compressedPath, fileName);
+        thumbnailUrl = `/uploads/covers/${path.basename(thumbPath)}`;
+
+        // 4. Geçici dosyayı sil
+        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
+      } catch (error) {
+        this.myLogger.error(`Video işleme hatası: ${error.message}`, error.stack, 'PostsService');
+        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
       }
     }
 
@@ -150,6 +185,8 @@ export class PostsService {
         id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
         content: cleanText,
         imageUrl: imageUrl,
+        videoUrl: videoUrl,
+        thumbnailUrl: thumbnailUrl,
         documentUrl: documentUrl,
         isAcademic: isAcademic,
         published: createPostDto.published ?? true,

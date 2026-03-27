@@ -241,6 +241,14 @@
           />
         </div>
 
+        <!-- Video Attachment -->
+        <div v-if="post.videoUrl" class="mb-4">
+          <VideoPlayer 
+            :video-url="post.videoUrl" 
+            :thumbnail-url="post.thumbnailUrl" 
+          />
+        </div>
+
         <!-- Document Attachment (Academic) -->
         <div v-if="post.documentUrl" class="mb-4">
           <a
@@ -691,6 +699,7 @@ import apiClient from "@/api/client";
 import { useToast } from "vue-toastification";
 import PostCard from "@/components/PostCard.vue";
 import HashtagText from "@/components/HashtagText.vue";
+import VideoPlayer from "@/components/VideoPlayer.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
 import type { Post } from "@/types";

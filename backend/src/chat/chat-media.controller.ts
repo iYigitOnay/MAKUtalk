@@ -10,13 +10,17 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { diskStorage } from 'multer';
-import { extname } from 'path';
+import { extname, join, basename } from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { MediaProcessingService } from '../common/utils/media-processing.service';
+import * as fs from 'fs';
 
 @Controller('chat/media')
 @UseGuards(JwtAuthGuard)
 export class ChatMediaController {
   private readonly logger = new Logger(ChatMediaController.name);
+
+  constructor(private readonly mediaProcessingService: MediaProcessingService) {}
 
   @Post('upload')
   @UseInterceptors(
@@ -33,7 +37,7 @@ export class ChatMediaController {
         },
       }),
       limits: {
-        fileSize: 20 * 1024 * 1024, // 20MB
+        fileSize: 25 * 1024 * 1024, // 25MB
       },
       fileFilter: (req, file, cb) => {
         const allowedMimeTypes = [
@@ -57,26 +61,49 @@ export class ChatMediaController {
       },
     }),
   )
-  uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
     if (!file) {
       this.logger.error('Dosya yükleme başarısız: uploadedFile undefined');
       throw new BadRequestException('Dosya bulunamadı.');
     }
 
     let mediaType = 'FILE';
+    let thumbnailUrl: string | null = null;
+    let finalUrl = `/uploads/chat/${file.filename}`;
+
     if (file.mimetype.startsWith('image/')) {
       mediaType = 'IMAGE';
     } else if (file.mimetype.startsWith('video/')) {
       mediaType = 'VIDEO';
+      const inputPath = file.path;
+      const fileName = file.filename;
+
+      try {
+        // 1. Videoyu sıkıştır
+        const compressedPath = await this.mediaProcessingService.compressVideo(inputPath, fileName);
+        finalUrl = `/uploads/chat/${basename(compressedPath)}`;
+
+        // 2. Thumbnail üret
+        const thumbPath = await this.mediaProcessingService.generateThumbnail(compressedPath, fileName);
+        thumbnailUrl = `/uploads/covers/${basename(thumbPath)}`;
+
+        // 3. Ham (sıkıştırılmamış) videoyu sil
+        if (fs.existsSync(inputPath)) fs.unlinkSync(inputPath);
+      } catch (error) {
+        this.logger.error(`Video işleme hatası: ${error.message}`);
+        // Hata durumunda ham videoyu URL olarak kullanmaya devam et (thumbnail olmayabilir)
+      }
     }
 
-    this.logger.log(`Dosya yüklendi: ${file.filename} (${mediaType})`);
+    this.logger.log(`Dosya işlendi: ${basename(finalUrl)} (${mediaType})`);
 
     return {
-      url: `/uploads/chat/${file.filename}`,
+      url: finalUrl,
+      thumbnailUrl: thumbnailUrl,
       type: mediaType,
       originalName: file.originalname,
       size: file.size,
     };
   }
 }
+

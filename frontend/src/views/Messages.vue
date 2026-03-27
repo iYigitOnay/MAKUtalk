@@ -111,7 +111,7 @@
                 <!-- MEDYA -->
                 <div v-if="msg.mediaUrl" class="mb-2 rounded-xl overflow-hidden bg-black/5 dark:bg-white/5 border border-white/10 min-h-[100px] flex items-center justify-center transform-gpu">
                   <img v-if="msg.mediaType === 'IMAGE'" :src="getImageUrl(msg.mediaUrl)" class="w-full h-auto max-h-64 object-cover cursor-pointer hover:scale-[1.02] active:scale-95 transition-transform duration-200" @click="openImage(msg.mediaUrl)" />
-                  <video v-else-if="msg.mediaType === 'VIDEO'" :src="getImageUrl(msg.mediaUrl)" controls class="w-full h-auto max-h-64"></video>
+                  <VideoPlayer v-else-if="msg.mediaType === 'VIDEO'" :video-url="msg.mediaUrl" :thumbnail-url="msg.thumbnailUrl" />
                   <a v-else :href="getImageUrl(msg.mediaUrl)" target="_blank" download class="flex items-center gap-3 p-3 text-white">
                     <div class="p-2 bg-white/20 rounded-lg"><svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" stroke-width="2"/></svg></div>
                     <span class="text-xs font-bold truncate">Dosya</span>
@@ -226,6 +226,7 @@ import EmojiPicker from "@/components/EmojiPicker.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import SharedPostCard from "@/components/SharedPostCard.vue";
 import ForwardModal from "@/components/ForwardModal.vue";
+import VideoPlayer from "@/components/VideoPlayer.vue";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
@@ -415,6 +416,7 @@ const handleSendMessage = async (customText?: string) => {
   if (!text.trim() && !selectedFile.value) return;
   let mediaUrl = undefined;
   let mediaType = undefined;
+  let thumbnailUrl = undefined;
   if (selectedFile.value) {
     isUploading.value = true;
     try {
@@ -423,6 +425,7 @@ const handleSendMessage = async (customText?: string) => {
       const res = await apiClient.post('/chat/media/upload', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       mediaUrl = res.data.url;
       mediaType = res.data.type;
+      thumbnailUrl = res.data.thumbnailUrl;
     } catch (err: any) { 
       console.error("❌ Medya Yükleme Hatası:", err.response?.data || err); 
       toast.error("Dosya yüklenemedi."); 
@@ -433,7 +436,7 @@ const handleSendMessage = async (customText?: string) => {
   
   // Encrypt message content before sending
   const encrypted = text.trim() ? CryptoJS.AES.encrypt(text.trim(), APP_SECRET_KEY).toString() : undefined;
-  sendMessage(chatStore.activeConversation.id, encrypted as any, otherUser.value?.id, undefined, false, mediaUrl, mediaType);
+  sendMessage(chatStore.activeConversation.id, encrypted as any, otherUser.value?.id, undefined, false, mediaUrl, mediaType, thumbnailUrl);
   
   if (typeof customText !== 'string') messageInput.value = "";
   clearFile(); 

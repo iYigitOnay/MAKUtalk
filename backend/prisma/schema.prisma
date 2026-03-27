@@ -119,6 +119,7 @@ model Message {
   postId         BigInt?  // Paylaşılan postun ID'si
   mediaUrl       String?  // Yüklenen medyanın yolu
   mediaType      String?  // IMAGE, VIDEO, FILE
+  thumbnailUrl   String?  // Videolar için kapak fotoğrafı
   isRead         Boolean  @default(false)
   isForwarded    Boolean  @default(false)
   isDeleted      Boolean  @default(false)
@@ -218,6 +219,8 @@ model Post {
   id         BigInt   @id
   content    String?  @db.Text
   imageUrl   String?  
+  videoUrl   String?  // Video dosyasının yolu
+  thumbnailUrl String? // Video için kapak fotoğrafı
   documentUrl String?
   isAcademic Boolean  @default(false)
   published  Boolean  @default(true)

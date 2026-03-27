@@ -161,6 +161,7 @@ export const usePostsStore = defineStore("posts", () => {
     parentId?: string,
     isAcademic: boolean = false,
     document?: File,
+    video?: File,
   ) => {
     loading.value = true;
     try {
@@ -172,6 +173,7 @@ export const usePostsStore = defineStore("posts", () => {
       if (isAcademic) formData.append("isAcademic", String(isAcademic));
       if (image) formData.append("image", image);
       if (document) formData.append("document", document);
+      if (video) formData.append("video", video);
 
       const response = await apiClient.post<Post>("/posts", formData, {
         headers: { "Content-Type": "multipart/form-data" },
