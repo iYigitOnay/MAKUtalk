@@ -26,6 +26,10 @@ export class BigIntInterceptor implements NestInterceptor {
       return data.map((item) => this.serializeBigInt(item));
     }
 
+    if (data instanceof Date) {
+      return data;
+    }
+
     if (typeof data === 'object') {
       const serializedObj = {};
       for (const key in data) {
