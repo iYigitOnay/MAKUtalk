@@ -147,22 +147,7 @@
     >
       <div class="flex gap-4">
         <div class="relative group flex-shrink-0">
-          <div
-            class="p-[2px] rounded-full bg-gradient-to-tr from-blue-400 to-purple-400 shadow-sm transition-transform group-hover:scale-105"
-          >
-            <img
-              v-if="authStore.user?.avatarUrl"
-              :src="getImageUrl(authStore.user.avatarUrl)"
-              :alt="authStore.user.username"
-              class="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-950"
-            />
-            <div
-              v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white dark:border-gray-950 flex items-center justify-center text-white font-black"
-            >
-              {{ authStore.user?.username?.charAt(0).toUpperCase() }}
-            </div>
-          </div>
+          <UserAvatar :user="authStore.user" size="lg" />
         </div>
         <div class="flex-1 min-w-0 relative">
           <textarea
@@ -172,14 +157,14 @@
             :placeholder="
               activeFeedTab === 'academic'
                 ? 'Duyuru, ders notu veya bilgilendirme paylaşın...'
-                : 'Ne Düşünüyorsun?'
+                : 'Ne Düşünüyorsunuz?'
             "
             class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium min-h-[100px] overflow-hidden pt-2.5 pr-12"
             :disabled="postsStore.loading"
             maxlength="750"
           />
 
-          <!-- ... Mentions Modal ... -->
+          <!-- Mentions Modal -->
           <div
             v-if="showMentions"
             :style="{ top: mentionPos.y + 'px', left: mentionPos.x + 'px' }"
@@ -192,17 +177,8 @@
                 @click="selectMention(user.username)"
                 class="w-full flex items-center gap-3 p-2.5 hover:bg-blue-600 hover:text-white transition-colors group text-left"
               >
-                <img
-                  v-if="user.avatarUrl"
-                  :src="getImageUrl(user.avatarUrl)"
-                  class="w-7 h-7 rounded-full object-cover border border-white/20"
-                />
-                <div
-                  v-else
-                  class="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-[10px] font-black group-hover:bg-white group-hover:text-blue-600 transition-colors"
-                >
-                  {{ user.username.charAt(0).toUpperCase() }}
-                </div>
+                <!-- FIXED: Asil Avatar KullanÄ±mÄ± (Mentions) -->
+                <UserAvatar :user="user" size="xs" />
                 <div class="flex flex-col min-w-0">
                   <span class="text-xs font-bold truncate">{{
                     user.fullName || user.username
@@ -323,7 +299,7 @@
                 class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth"
                 @scroll="handleComposerScroll"
               >
-                <!-- Kategori Seçici Sadece Ana Akışta Görünür -->
+                <!-- Kategori SeÃ§ici Sadece Ana AkÄ±ÅŸta GÃ¶rÃ¼nÃ¼r -->
                 <div
                   v-for="(item, index) in allItems"
                   :key="index"
@@ -458,7 +434,7 @@
                 </svg>
               </button>
 
-              <!-- Döküman Yükleme Butonu (Sadece Akademik Akışta) -->
+              <!-- DÃ¶kÃ¼man YÃ¼kleme Butonu (Sadece Akademik AkÄ±ÅŸta) -->
               <template v-if="activeFeedTab === 'academic'">
                 <input
                   type="file"
@@ -571,7 +547,6 @@
       </div>
     </div>
 
-    <!-- ANA KATEGORİ ÇARKI (Artık en üstte sticky: top-0) -->
     <div
       v-if="activeFeedTab === 'main'"
       class="sticky top-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden"
@@ -685,6 +660,7 @@ import PostCard from "@/components/PostCard.vue";
 import CommentsModal from "@/components/CommentsModal.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
+import UserAvatar from "@/components/UserAvatar.vue";
 import apiClient from "@/api/client";
 
 const authStore = useAuthStore();
@@ -715,14 +691,13 @@ const activeFeedTab = computed({
   set: (val) => (postsStore.activeFeedTab = val),
 });
 
-const switchTab = (tab: 'main' | 'academic') => {
+const switchTab = (tab: "main" | "academic") => {
   activeFeedTab.value = tab;
-  postsStore.posts = []; // Geçiş yaparken listeyi temizle
-  postsStore.resetCategory(); // Kategori filtresini temizle
+  postsStore.posts = [];
+  postsStore.resetCategory();
 
-  if (tab === 'main') {
+  if (tab === "main") {
     postsStore.fetchPosts(authStore.user?.id);
-    // Kategori çarkını "Akış"a (ortaya) geri çek
     nextTick(() => {
       const idx = allItems.value.findIndex((i) => i.id === null);
       if (idx !== -1) centerCarouselItem(idx);
@@ -731,7 +706,6 @@ const switchTab = (tab: 'main' | 'academic') => {
     postsStore.fetchAcademicPosts(authStore.user?.id);
   }
 };
-
 
 const canPostToAcademic = computed(() => {
   return (
@@ -908,7 +882,6 @@ const selectCategory = (id: number | null) => {
 const handleImageSelect = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (file) {
-    // Diğer medyaları temizle
     removeSelectedVideo();
     removeSelectedDocument();
     selectedImage.value = file;
@@ -929,7 +902,6 @@ const handleVideoSelect = (e: Event) => {
       toast.error("Video boyutu 25MB'dan büyük olamaz.");
       return;
     }
-    // Diğer medyaları temizle
     removeSelectedImage();
     removeSelectedDocument();
     selectedVideo.value = file;
@@ -974,7 +946,6 @@ const handleCreatePost = async () => {
     nextTick(adjustTextareaHeight);
     toast.success("Paylaşıldı!");
   } catch (err: any) {
-    // Store zaten error.response.data'yı fırlattığı için direkt içindeki message'a bakıyoruz
     const msg = err.message || err.response?.data?.message;
     toast.error(Array.isArray(msg) ? msg[0] : msg || "Hata!");
   }
@@ -1069,15 +1040,18 @@ const handleShowComments = (id: number) => {
   commentsModalOpen.value = true;
 };
 
-// CANLI SENKRONÄ°ZASYON: Yan panelden kategori seÃ§ilirse Ã§arkÄ± merkezle
-watch(() => postsStore.currentCategory, (newCatId) => {
-  const index = allItems.value.findIndex(item => item.id === newCatId);
-  if (index !== -1) {
-    nextTick(() => {
-      centerCarouselItem(index);
-    });
-  }
-}, { immediate: true });
+watch(
+  () => postsStore.currentCategory,
+  (newCatId) => {
+    const index = allItems.value.findIndex((item) => item.id === newCatId);
+    if (index !== -1) {
+      nextTick(() => {
+        centerCarouselItem(index);
+      });
+    }
+  },
+  { immediate: true },
+);
 
 onMounted(() => {
   postsStore.resetCategory();
