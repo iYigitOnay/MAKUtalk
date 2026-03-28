@@ -410,6 +410,18 @@
               />
             </div>
           </template>
+
+          <!-- PRIVATE ACCOUNT NOTICE (MINIMALIST) -->
+          <div 
+            v-else 
+            class="mt-12 py-16 text-center bg-gray-50/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-gray-200 dark:border-white/10 mx-4 sm:mx-0 animate-in fade-in slide-in-from-bottom-4 duration-500"
+          >
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800/50 mb-4 border border-gray-200 dark:border-white/5">
+              <component :is="getBadgeComponent('lock')" class="w-6 h-6 text-gray-400 dark:text-gray-500" />
+            </div>
+            <h3 class="text-base font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-1.5">Bu Hesap Gizlidir</h3>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 font-black uppercase tracking-[0.2em] opacity-50">Gönderileri ve aktiviteleri görmek için takip etmelisin.</p>
+          </div>
         </template>
       </div>
     </template>
