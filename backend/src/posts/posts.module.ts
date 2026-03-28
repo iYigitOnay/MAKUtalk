@@ -4,9 +4,10 @@ import { PostsController } from './posts.controller';
 import { AiModule } from '../ai/ai.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { ChatModule } from '../chat/chat.module';
+import { HashtagModule } from '../hashtags/hashtag.module';
 
 @Module({
-  imports: [AiModule, NotificationsModule, ChatModule],
+  imports: [AiModule, NotificationsModule, ChatModule, HashtagModule],
   controllers: [PostsController],
   providers: [PostsService],
   exports: [PostsService],

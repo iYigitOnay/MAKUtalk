@@ -6,44 +6,23 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SearchService {
   constructor(private prisma: PrismaService) {}
 
-  // Popüler hashtagleri çek (son 7 günün postlarından)
+  // Popüler hashtagleri çek (Yeni tablo yapısını kullanarak)
   async getPopularHashtags(limit = 10) {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const posts = await this.prisma.post.findMany({
+    const hashtags = await this.prisma.hashtag.findMany({
       where: {
-        createdAt: { gte: sevenDaysAgo },
-        published: true,
-        author: {
-          isPrivate: false,
-          isBanned: false,
-        },
+        usageCount: { gt: 0 },
       },
-      select: { content: true },
+      select: {
+        name: true,
+        usageCount: true,
+      },
+      orderBy: {
+        usageCount: 'desc',
+      },
+      take: limit,
     });
 
-    // Post içeriklerinden hashtagleri çıkar
-    const hashtagCounts: Record<string, number> = {};
-
-    posts.forEach(({ content }) => {
-      if (!content) return;
-      // Güvenli hashtag regex'i
-      const matches = content.match(/#[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+/g) || [];
-      matches.forEach((tag) => {
-        // Başındaki # işaretini at ve küçük harfe çevir
-        const normalized = tag.slice(1).toLowerCase();
-        if (normalized.length >= 2) {
-          hashtagCounts[normalized] = (hashtagCounts[normalized] || 0) + 1;
-        }
-      });
-    });
-
-    // Sırala ve limit uygula
-    return Object.entries(hashtagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
-      .map(([tag, count]) => ({ tag, count }));
+    return hashtags.map((h) => ({ tag: h.name, count: h.usageCount }));
   }
 
   // Genel arama

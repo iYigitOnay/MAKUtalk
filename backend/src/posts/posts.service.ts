@@ -21,6 +21,7 @@ import {
 import { ChatGateway } from '../chat/chat.gateway';
 import { SnowflakeService } from '../common/snowflake/snowflake.service';
 import { MediaProcessingService } from '../common/utils/media-processing.service';
+import { HashtagService } from '../hashtags/hashtag.service';
 
 @Injectable()
 export class PostsService {
@@ -32,6 +33,7 @@ export class PostsService {
     private chatGateway: ChatGateway,
     private snowflakeService: SnowflakeService,
     private mediaProcessingService: MediaProcessingService,
+    private readonly hashtagService: HashtagService,
   ) {}
 
   async create(
@@ -274,6 +276,9 @@ export class PostsService {
       this.chatGateway.broadcastNewPost(post);
     }
 
+    // Hashtag senkronizasyonu
+    await this.hashtagService.syncHashtags(post.id, post.content);
+
     // --- MENTION RADARI: @username tespiti ve bildirim gönderimi ---
     if (cleanText) {
       const mentionRegex = /@(\w+)/g;
@@ -325,8 +330,11 @@ export class PostsService {
     if (existingRepost) {
       await this.prisma.post.update({
         where: { id: existingRepost.id },
-        data: { isDeleted: true },
+        data: { isDeleted: true, deletedAt: new Date() },
       });
+
+      // Hashtag sayaçlarını düşür
+      await this.hashtagService.decrementHashtagCounts(existingRepost.id);
 
       const count = await this.prisma.post.count({
         where: { repostId: targetPostId, isDeleted: false },
@@ -1147,7 +1155,7 @@ export class PostsService {
         'Security',
       );
 
-    return this.prisma.post.update({
+    const updatedPost = await this.prisma.post.update({
       where: { id },
       data: { ...updatePostDto, content: cleanText },
       include: {
@@ -1193,6 +1201,11 @@ export class PostsService {
         },
       },
     });
+
+    // Hashtag senkronizasyonu
+    await this.hashtagService.syncHashtags(id, cleanText);
+
+    return updatedPost;
   }
 
   async togglePin(userId: bigint, id: bigint) {
@@ -1242,7 +1255,14 @@ export class PostsService {
     if (post.authorId !== userId && !isAdmin)
       throw new ForbiddenException('Yetkiniz yok.');
 
-    await this.prisma.post.update({ where: { id }, data: { isDeleted: true } });
+    await this.prisma.post.update({
+      where: { id },
+      data: { isDeleted: true, deletedAt: new Date() },
+    });
+
+    // Hashtag sayaçlarını düşür
+    await this.hashtagService.decrementHashtagCounts(id);
+
     this.myLogger.log(
       `Post Soft-Deleted: ID ${id} by User ${userId}`,
       'Security',

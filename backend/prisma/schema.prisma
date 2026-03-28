@@ -231,6 +231,7 @@ model Post {
   sentiment      String?  
   sentimentScore Float?
   isDeleted  Boolean  @default(false)
+  deletedAt  DateTime? // Silinme tarihi (15 gün sonra kalıcı silinme için)
   isPinned    Boolean   @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
@@ -250,6 +251,7 @@ model Post {
   reports       Report[]
   bookmarks     Bookmark[]
   sharedInMessages Message[] @relation("SharedPost")
+  hashtags      Hashtag[] @relation("PostHashtags")
 
   @@index([authorId])
   @@index([categoryId])
@@ -257,6 +259,18 @@ model Post {
   @@index([repostId])
   @@index([parentId])
   @@index([isAcademic])
+}
+
+model Hashtag {
+  id          BigInt   @id
+  name        String   @unique // # olmadan isim, örn: "maku"
+  usageCount  Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  posts       Post[]   @relation("PostHashtags")
+
+  @@index([usageCount])
 }
 
 model Like {

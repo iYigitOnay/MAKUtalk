@@ -1,9 +1,15 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
 
 @Injectable()
 export class HashtagService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(HashtagService.name);
+
+  constructor(
+    private prisma: PrismaService,
+    private snowflakeService: SnowflakeService,
+  ) {}
 
   // Post içeriğinden hashtag'leri çıkar
   extractHashtags(content: string | null): string[] {
@@ -12,18 +18,98 @@ export class HashtagService {
     const matches = content.match(hashtagRegex);
     if (!matches) return [];
 
+    // Tekrar edenleri temizle ve küçük harfe çevir (başındaki #'i at)
     return [...new Set(matches.map((tag) => tag.slice(1).toLowerCase()))];
   }
 
-  // Hashtag'e göre postları getir
+  // Post oluşturulduğunda veya güncellendiğinde hashtag'leri senkronize et
+  async syncHashtags(postId: bigint, content: string | null) {
+    const newTags = this.extractHashtags(content);
+
+    const currentPost = await this.prisma.post.findUnique({
+      where: { id: postId },
+      include: { hashtags: true },
+    });
+
+    if (!currentPost) return;
+
+    const oldTags = currentPost.hashtags.map((h) => h.name);
+    const removedTags = oldTags.filter((tag) => !newTags.includes(tag));
+    const addedTags = newTags.filter((tag) => !oldTags.includes(tag));
+
+    for (const tagName of removedTags) {
+      const tag = currentPost.hashtags.find((h) => h.name === tagName);
+      if (tag) {
+        await this.prisma.hashtag.update({
+          where: { id: tag.id },
+          data: {
+            usageCount: { decrement: 1 },
+            posts: { disconnect: { id: postId } },
+          },
+        });
+        this.logger.log(`Hashtag düşürüldü (Sync): #${tagName}, Post: ${postId}`);
+      }
+    }
+
+    for (const tagName of addedTags) {
+      await this.prisma.hashtag.upsert({
+        where: { name: tagName },
+        update: {
+          usageCount: { increment: 1 },
+          posts: { connect: { id: postId } },
+        },
+        create: {
+          id: this.snowflakeService.getNextId(),
+          name: tagName,
+          usageCount: 1,
+          posts: { connect: { id: postId } },
+        },
+      });
+      this.logger.log(`Hashtag artırıldı (Sync): #${tagName}, Post: ${postId}`);
+    }
+  }
+
+  // Post silindiğinde sayaçları düşür - EN GARANTİ YÖNTEM
+  async decrementHashtagCounts(postId: bigint) {
+    // Postu ve içeriğini çek (isDeleted: true olsa bile findUnique getirir)
+    const post = await this.prisma.post.findUnique({
+      where: { id: postId },
+      select: { content: true }
+    });
+
+    if (!post || !post.content) return;
+
+    const tags = this.extractHashtags(post.content);
+    this.logger.log(`Post siliniyor, hashtagler düşürülüyor: ${tags.join(', ')}`);
+
+    for (const tagName of tags) {
+      const tag = await this.prisma.hashtag.findUnique({
+        where: { name: tagName }
+      });
+
+      if (tag && tag.usageCount > 0) {
+        await this.prisma.hashtag.update({
+          where: { id: tag.id },
+          data: {
+            usageCount: { decrement: 1 },
+            posts: { disconnect: { id: postId } }
+          }
+        });
+        this.logger.log(`Hashtag sayacı düşürüldü: #${tagName}, Yeni Sayaç: ${tag.usageCount - 1}`);
+      }
+    }
+  }
+
   async getPostsByHashtag(hashtag: string, userId?: bigint) {
     const posts = await this.prisma.post.findMany({
       where: {
-        content: {
-          contains: `#${hashtag.toLowerCase()}`,
-          mode: 'insensitive',
+        hashtags: {
+          some: {
+            name: hashtag.toLowerCase(),
+          },
         },
         published: true,
+        isDeleted: false,
       },
       include: {
         author: {
@@ -67,34 +153,18 @@ export class HashtagService {
   }
 
   async getTrendingHashtags(limit = 10) {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const posts = await this.prisma.post.findMany({
+    return this.prisma.hashtag.findMany({
       where: {
-        createdAt: { gte: sevenDaysAgo },
-        published: true,
-        author: {
-          isPrivate: false,
-          isBanned: false,
-        },
+        usageCount: { gt: 0 }, // Sadece 0'dan büyük olanlar
       },
-      select: { content: true },
+      select: {
+        name: true,
+        usageCount: true,
+      },
+      orderBy: {
+        usageCount: 'desc',
+      },
+      take: limit,
     });
-
-    const hashtagCount = new Map<string, number>();
-    posts.forEach((post) => {
-      const hashtags = this.extractHashtags(post.content);
-      hashtags.forEach((tag) => {
-        hashtagCount.set(tag, (hashtagCount.get(tag) || 0) + 1);
-      });
-    });
-
-    const trending = Array.from(hashtagCount.entries())
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
-      .map(([tag, count]) => ({ tag, count }));
-
-    return trending;
   }
 }
