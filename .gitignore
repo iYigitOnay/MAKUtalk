@@ -19,4 +19,4 @@ Thumbs.db
 .vscode/
 .idea/
 # Task tracking
-tasks/
+/tasks/

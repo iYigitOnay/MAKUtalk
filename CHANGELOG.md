@@ -2,6 +2,18 @@
 
 Tüm zamanların en güncel ve havalı kampüs uygulamasının gelişim süreci.
 
+## [v1.4.2] - 28-03-2026
+
+### Eklendi
+
+- **Akıllı Navigasyon:** Arama kutusu boş bırakıldığında veya temizlendiğinde anasayfaya hızlı dönüş özelliği eklendi.
+- **Performans Optimizasyonu:** Hashtag senkronizasyonu ve arama indeksleme süreçleri hızlandırıldı.
+
+### Düzeltildi
+
+- **Navigasyon Akışı:** Arama sonuçlarından anasayfaya geçişlerdeki takılmalar giderildi.
+- **Genel Kararlılık:** Snowflake ID sistemiyle ilgili uç durumlar (edge cases) için iyileştirmeler yapıldı.
+
 ## [v1.4.1] - 28-03-2026
 
 ### Eklendi
