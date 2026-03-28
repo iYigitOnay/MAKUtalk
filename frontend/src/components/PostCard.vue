@@ -15,7 +15,11 @@
     <div v-if="displayPost.isAcademic && !displayPost.isLiked" class="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full -mr-16 -mt-16 blur-3xl pointer-events-none"></div>
 
     <!-- Tıklanabilir İçerik Alanı -->
-    <div @click="$router.push(`/post/${displayPost.id}`)" class="p-4 pb-0 cursor-pointer relative z-10">
+    <div 
+      @click="!displayPost.isContentHidden && $router.push(`/post/${displayPost.id}`)" 
+      class="p-4 pb-0 relative z-10"
+      :class="displayPost.isContentHidden ? 'cursor-default' : 'cursor-pointer'"
+    >
       <!-- Pinned Header - Sadece profil sayfalarında gösterilir -->
       <div
         v-if="displayPost.isPinned && isProfileView"
@@ -98,98 +102,111 @@
             </div>
           </div>
 
-          <div class="flex flex-wrap gap-1.5 mb-2">
-            <span
-              v-if="displayPost.category && !displayPost.parentId"
-              class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider text-white"
-              :style="{
-                backgroundColor: displayPost.category.color || '#3b82f6',
-              }"
-            >
-              {{ displayPost.category.name }}
-            </span>
-            <span
-              v-if="displayPost.sentiment"
-              class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border"
-              :class="getSentimentStyles(displayPost.sentiment).class"
-            >
-              {{ translateSentiment(displayPost.sentiment) }}
-            </span>
+          <!-- GİZLİ İÇERİK TASARIMI -->
+          <div v-if="displayPost.isContentHidden" class="mb-4">
+            <div class="flex flex-col items-center justify-center py-6 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-dashed border-slate-200 dark:border-white/10 group-hover:border-blue-500/30 transition-colors">
+              <div class="w-8 h-8 bg-slate-100 dark:bg-white/5 rounded-full flex items-center justify-center mb-2">
+                <component :is="getBadgeComponent('lock')" class="w-4 h-4 text-slate-400 dark:text-white/20" />
+              </div>
+              <p class="text-[10px] font-black text-slate-500 dark:text-gray-400 uppercase tracking-[0.2em]">Bu içerik kilitli</p>
+              <p class="text-[8px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mt-0.5">Görmek için takip etmelisin</p>
+            </div>
           </div>
 
-          <p class="text-gray-900 dark:text-white text-[15px] leading-normal whitespace-pre-wrap mb-3">
-            <HashtagText :text="displayPost.content || ''" />
-          </p>
-
-          <div v-if="displayPost.imageUrl" class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 bg-slate-50 dark:bg-gray-800 flex justify-center">
-            <img 
-              :src="getImageUrl(displayPost.imageUrl)" 
-              class="w-full h-auto max-h-[720px] object-contain cursor-zoom-in hover:opacity-95 transition-opacity" 
-              loading="lazy" 
-              @click.stop="showImageModal = true"
-            />
-            <ImageModal 
-              :is-open="showImageModal" 
-              :image-url="getImageUrl(displayPost.imageUrl)" 
-              @close="showImageModal = false" 
-            />
-          </div>
-
-          <!-- Video Attachment -->
-          <div v-if="displayPost.videoUrl" class="mb-3" @click.stop>
-            <VideoPlayer 
-              :video-url="displayPost.videoUrl" 
-              :thumbnail-url="displayPost.thumbnailUrl" 
-            />
-          </div>
-
-          <!-- Document Attachment (Academic) -->
-          <div v-if="displayPost.documentUrl" class="mb-3">
-            <a 
-              :href="getImageUrl(displayPost.documentUrl)" 
-              target="_blank" 
-              download 
-              class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group overflow-hidden relative"
-            >
-              <!-- Extension-based Background Accent -->
-              <div 
-                class="absolute left-0 top-0 w-1 h-full"
-                :class="{
-                  'bg-red-500': getFileExt(displayPost.documentUrl) === 'pdf',
-                  'bg-blue-500': ['doc', 'docx'].includes(getFileExt(displayPost.documentUrl)),
-                  'bg-green-500': ['xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl)),
-                  'bg-orange-500': !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl))
-                }"
-              ></div>
-
-              <div 
-                class="p-2 rounded-lg group-hover:scale-110 transition-transform"
-                :class="{
-                  'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400': getFileExt(displayPost.documentUrl) === 'pdf',
-                  'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400': ['doc', 'docx'].includes(getFileExt(displayPost.documentUrl)),
-                  'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400': ['xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl)),
-                  'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400': !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl))
+          <!-- NORMAL İÇERİK -->
+          <template v-else>
+            <div class="flex flex-wrap gap-1.5 mb-2">
+              <span
+                v-if="displayPost.category && !displayPost.parentId"
+                class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider text-white"
+                :style="{
+                  backgroundColor: displayPost.category.color || '#3b82f6',
                 }"
               >
-                <component :is="getBadgeComponent(getFileExt(displayPost.documentUrl) === 'pdf' ? 'file-text' : 'file')" class="w-6 h-6" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-bold text-gray-900 dark:text-white truncate">
-                  {{ getFileName(displayPost.documentUrl) }}
-                </p>
-                <p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">
-                  {{ getFileExt(displayPost.documentUrl) }} Dökümanı · İndirmek için tıklayın
-                </p>
-              </div>
-              <component :is="getBadgeComponent('download')" class="w-5 h-5 text-gray-400 group-hover:text-primary-500" />
-            </a>
-          </div>
+                {{ displayPost.category.name }}
+              </span>
+              <span
+                v-if="displayPost.sentiment"
+                class="px-1.5 py-0.5 rounded-full text-[8px] font-black uppercase tracking-wider border"
+                :class="getSentimentStyles(displayPost.sentiment).class"
+              >
+                {{ translateSentiment(displayPost.sentiment) }}
+              </span>
+            </div>
+
+            <p class="text-gray-900 dark:text-white text-[15px] leading-normal whitespace-pre-wrap mb-3">
+              <HashtagText :text="displayPost.content || ''" />
+            </p>
+
+            <div v-if="displayPost.imageUrl" class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 bg-slate-50 dark:bg-gray-800 flex justify-center">
+              <img 
+                :src="getImageUrl(displayPost.imageUrl)" 
+                class="w-full h-auto max-h-[720px] object-contain cursor-zoom-in hover:opacity-95 transition-opacity" 
+                loading="lazy" 
+                @click.stop="showImageModal = true"
+              />
+              <ImageModal 
+                :is-open="showImageModal" 
+                :image-url="getImageUrl(displayPost.imageUrl)" 
+                @close="showImageModal = false" 
+              />
+            </div>
+
+            <!-- Video Attachment -->
+            <div v-if="displayPost.videoUrl" class="mb-3" @click.stop>
+              <VideoPlayer 
+                :video-url="displayPost.videoUrl" 
+                :thumbnail-url="displayPost.thumbnailUrl" 
+              />
+            </div>
+
+            <!-- Document Attachment (Academic) -->
+            <div v-if="displayPost.documentUrl" class="mb-3">
+              <a 
+                :href="getImageUrl(displayPost.documentUrl)" 
+                target="_blank" 
+                download 
+                class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group overflow-hidden relative"
+              >
+                <div 
+                  class="absolute left-0 top-0 w-1 h-full"
+                  :class="{
+                    'bg-red-500': getFileExt(displayPost.documentUrl) === 'pdf',
+                    'bg-blue-500': ['doc', 'docx'].includes(getFileExt(displayPost.documentUrl)),
+                    'bg-green-500': ['xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl)),
+                    'bg-orange-500': !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl))
+                  }"
+                ></div>
+
+                <div 
+                  class="p-2 rounded-lg group-hover:scale-110 transition-transform"
+                  :class="{
+                    'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400': getFileExt(displayPost.documentUrl) === 'pdf',
+                    'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400': ['doc', 'docx'].includes(getFileExt(displayPost.documentUrl)),
+                    'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400': ['xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl)),
+                    'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400': !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl))
+                  }"
+                >
+                  <component :is="getBadgeComponent(getFileExt(displayPost.documentUrl) === 'pdf' ? 'file-text' : 'file')" class="w-6 h-6" />
+                </div>
+                <div class="flex-1 min-w-0">
+                  <p class="text-sm font-bold text-gray-900 dark:text-white truncate">
+                    {{ getFileName(displayPost.documentUrl) }}
+                  </p>
+                  <p class="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider">
+                    {{ getFileExt(displayPost.documentUrl) }} Dökümanı · İndirmek için tıklayın
+                  </p>
+                </div>
+                <component :is="getBadgeComponent('download')" class="w-5 h-5 text-gray-400 group-hover:text-primary-500" />
+              </a>
+            </div>
+          </template>
         </div>
       </div>
     </div>
 
-    <!-- Aksiyon Butonları Alanı (Tıklama Alanının Dışında!) -->
-    <div class="px-4 pb-4 ml-14 sm:ml-16">
+    <!-- Aksiyon Butonları Alanı -->
+    <div class="px-4 pb-4 ml-14 sm:ml-16" :class="{ 'hidden': displayPost.isContentHidden }">
       <div class="flex justify-between items-center text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-50 dark:border-primary-900/10">
         <!-- LIKE / OKUDUM -->
         <button @click.stop="handleLikeToggle" :disabled="likeLoading" class="flex items-center gap-2 px-3 py-2 rounded-full transition-all group" :class="[displayPost.isAcademic ? 'hover:bg-green-50 dark:hover:bg-green-900/20' : 'hover:bg-red-50 dark:hover:bg-red-900/20', (post.isLiked || displayPost.isLiked) ? (displayPost.isAcademic ? 'text-green-600' : 'text-red-600') : '']">

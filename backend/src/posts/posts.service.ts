@@ -1010,29 +1010,60 @@ export class PostsService {
   }
 
   private async mapInteractionStatus(posts: any[], userId?: bigint) {
-    if (!userId) return posts;
+    // Takip ettiklerimizi bulalım (Gizlilik süzgeci için)
+    let followingIds: Set<bigint> = new Set();
+    if (userId) {
+      const follows = await this.prisma.follow.findMany({
+        where: { followerId: userId },
+        select: { followingId: true },
+      });
+      followingIds = new Set(follows.map((f) => f.followingId));
+    }
+
     const [userLikes, userReposts, userBookmarks] = await Promise.all([
-      this.prisma.like.findMany({
-        where: { userId },
-        select: { postId: true },
-      }),
-      this.prisma.post.findMany({
-        where: { authorId: userId, NOT: { repostId: null }, isDeleted: false },
-        select: { repostId: true },
-      }),
-      this.prisma.bookmark.findMany({
-        where: { userId },
-        select: { postId: true },
-      }),
+      ...(userId ? [
+        this.prisma.like.findMany({
+          where: { userId },
+          select: { postId: true },
+        }),
+        this.prisma.post.findMany({
+          where: { authorId: userId, NOT: { repostId: null }, isDeleted: false },
+          select: { repostId: true },
+        }),
+        this.prisma.bookmark.findMany({
+          where: { userId },
+          select: { postId: true },
+        })
+      ] : [[], [], []])
     ]);
+
     const likedPostIds = new Set(userLikes.map((l) => l.postId));
     const repostedPostIds = new Set(userReposts.map((r) => r.repostId));
     const bookmarkedPostIds = new Set(userBookmarks.map((b) => b.postId));
 
     return posts.map((p) => {
       const targetId = p.repostId || p.id;
+      const author = p.author;
+      
+      let content = p.content;
+      let isContentHidden = false;
+      let imageUrl = p.imageUrl;
+      let videoUrl = p.videoUrl;
+
+      // GLOBAL GİZLİLİK SÜZGECİ
+      if (author && author.isPrivate && author.id !== userId && !followingIds.has(author.id)) {
+        content = p.parentId ? '🔒 Bu yanıt gizli bir hesap tarafından yapılmıştır.' : '🔒 Bu gönderi gizli bir hesap tarafından yapılmıştır.';
+        isContentHidden = true;
+        imageUrl = null;
+        videoUrl = null;
+      }
+
       return {
         ...p,
+        content,
+        imageUrl,
+        videoUrl,
+        isContentHidden,
         isLiked: likedPostIds.has(targetId),
         isReposted: repostedPostIds.has(targetId),
         isBookmarked: bookmarkedPostIds.has(targetId),
@@ -1445,15 +1476,40 @@ export class PostsService {
         orderBy: { createdAt: 'desc' },
       });
 
+      // Gizlilik Maskelemesi
+      let followingIds: Set<bigint> = new Set();
+      if (currentUserId) {
+        const follows = await this.prisma.follow.findMany({
+          where: { followerId: currentUserId },
+          select: { followingId: true },
+        });
+        followingIds = new Set(follows.map((f) => f.followingId));
+      }
+
       const mappedReplies = await this.mapInteractionStatus(
         replies,
         currentUserId,
       );
 
+      // Yanıtları gizlilik süzgecinden geçir
+      const privacyMappedReplies = mappedReplies.map((reply) => {
+        const author = reply.author;
+        if (author.isPrivate && author.id !== currentUserId && !followingIds.has(author.id)) {
+          return {
+            ...reply,
+            content: '🔒 Bu yanıt gizli bir hesap tarafından yapılmıştır.',
+            imageUrl: null,
+            videoUrl: null,
+            isContentHidden: true,
+          };
+        }
+        return reply;
+      });
+
       return {
         parents,
         post,
-        replies: mappedReplies,
+        replies: privacyMappedReplies,
       };
     } catch (error) {
       this.myLogger.error(`Thread fetch error: ${error.message}`, error.stack);

@@ -49,7 +49,7 @@ export class CommentsService {
       },
       include: {
         user: {
-          select: { id: true, username: true, fullName: true, avatarUrl: true },
+          select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true },
         },
       },
     });
@@ -97,18 +97,50 @@ export class CommentsService {
     return { ...rest, author: user, commentsCount };
   }
 
-  async findByPost(postId: bigint) {
+  async findByPost(postId: bigint, currentUserId?: bigint) {
+    this.myLogger.log(`[COMMENTS] findByPost - Post: ${postId}, User: ${currentUserId}`, 'CommentsService');
     const comments = await this.prisma.comment.findMany({
       where: { postId, isDeleted: false },
       include: {
         user: {
-          select: { id: true, username: true, fullName: true, avatarUrl: true },
+          select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true },
         },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    return comments.map(({ user, ...rest }) => ({ ...rest, author: user }));
+    // Eğer kullanıcı giriş yapmışsa, takip ettiklerini bul
+    let followingIds: Set<bigint> = new Set();
+    if (currentUserId) {
+      const follows = await this.prisma.follow.findMany({
+        where: { followerId: currentUserId },
+        select: { followingId: true },
+      });
+      followingIds = new Set(follows.map((f) => f.followingId));
+      this.myLogger.log(`[COMMENTS] Takip Edilen Sayısı: ${followingIds.size}`, 'CommentsService');
+    }
+
+    return comments.map(({ user, content, ...rest }) => {
+      let finalContent = content;
+      let isContentHidden = false;
+
+      const isMe = currentUserId === user.id;
+      const isFollowing = followingIds.has(user.id);
+
+      this.myLogger.log(`[COMMENTS] Yorum Sahibi: ${user.username}, Gizli: ${user.isPrivate}, Ben miyim: ${isMe}, Takip ediyor muyum: ${isFollowing}`, 'CommentsService');
+
+      if (user.isPrivate && !isMe && !isFollowing) {
+        finalContent = '🔒 Bu yorum gizli bir hesap tarafından yapılmıştır.';
+        isContentHidden = true;
+      }
+
+      return {
+        ...rest,
+        content: finalContent,
+        isContentHidden,
+        author: user,
+      };
+    });
   }
 
   async remove(commentId: bigint, userId: bigint) {

@@ -27,8 +27,11 @@ export class CommentsController {
   }
 
   @Get()
-  findByPost(@Param('postId') postId: string) {
-    return this.commentsService.findByPost(BigInt(postId));
+  findByPost(
+    @Param('postId') postId: string,
+    @CurrentUser() user?: any
+  ) {
+    return this.commentsService.findByPost(BigInt(postId), user ? BigInt(user.id) : undefined);
   }
 
   @Delete(':id')
