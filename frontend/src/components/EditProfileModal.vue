@@ -170,7 +170,7 @@ const userInitial = ref('');
 
 const getImageUrl = (path: string) => {
   if (!path) return '';
-  if (path.startsWith('http')) return path;
+  if (path.startsWith('http') || path.startsWith('blob:')) return path;
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
   const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
