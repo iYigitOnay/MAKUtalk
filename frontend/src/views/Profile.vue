@@ -646,7 +646,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch, onUnmounted } from "vue";
+import { computed, onMounted, ref, watch, onUnmounted, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
@@ -728,7 +728,7 @@ const reportCategories: Record<string, string[]> = {
   ],
 };
 
-const dropdownStyle = ref({ top: "0px", left: "0px" });
+const dropdownStyle = ref({ top: "-9999px", left: "-9999px" });
 
 const displayedUser = computed(() => profileStore.profileUser);
 const loading = computed(() => profileStore.loadingProfile);

@@ -69,30 +69,32 @@
             </div>
             
             <!-- Menü Butonu -->
-            <div class="relative flex-shrink-0" @click.stop>
+            <div class="relative flex-shrink-0" ref="menuRef" @click.stop>
               <button @click="showMenu = !showMenu" class="p-2 text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-full transition-all">
                 <component :is="getBadgeComponent('more-vertical')" class="w-5 h-5" />
               </button>
-              <div v-if="showMenu" class="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl z-[100] py-1.5 overflow-hidden">
-                <button @click="handleCopyLink" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('link')" class="w-4 h-4 text-gray-400" />Bağlantıyı Kopyala</button>
-                
-                <button v-if="isOwner" @click="handleTogglePin" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2.5">
-                  <component :is="getBadgeComponent('pin')" class="w-4 h-4" />
-                  {{ displayPost.isPinned ? 'Sabiti Kaldır' : 'Profile Sabitle' }}
-                </button>
+              <transition name="fade-scale">
+                <div v-if="showMenu" class="absolute right-0 mt-1 w-48 bg-white dark:bg-gray-900 border border-gray-100 dark:border-white/5 rounded-2xl shadow-2xl z-[100] py-1.5 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <button @click="handleCopyLink" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('link')" class="w-4 h-4 text-gray-400" />Bağlantıyı Kopyala</button>
+                  
+                  <button v-if="isOwner" @click="handleTogglePin" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors flex items-center gap-2.5">
+                    <component :is="getBadgeComponent('pin')" class="w-4 h-4" />
+                    {{ displayPost.isPinned ? 'Sabiti Kaldır' : 'Profile Sabitle' }}
+                  </button>
 
-                <button v-if="isAdmin" @click="handleRefreshAI" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors flex items-center gap-2.5">
-                  <component :is="getBadgeComponent('refresh-cw')" class="w-4 h-4" />
-                  AI Analizini Yenile
-                </button>
+                  <button v-if="isAdmin" @click="handleRefreshAI" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors flex items-center gap-2.5">
+                    <component :is="getBadgeComponent('refresh-cw')" class="w-4 h-4" />
+                    AI Analizini Yenile
+                  </button>
 
-                <button v-if="!isOwner" @click="$emit('report', displayPost.id); showMenu = false;" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2.5">
-                  <component :is="getBadgeComponent('flag')" class="w-4 h-4" />
-                  Şikayet Et
-                </button>
+                  <button v-if="!isOwner" @click="$emit('report', displayPost.id); showMenu = false;" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-colors flex items-center gap-2.5">
+                    <component :is="getBadgeComponent('flag')" class="w-4 h-4" />
+                    Şikayet Et
+                  </button>
 
-                <button v-if="isOwner || isAdmin" @click="$emit('delete', post.id); showMenu = false;" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('trash-2')" class="w-4 h-4" />Gönderiyi Sil</button>
-              </div>
+                  <button v-if="isOwner || isAdmin" @click="$emit('delete', post.id); showMenu = false;" class="w-full text-left px-3 py-2 text-[13px] font-semibold text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2.5"><component :is="getBadgeComponent('trash-2')" class="w-4 h-4" />Gönderiyi Sil</button>
+                </div>
+              </transition>
             </div>
           </div>
 
@@ -221,7 +223,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { useAuthStore } from "@/stores/auth";
 import { useLikesStore } from "@/stores/likes";
 import { usePostsStore } from "@/stores/posts";
@@ -262,6 +264,21 @@ const repostLoading = ref(false);
 const bookmarkLoading = ref(false);
 const showMenu = ref(false);
 const showImageModal = ref(false);
+const menuRef = ref<HTMLElement | null>(null);
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (menuRef.value && !menuRef.value.contains(event.target as Node)) {
+    showMenu.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 
 const handleTogglePin = async () => {
   if (!displayPost.value) return;
@@ -479,6 +496,18 @@ const getSentimentStyles = (sentiment: string) => {
 </script>
 
 <style scoped>
+/* Dropdown Animasyonu */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-10px);
+}
+
 .academic-unread {
   position: relative;
   background-color: rgba(16, 185, 129, 0.03);
