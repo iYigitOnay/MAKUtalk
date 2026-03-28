@@ -59,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import Sidebar from "@/components/Sidebar.vue";
 import RightSidebar from "@/components/RightSidebar.vue";
@@ -73,11 +73,15 @@ import { useChatStore } from "@/stores/chat";
 import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
 import { useRouter } from "vue-router";
+import { useFaviconBadge } from "@/composables/useFaviconBadge";
 
 useDarkMode();
 
 // Socket'i global olarak başlat
 useSocket();
+
+// Favicon ve Bildirim sistemini başlat
+const { requestPermission } = useFaviconBadge();
 
 const route = useRoute();
 const router = useRouter();
@@ -85,6 +89,11 @@ const authStore = useAuthStore();
 const chatStore = useChatStore();
 const postsStore = usePostsStore();
 const mainContent = ref<HTMLElement | null>(null);
+
+// Başlangıçta bildirim izni iste
+onMounted(() => {
+  requestPermission();
+});
 
 // BAN KONTROLU
 watch(() => authStore.user?.isBanned, (isBanned) => {

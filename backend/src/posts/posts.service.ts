@@ -1020,22 +1020,30 @@ export class PostsService {
       followingIds = new Set(follows.map((f) => f.followingId));
     }
 
-    const [userLikes, userReposts, userBookmarks] = await Promise.all([
-      ...(userId ? [
+    let userLikes: { postId: bigint }[] = [];
+    let userReposts: { repostId: bigint | null }[] = [];
+    let userBookmarks: { postId: bigint }[] = [];
+
+    if (userId) {
+      [userLikes, userReposts, userBookmarks] = await Promise.all([
         this.prisma.like.findMany({
           where: { userId },
           select: { postId: true },
         }),
         this.prisma.post.findMany({
-          where: { authorId: userId, NOT: { repostId: null }, isDeleted: false },
+          where: {
+            authorId: userId,
+            NOT: { repostId: null },
+            isDeleted: false,
+          },
           select: { repostId: true },
         }),
         this.prisma.bookmark.findMany({
           where: { userId },
           select: { postId: true },
-        })
-      ] : [[], [], []])
-    ]);
+        }),
+      ]);
+    }
 
     const likedPostIds = new Set(userLikes.map((l) => l.postId));
     const repostedPostIds = new Set(userReposts.map((r) => r.repostId));
@@ -1044,15 +1052,22 @@ export class PostsService {
     return posts.map((p) => {
       const targetId = p.repostId || p.id;
       const author = p.author;
-      
+
       let content = p.content;
       let isContentHidden = false;
       let imageUrl = p.imageUrl;
       let videoUrl = p.videoUrl;
 
       // GLOBAL GİZLİLİK SÜZGECİ
-      if (author && author.isPrivate && author.id !== userId && !followingIds.has(author.id)) {
-        content = p.parentId ? '🔒 Bu yanıt gizli bir hesap tarafından yapılmıştır.' : '🔒 Bu gönderi gizli bir hesap tarafından yapılmıştır.';
+      if (
+        author &&
+        author.isPrivate &&
+        author.id !== userId &&
+        !followingIds.has(author.id)
+      ) {
+        content = p.parentId
+          ? '🔒 Bu yanıt gizli bir hesap tarafından yapılmıştır.'
+          : '🔒 Bu gönderi gizli bir hesap tarafından yapılmıştır.';
         isContentHidden = true;
         imageUrl = null;
         videoUrl = null;
@@ -1494,7 +1509,11 @@ export class PostsService {
       // Yanıtları gizlilik süzgecinden geçir
       const privacyMappedReplies = mappedReplies.map((reply) => {
         const author = reply.author;
-        if (author.isPrivate && author.id !== currentUserId && !followingIds.has(author.id)) {
+        if (
+          author.isPrivate &&
+          author.id !== currentUserId &&
+          !followingIds.has(author.id)
+        ) {
           return {
             ...reply,
             content: '🔒 Bu yanıt gizli bir hesap tarafından yapılmıştır.',
