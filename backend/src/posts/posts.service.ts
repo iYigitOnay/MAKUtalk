@@ -410,13 +410,34 @@ export class PostsService {
     return { reposted: true, post: newRepost, count, message: 'Remakülendi!' };
   }
 
+  private async getBlockedUserIds(userId?: bigint): Promise<bigint[]> {
+    if (!userId) return [];
+    const [blocking, blockedBy] = await Promise.all([
+      this.prisma.block.findMany({
+        where: { blockerId: userId },
+        select: { blockedId: true },
+      }),
+      this.prisma.block.findMany({
+        where: { blockedId: userId },
+        select: { blockerId: true },
+      }),
+    ]);
+    return [
+      ...blocking.map((b) => b.blockedId),
+      ...blockedBy.map((b) => b.blockerId),
+    ];
+  }
+
   async findAll(userId?: bigint) {
+    const blockedIds = await this.getBlockedUserIds(userId);
+
     const posts = await this.prisma.post.findMany({
       where: {
         published: true,
         isDeleted: false,
         parentId: null,
         isAcademic: false,
+        authorId: { notIn: blockedIds },
         OR: [
           { author: { isPrivate: false } },
           { authorId: userId },
@@ -471,12 +492,14 @@ export class PostsService {
   }
 
   async findAcademicFeed(userId?: bigint) {
+    const blockedIds = await this.getBlockedUserIds(userId);
     const posts = await this.prisma.post.findMany({
       where: {
         published: true,
         isDeleted: false,
         parentId: null,
         isAcademic: true,
+        authorId: { notIn: blockedIds },
       },
       include: {
         author: {
@@ -504,8 +527,15 @@ export class PostsService {
   }
 
   async findBookmarks(userId: bigint) {
+    const blockedIds = await this.getBlockedUserIds(userId);
     const bookmarks = await this.prisma.bookmark.findMany({
-      where: { userId, post: { isDeleted: false } },
+      where: { 
+        userId, 
+        post: { 
+          isDeleted: false,
+          authorId: { notIn: blockedIds }
+        } 
+      },
       include: {
         post: {
           include: {
@@ -560,8 +590,22 @@ export class PostsService {
   }
 
   async toggleBookmark(userId: bigint, postId: bigint) {
-    const post = await this.prisma.post.findUnique({ where: { id: postId } });
+    const post = await this.prisma.post.findUnique({ 
+      where: { id: postId },
+      include: { author: true }
+    });
     if (!post) throw new NotFoundException('Post bulunamadı.');
+
+    // Engel kontrolü
+    const block = await this.prisma.block.findFirst({
+      where: {
+        OR: [
+          { blockerId: userId, blockedId: post.authorId },
+          { blockerId: post.authorId, blockedId: userId }
+        ]
+      }
+    });
+    if (block) throw new ForbiddenException('Bu kullanıcıyla etkileşim kuramazsınız.');
 
     // Twitter Mantığı: Repost'un bookmark'ı orijinal post'u bookmark'lar
     const targetPostId = post.repostId || post.id;
@@ -588,12 +632,14 @@ export class PostsService {
   }
 
   async findByCategory(categoryId: bigint, userId?: bigint) {
+    const blockedIds = await this.getBlockedUserIds(userId);
     const posts = await this.prisma.post.findMany({
       where: {
         categoryId,
         published: true,
         isDeleted: false,
         parentId: null,
+        authorId: { notIn: blockedIds },
         OR: [
           { author: { isPrivate: false } },
           { authorId: userId },
@@ -1032,6 +1078,19 @@ export class PostsService {
       },
     });
     if (!post) return null;
+
+    // Karşılıklı Engel Kontrolü
+    if (currentUserId) {
+      const block = await this.prisma.block.findFirst({
+        where: {
+          OR: [
+            { blockerId: currentUserId, blockedId: post.authorId },
+            { blockerId: post.authorId, blockedId: currentUserId }
+          ]
+        }
+      });
+      if (block) throw new NotFoundException('Post bulunamadı.');
+    }
 
     if (post.author.isPrivate && post.authorId !== currentUserId) {
       const isFollowing = await this.prisma.follow.findUnique({

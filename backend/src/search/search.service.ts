@@ -50,12 +50,23 @@ export class SearchService {
   async search(query: string, currentUserId?: bigint) {
     if (!query || query.trim().length < 2) return { posts: [], users: [] };
 
+    // Engel filtresi
+    let blockedIds: bigint[] = [];
+    if (currentUserId) {
+      const [blocking, blockedBy] = await Promise.all([
+        this.prisma.block.findMany({ where: { blockerId: currentUserId }, select: { blockedId: true } }),
+        this.prisma.block.findMany({ where: { blockedId: currentUserId }, select: { blockerId: true } }),
+      ]);
+      blockedIds = [...blocking.map(b => b.blockedId), ...blockedBy.map(b => b.blockerId)];
+    }
+
     const [posts, users] = await Promise.all([
       this.prisma.post.findMany({
         where: {
           published: true,
           isDeleted: false,
           content: { contains: query, mode: 'insensitive' },
+          authorId: { notIn: blockedIds },
           author: {
             OR: [
               { isPrivate: false }, // Herkese açık hesaplar
@@ -94,6 +105,7 @@ export class SearchService {
       }),
       this.prisma.user.findMany({
         where: {
+          id: { notIn: blockedIds },
           OR: [
             { username: { contains: query, mode: 'insensitive' } },
             { fullName: { contains: query, mode: 'insensitive' } },

@@ -361,6 +361,7 @@
             </div>
           </div>
 
+          <!-- CONTENT SECTION -->
           <template v-if="canViewContent">
             <div
               class="flex border-b border-slate-100 dark:border-gray-800 mt-6 sm:mt-8 mb-4 sm:mb-6 overflow-x-auto no-scrollbar"
@@ -410,6 +411,36 @@
               />
             </div>
           </template>
+
+          <!-- BLOCKED BY ME NOTICE -->
+          <div 
+            v-else-if="isBlockedByMe" 
+            class="mt-12 py-16 text-center bg-red-50/50 dark:bg-red-950/10 rounded-[2.5rem] border border-dashed border-red-200 dark:border-red-900/30 mx-4 sm:mx-0 animate-in fade-in slide-in-from-bottom-4 duration-500"
+          >
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-100 dark:bg-red-900/30 mb-4 border border-red-200 dark:border-red-800/20">
+              <component :is="getBadgeComponent('user-x')" class="w-6 h-6 text-red-600 dark:text-red-400" />
+            </div>
+            <h3 class="text-base font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-1.5">Bu Kullanıcıyı Engellediniz</h3>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 font-black uppercase tracking-[0.2em] opacity-50 mb-6">İçeriği görmek için engeli kaldırmalısınız.</p>
+            <button 
+              @click="handleBlockToggle"
+              class="px-8 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-full text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-red-600/20 active:scale-95"
+            >
+              {{ followLoading ? 'İşleniyor...' : 'Engeli Kaldır' }}
+            </button>
+          </div>
+
+          <!-- BLOCKED ME NOTICE (USER NOT FOUND FEEL) -->
+          <div 
+            v-else-if="isBlockedMe" 
+            class="mt-12 py-16 text-center bg-gray-50/50 dark:bg-white/[0.02] rounded-[2.5rem] border border-dashed border-gray-200 dark:border-white/10 mx-4 sm:mx-0 animate-in fade-in slide-in-from-bottom-4 duration-500"
+          >
+            <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800/50 mb-4 border border-gray-200 dark:border-white/5">
+              <component :is="getBadgeComponent('search')" class="w-6 h-6 text-gray-400 dark:text-gray-500" />
+            </div>
+            <h3 class="text-base font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-1.5">Kullanıcıya Ulaşılamıyor</h3>
+            <p class="text-[10px] text-gray-500 dark:text-gray-400 font-black uppercase tracking-[0.2em] opacity-50">Bu hesap artık mevcut değil veya erişiminiz kısıtlanmış.</p>
+          </div>
 
           <!-- PRIVATE ACCOUNT NOTICE (MINIMALIST) -->
           <div 
@@ -754,11 +785,14 @@ const isMyProfile = computed(() => {
   return String(myId) === String(targetId);
 });
 const isFollowing = computed(() => displayedUser.value?.isFollowing);
+const isBlockedByMe = computed(() => displayedUser.value?.isBlockedByMe);
+const isBlockedMe = computed(() => displayedUser.value?.isBlockedMe);
+
 const canViewContent = computed(
   () =>
     (isMyProfile.value ||
-      !displayedUser.value?.isPrivate ||
-      isFollowing.value) &&
+      (!displayedUser.value?.isPrivate && !isBlockedMe.value && !isBlockedByMe.value) ||
+      (isFollowing.value && !isBlockedMe.value && !isBlockedByMe.value)) &&
     !displayedUser.value?.isBanned,
 );
 const userInitials = computed(() =>

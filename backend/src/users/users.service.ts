@@ -112,10 +112,11 @@ export class UsersService {
 
     let followStatus: 'FOLLOWING' | 'PENDING' | 'NONE' = 'NONE';
     let isFollowing = false;
-    let isBlocked = false;
+    let isBlockedByMe = false;
+    let isBlockedMe = false;
 
     if (currentUserId) {
-      const [follow, request, block] = await Promise.all([
+      const [follow, request, blockByMe, blockMe] = await Promise.all([
         this.prisma.follow.findFirst({
           where: { followerId: currentUserId, followingId: user.id },
         }),
@@ -124,6 +125,9 @@ export class UsersService {
         }),
         this.prisma.block.findFirst({
           where: { blockerId: currentUserId, blockedId: user.id },
+        }),
+        this.prisma.block.findFirst({
+          where: { blockerId: user.id, blockedId: currentUserId },
         }),
       ]);
 
@@ -134,10 +138,25 @@ export class UsersService {
         followStatus = 'PENDING';
       }
 
-      isBlocked = !!block;
+      isBlockedByMe = !!blockByMe;
+      isBlockedMe = !!blockMe;
     }
 
-    return { ...user, isFollowing, followStatus, isBlocked };
+    // Eğer o beni engellediyse, verileri kısıtlı döndürelim (Privacy)
+    if (isBlockedMe) {
+      return {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        avatarUrl: user.avatarUrl,
+        isBlockedMe: true,
+        isBlockedByMe: false, // O beni engellediği için benim engelim önemsiz kalabilir
+        isPrivate: true,
+        _count: { posts: 0, followers: 0, following: 0 }
+      };
+    }
+
+    return { ...user, isFollowing, followStatus, isBlockedByMe, isBlockedMe };
   }
 
   async findById(id: bigint) {

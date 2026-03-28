@@ -94,8 +94,20 @@ export const useProfileStore = defineStore("profile", () => {
   // ADMIN & PROFILE ACTIONS
   const blockUser = async (userId: string) => {
     const res = await apiClient.post(`/users/${userId}/block`);
-    if (profileUser.value && profileUser.value.id === userId) {
-      profileUser.value.isBlocked = !profileUser.value.isBlocked;
+    // res.data.blocked: true (engellendi) veya false (engel kaldırıldı) döner
+    if (profileUser.value && String(profileUser.value.id) === String(userId)) {
+      profileUser.value.isBlockedByMe = res.data.blocked;
+      profileUser.value.isBlocked = res.data.blocked; // Geriye dönük uyumluluk için
+      
+      // Engel anında içerikleri temizleyelim (Gizlilik)
+      if (res.data.blocked) {
+        userPosts.value = [];
+        userReplies.value = [];
+        userReposts.value = [];
+        userLikedPosts.value = [];
+        profileUser.value.isFollowing = false;
+        profileUser.value.followStatus = 'NONE';
+      }
     }
     return res.data;
   };
