@@ -245,8 +245,11 @@ async function selectTrendingCategory(categoryId: string) {
 }
 
 function handleSearch() {
-  if (searchQuery.value.trim()) {
-    router.push(`/search?q=${encodeURIComponent(searchQuery.value.trim())}`);
+  const query = searchQuery.value.trim();
+  if (query) {
+    router.push(`/search?q=${encodeURIComponent(query)}`);
+  } else {
+    router.push("/");
   }
 }
 
