@@ -166,4 +166,10 @@ export class PostsController {
   refreshSentiment(@Param('id') id: string, @CurrentUser() user) {
     return this.postsService.refreshSentiment(BigInt(id), BigInt(user.id));
   }
+
+  @Post(':id/refresh-ai')
+  @UseGuards(JwtAuthGuard)
+  refreshAI(@Param('id') id: string, @CurrentUser() user) {
+    return this.postsService.refreshAI(BigInt(id), BigInt(user.id));
+  }
 }

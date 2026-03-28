@@ -47,7 +47,7 @@ export class AiService implements OnModuleInit {
         this.model = this.genAI.getGenerativeModel({
           model: selectedModel,
           generationConfig: {
-            temperature: 0.1,
+            temperature: 0.5, // Daha yaratıcı ve değişken yanıtlar için yükseltildi
             // Sadece Gemini modelleri JSON modunu garanti eder, Gemma için kapatıyoruz
             ...(selectedModel.includes('gemini')
               ? { responseMimeType: 'application/json' }

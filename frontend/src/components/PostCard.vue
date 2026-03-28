@@ -296,16 +296,21 @@ const isOwner = computed(() => authStore.user?.id === props.post.authorId);
 const isAdmin = computed(() => authStore.user?.role === "ADMIN");
 
 const handleRefreshAI = async () => {
+  console.log("[PostCard] Refresh AI clicked for post:", displayPost.value.id);
   try {
     const res = await postsStore.refreshAI(displayPost.value.id);
+    console.log("[PostCard] Refresh AI response:", res);
     postsStore.updatePostLocally(displayPost.value.id, {
       sentiment: res.sentiment,
       sentimentScore: res.sentimentScore,
+      category: res.category,
+      categoryId: res.categoryId
     });
     toast.success("AI Analizi yenilendi!");
     showMenu.value = false;
-  } catch (error) {
-    toast.error("AI yenileme hatası!");
+  } catch (error: any) {
+    console.error("[PostCard] Refresh AI error:", error);
+    toast.error("AI yenileme hatası! " + (error.response?.data?.message || ""));
   }
 };
 

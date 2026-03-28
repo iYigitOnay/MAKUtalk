@@ -8,13 +8,14 @@ export interface User {
   coverUrl?: string;
   department?: string;
   class?: string;
-  role: 'USER' | 'ADMIN' | 'ACADEMIC';
+  role: "USER" | "ADMIN" | "ACADEMIC";
   isBanned: boolean;
   isPrivate: boolean;
   isFollowing?: boolean;
-  followStatus?: 'FOLLOWING' | 'PENDING' | 'NONE';
+  followStatus?: "FOLLOWING" | "PENDING" | "NONE";
   isBlocked?: boolean;
-  createdAt: string;  updatedAt: string;
+  createdAt: string;
+  updatedAt: string;
   _count?: {
     posts: number;
     followers: number;
@@ -41,7 +42,7 @@ export interface Post {
   repostId?: string;
   repostOf?: Post;
   parentId?: string; // TWITTER MANTIĞI: Yanıt verilen postun ID'si
-  parent?: Post;     // TWITTER MANTIĞI: Yanıt verilen ana post verisi
+  parent?: Post; // TWITTER MANTIĞI: Yanıt verilen ana post verisi
   isAcademic: boolean;
   documentUrl?: string;
   sentiment?: string;

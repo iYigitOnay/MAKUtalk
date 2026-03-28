@@ -37,8 +37,8 @@ export class PostsService {
   async create(
     userId: bigint,
     createPostDto: CreatePostDto,
-    files?: { 
-      image?: Express.Multer.File[]; 
+    files?: {
+      image?: Express.Multer.File[];
       document?: Express.Multer.File[];
       video?: Express.Multer.File[];
     },
@@ -110,27 +110,38 @@ export class PostsService {
 
     if (files?.video?.[0]) {
       const uploadDir = path.join(process.cwd(), 'uploads', 'posts');
-      if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+      if (!fs.existsSync(uploadDir))
+        fs.mkdirSync(uploadDir, { recursive: true });
 
       const fileName = `post-video-${Date.now()}-${files.video[0].originalname.replace(/\s+/g, '_')}`;
       const tempPath = path.join(uploadDir, `temp-${fileName}`);
-      
+
       try {
         // 1. Videoyu geçici olarak kaydet
         fs.writeFileSync(tempPath, files.video[0].buffer);
 
         // 2. Sıkıştır
-        const compressedPath = await this.mediaProcessingService.compressVideo(tempPath, fileName);
+        const compressedPath = await this.mediaProcessingService.compressVideo(
+          tempPath,
+          fileName,
+        );
         videoUrl = `/uploads/chat/${path.basename(compressedPath)}`; // MediaProcessingService 'uploads/chat' kullanıyor
 
         // 3. Thumbnail üret
-        const thumbPath = await this.mediaProcessingService.generateThumbnail(compressedPath, fileName);
+        const thumbPath = await this.mediaProcessingService.generateThumbnail(
+          compressedPath,
+          fileName,
+        );
         thumbnailUrl = `/uploads/covers/${path.basename(thumbPath)}`;
 
         // 4. Geçici dosyayı sil
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
       } catch (error) {
-        this.myLogger.error(`Video işleme hatası: ${error.message}`, error.stack, 'PostsService');
+        this.myLogger.error(
+          `Video işleme hatası: ${error.message}`,
+          error.stack,
+          'PostsService',
+        );
         if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
       }
     }
@@ -267,16 +278,16 @@ export class PostsService {
     if (cleanText) {
       const mentionRegex = /@(\w+)/g;
       const matches = [...cleanText.matchAll(mentionRegex)];
-      const mentionedUsernames = [...new Set(matches.map(m => m[1]))]; // Tekilleştir
+      const mentionedUsernames = [...new Set(matches.map((m) => m[1]))]; // Tekilleştir
 
       if (mentionedUsernames.length > 0) {
         // Bahsedilen kullanıcıları DB'den bul (Toplu Sorgu)
         const mentionedUsers = await this.prisma.user.findMany({
-          where: { 
+          where: {
             username: { in: mentionedUsernames },
-            id: { not: userId } // Kendisini etiketlemişse bildirim gitmesin
+            id: { not: userId }, // Kendisini etiketlemişse bildirim gitmesin
           },
-          select: { id: true }
+          select: { id: true },
         });
 
         // Her birine bildirim gönder
@@ -286,10 +297,12 @@ export class PostsService {
               NotificationType.MENTION,
               targetUser.id,
               userId,
-              post.id
+              post.id,
             );
           } catch (err) {
-            this.myLogger.error(`Mention bildirimi gönderilemedi: ${err.message}`);
+            this.myLogger.error(
+              `Mention bildirimi gönderilemedi: ${err.message}`,
+            );
           }
         }
       }
@@ -314,9 +327,9 @@ export class PostsService {
         where: { id: existingRepost.id },
         data: { isDeleted: true },
       });
-      
+
       const count = await this.prisma.post.count({
-        where: { repostId: targetPostId, isDeleted: false }
+        where: { repostId: targetPostId, isDeleted: false },
       });
 
       return { reposted: false, count, message: 'Remakü geri alındı.' };
@@ -391,7 +404,7 @@ export class PostsService {
     }
 
     const count = await this.prisma.post.count({
-      where: { repostId: targetPostId, isDeleted: false }
+      where: { repostId: targetPostId, isDeleted: false },
     });
 
     return { reposted: true, post: newRepost, count, message: 'Remakülendi!' };
@@ -1193,6 +1206,67 @@ export class PostsService {
       data: {
         sentiment: aiAnalysis.sentiment,
         sentimentScore: aiAnalysis.sentimentScore,
+      },
+      include: {
+        author: {
+          select: {
+            id: true,
+            username: true,
+            fullName: true,
+            avatarUrl: true,
+            isPrivate: true,
+            badges: { include: { badge: true } },
+          },
+        },
+        category: true,
+        _count: {
+          select: {
+            likes: true,
+            reposts: { where: { isDeleted: false } },
+            replies: { where: { isDeleted: false } },
+          },
+        },
+      },
+    });
+  }
+
+  async refreshAI(id: bigint, userId: bigint) {
+    this.myLogger.log(`AI Refreshing for post: ${id} by admin: ${userId}`, 'PostsService');
+    
+    const post = await this.prisma.post.findFirst({
+      where: { id, isDeleted: false },
+    });
+    if (!post) throw new NotFoundException('Post bulunamadı.');
+
+    // Sadece admin veya sistem sahibi yenileyebilir (admin kontrolü controller'da rol bazlı yapılabilir ama burada da garantileyebiliriz)
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (user?.role !== 'ADMIN') throw new ForbiddenException('Bu işlem için admin yetkisi gerekir.');
+
+    // AI'ya hem sentiment hem kategori için soralım
+    const aiAnalysis = await this.aiService.analyzePost(
+      post.content || '',
+      true, // category identification true
+    );
+
+    this.myLogger.log(`AI Analysis result: ${JSON.stringify(aiAnalysis)}`, 'PostsService');
+
+    let categoryId = post.categoryId;
+
+    if (aiAnalysis.suggestedCategorySlug) {
+      const suggestedCategory = await this.prisma.category.findUnique({
+        where: { slug: aiAnalysis.suggestedCategorySlug.toLowerCase().trim() },
+      });
+      if (suggestedCategory) {
+        categoryId = suggestedCategory.id;
+      }
+    }
+
+    return this.prisma.post.update({
+      where: { id },
+      data: {
+        sentiment: aiAnalysis.sentiment,
+        sentimentScore: aiAnalysis.sentimentScore,
+        categoryId: categoryId,
       },
       include: {
         author: {

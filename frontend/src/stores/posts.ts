@@ -252,6 +252,19 @@ export const usePostsStore = defineStore("posts", () => {
     }
   };
 
+  const refreshAI = async (postId: string) => {
+    console.log(`[PostsStore] refreshAI tetiklendi - PostID: ${postId}`);
+    const response = await apiClient.post(`/posts/${postId}/refresh-ai`);
+    console.log(`[PostsStore] refreshAI sonucu:`, response.data);
+    updatePostLocally(postId, {
+      sentiment: response.data.sentiment,
+      sentimentScore: response.data.sentimentScore,
+      category: response.data.category,
+      categoryId: response.data.categoryId
+    });
+    return response.data;
+  };
+
   const updatePostLocally = (postId: string, updates: any) => {
     console.log(`[PostsStore] Kusursuz Senkronizasyon Başlatıldı - Hedef PostID: ${postId}`, updates);
     let totalUpdated = 0;
@@ -268,6 +281,8 @@ export const usePostsStore = defineStore("posts", () => {
         if (updates.isRead !== undefined) p.isRead = updates.isRead;
         if (updates.sentiment !== undefined) p.sentiment = updates.sentiment;
         if (updates.sentimentScore !== undefined) p.sentimentScore = updates.sentimentScore;
+        if (updates.category !== undefined) p.category = updates.category;
+        if (updates.categoryId !== undefined) p.categoryId = updates.categoryId;
         if (updates._count) p._count = { ...p._count, ...updates._count };
         updated = true;
       }
@@ -280,6 +295,9 @@ export const usePostsStore = defineStore("posts", () => {
         if (updates.isBookmarked !== undefined) r.isBookmarked = updates.isBookmarked;
         if (updates.isRead !== undefined) r.isRead = updates.isRead;
         if (updates.sentiment !== undefined) r.sentiment = updates.sentiment;
+        if (updates.sentimentScore !== undefined) r.sentimentScore = updates.sentimentScore;
+        if (updates.category !== undefined) r.category = updates.category;
+        if (updates.categoryId !== undefined) r.categoryId = updates.categoryId;
         if (updates._count) r._count = { ...r._count, ...updates._count };
         
         // Remakü wrapper'ının sayaçlarını da orijinaliyle eşitlemeliyiz
@@ -371,7 +389,7 @@ export const usePostsStore = defineStore("posts", () => {
   return {
     posts, myPosts, searchResults, currentCategory, currentThread, loading, error, activeFeedTab,
     fetchPosts, fetchAcademicPosts, fetchBookmarks, fetchPostsByCategory, fetchMyPosts, toggleRepost, toggleBookmark, markAsRead, togglePin, createPost,
-    fetchThread, deletePost, updatePostLocally, updateUserInPosts, refreshSentiment,
+    fetchThread, deletePost, updatePostLocally, updateUserInPosts, refreshSentiment, refreshAI,
     resetCategory, onPostCreated, sharePost, isShareModalOpen, openShareModal, closeShareModal
   };
 });
