@@ -1072,15 +1072,12 @@ const handleLogin = async () => {
 const handleRegister = async () => {
   registerLoading.value = true;
   try {
-    await apiClient.post("/auth/register", registerForm.value);
+    // authStore.register'ı kullanmak daha tutarlı olur
+    await authStore.register(registerForm.value);
     toast.success("Kayıt başarılı! Mailini kontrol et. 📬");
     showVerification.value = true;
   } catch (error: any) {
-    const errorData = error.response?.data;
-    const message = Array.isArray(errorData?.message)
-      ? errorData.message[0]
-      : errorData?.message || "Kayıt başarısız.";
-    toast.error(message);
+    toast.error(error.message || "Kayıt başarısız.");
   } finally {
     registerLoading.value = false;
   }

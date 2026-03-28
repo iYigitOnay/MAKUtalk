@@ -59,15 +59,16 @@ export const useAuthStore = defineStore("auth", () => {
     } catch (error: any) {
       console.error("Login error:", error);
       const errorData = error.response?.data;
-      
+      const message = Array.isArray(errorData?.message)
+        ? errorData.message[0]
+        : errorData?.message || "Giriş başarısız.";
+
       // YASAKLI KULLANICI KONTROLÜ
-      if (errorData?.message === 'BANNED_USER' || error.response?.status === 403) {
-        // Geçici bir "yasaklı" bilgisi tutabiliriz veya direkt router ile yönlendirebiliriz
-        // Ama store içinde yönlendirme yapmak yerine hatayı yukarı fırlatıp Auth.vue'da yakalamak daha temiz
-        throw { type: 'BANNED', message: 'BANNED_USER' };
+      if (message === "BANNED_USER" || error.response?.status === 403) {
+        throw { type: "BANNED", message: "Hesabınız askıya alınmıştır." };
       }
-      
-      throw errorData || error;
+
+      throw { message };
     } finally {
       loading.value = false;
     }
@@ -81,7 +82,11 @@ export const useAuthStore = defineStore("auth", () => {
       return response.data;
     } catch (error: any) {
       console.error("Register error:", error);
-      throw error.response?.data || error;
+      const errorData = error.response?.data;
+      const message = Array.isArray(errorData?.message)
+        ? errorData.message[0]
+        : errorData?.message || "Kayıt başarısız.";
+      throw { message };
     } finally {
       loading.value = false;
     }
