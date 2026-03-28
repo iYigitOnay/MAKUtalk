@@ -313,12 +313,14 @@ const playVideo = () => {
   isPlaying.value = true;
   isEnded.value = false;
   videoStore.setCurrentlyPlaying(props.videoUrl);
+  videoStore.setPlayingState(props.videoUrl, true);
 };
 
 const pauseVideo = () => {
   if (!videoRef.value) return;
   videoRef.value.pause();
   isPlaying.value = false;
+  videoStore.setPlayingState(props.videoUrl, false);
 };
 
 const replayVideo = () => {
@@ -336,6 +338,8 @@ const seek = (seconds: number) => {
 const onEnded = () => {
   isPlaying.value = false;
   isEnded.value = true;
+  videoStore.setPlayingState(props.videoUrl, false);
+  videoStore.setPlaybackTime(props.videoUrl, 0); // Bittiğinde sıfırla
   if (videoStore.currentlyPlayingId === props.videoUrl) {
     videoStore.setCurrentlyPlaying(null);
   }
@@ -379,12 +383,28 @@ const updateProgress = () => {
   if (!videoRef.value) return;
   currentTime.value = videoRef.value.currentTime;
   progress.value = (currentTime.value / duration.value) * 100;
+  
+  // Saniyeyi store'a kaydet
+  videoStore.setPlaybackTime(props.videoUrl, currentTime.value);
 };
 
 const onMetadataLoaded = () => {
   if (videoRef.value) {
     duration.value = videoRef.value.duration;
     videoRef.value.volume = volume.value;
+    
+    // ESKİ KONUMDAN DEVAM ET
+    const savedTime = videoStore.getPlaybackTime(props.videoUrl);
+    if (savedTime > 0 && savedTime < duration.value) {
+      videoRef.value.currentTime = savedTime;
+      currentTime.value = savedTime;
+    }
+
+    // EĞER ÖNCEKİ SAYFADA OYNUYORSA BURADA DA OYNAT
+    if (videoStore.getPlayingState(props.videoUrl)) {
+      playVideo();
+    }
+
     if (videoRef.value.videoWidth && videoRef.value.videoHeight) {
       videoRatio.value = videoRef.value.videoWidth / videoRef.value.videoHeight;
     }
