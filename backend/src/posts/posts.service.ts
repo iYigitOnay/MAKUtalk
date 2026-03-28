@@ -529,12 +529,12 @@ export class PostsService {
   async findBookmarks(userId: bigint) {
     const blockedIds = await this.getBlockedUserIds(userId);
     const bookmarks = await this.prisma.bookmark.findMany({
-      where: { 
-        userId, 
-        post: { 
+      where: {
+        userId,
+        post: {
           isDeleted: false,
-          authorId: { notIn: blockedIds }
-        } 
+          authorId: { notIn: blockedIds },
+        },
       },
       include: {
         post: {
@@ -590,9 +590,9 @@ export class PostsService {
   }
 
   async toggleBookmark(userId: bigint, postId: bigint) {
-    const post = await this.prisma.post.findUnique({ 
+    const post = await this.prisma.post.findUnique({
       where: { id: postId },
-      include: { author: true }
+      include: { author: true },
     });
     if (!post) throw new NotFoundException('Post bulunamadı.');
 
@@ -601,11 +601,12 @@ export class PostsService {
       where: {
         OR: [
           { blockerId: userId, blockedId: post.authorId },
-          { blockerId: post.authorId, blockedId: userId }
-        ]
-      }
+          { blockerId: post.authorId, blockedId: userId },
+        ],
+      },
     });
-    if (block) throw new ForbiddenException('Bu kullanıcıyla etkileşim kuramazsınız.');
+    if (block)
+      throw new ForbiddenException('Bu kullanıcıyla etkileşim kuramazsınız.');
 
     // Twitter Mantığı: Repost'un bookmark'ı orijinal post'u bookmark'lar
     const targetPostId = post.repostId || post.id;
@@ -1085,9 +1086,9 @@ export class PostsService {
         where: {
           OR: [
             { blockerId: currentUserId, blockedId: post.authorId },
-            { blockerId: post.authorId, blockedId: currentUserId }
-          ]
-        }
+            { blockerId: post.authorId, blockedId: currentUserId },
+          ],
+        },
       });
       if (block) throw new NotFoundException('Post bulunamadı.');
     }
@@ -1290,8 +1291,11 @@ export class PostsService {
   }
 
   async refreshAI(id: bigint, userId: bigint) {
-    this.myLogger.log(`AI Refreshing for post: ${id} by admin: ${userId}`, 'PostsService');
-    
+    this.myLogger.log(
+      `AI Refreshing for post: ${id} by admin: ${userId}`,
+      'PostsService',
+    );
+
     const post = await this.prisma.post.findFirst({
       where: { id, isDeleted: false },
     });
@@ -1299,7 +1303,8 @@ export class PostsService {
 
     // Sadece admin veya sistem sahibi yenileyebilir (admin kontrolü controller'da rol bazlı yapılabilir ama burada da garantileyebiliriz)
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (user?.role !== 'ADMIN') throw new ForbiddenException('Bu işlem için admin yetkisi gerekir.');
+    if (user?.role !== 'ADMIN')
+      throw new ForbiddenException('Bu işlem için admin yetkisi gerekir.');
 
     // AI'ya hem sentiment hem kategori için soralım
     const aiAnalysis = await this.aiService.analyzePost(
@@ -1307,7 +1312,10 @@ export class PostsService {
       true, // category identification true
     );
 
-    this.myLogger.log(`AI Analysis result: ${JSON.stringify(aiAnalysis)}`, 'PostsService');
+    this.myLogger.log(
+      `AI Analysis result: ${JSON.stringify(aiAnalysis)}`,
+      'PostsService',
+    );
 
     let categoryId = post.categoryId;
 
