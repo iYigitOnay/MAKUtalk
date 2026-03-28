@@ -431,12 +431,12 @@ const fetchTrends = async () => {
   try {
     const [catRes, tagRes] = await Promise.all([
       apiClient.get("/categories/trending"),
-      apiClient.get("/search/hashtags/popular?limit=12"),
+      apiClient.get("/hashtags/trending?limit=12"),
     ]);
     trendingCategories.value = catRes.data;
     trendingHashtags.value = tagRes.data.map((t: any) => ({
-      name: t.tag,
-      count: t.count,
+      name: t.name,
+      count: t.usageCount,
     }));
   } catch (err) {
     console.error("Trends fetch error:", err);

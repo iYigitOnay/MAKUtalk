@@ -217,8 +217,11 @@ onUnmounted(() => {
 
 async function fetchHashtags() {
   try {
-    const res = await apiClient.get("/search/hashtags/popular?limit=8");
-    hashtags.value = res.data;
+    const res = await apiClient.get("/hashtags/trending?limit=8");
+    hashtags.value = res.data.map((t: any) => ({
+      tag: t.name,
+      count: t.usageCount,
+    }));
   } catch {
     hashtags.value = [];
   } finally {

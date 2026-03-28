@@ -10,6 +10,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
 import { SnowflakeService } from '../common/snowflake/snowflake.service';
+import { HashtagService } from '../hashtags/hashtag.service';
 
 @Injectable()
 export class UsersService {
@@ -17,6 +18,7 @@ export class UsersService {
     private prisma: PrismaService,
     private mailService: MailService,
     private snowflakeService: SnowflakeService,
+    private readonly hashtagService: HashtagService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -267,7 +269,14 @@ export class UsersService {
         }
       }
 
-      return await this.prisma.user.update({
+      const oldIsPrivate = user.isPrivate;
+      let newIsPrivate = oldIsPrivate;
+      
+      if (data.isPrivate !== undefined) {
+        newIsPrivate = String(data.isPrivate) === 'true';
+      }
+
+      const updatedUser = await this.prisma.user.update({
         where: { id: userId },
         data: updateData,
         select: {
@@ -283,6 +292,14 @@ export class UsersService {
           class: true,
         },
       });
+
+      // Eğer gizlilik durumu değişmişse, arka planda hashtag senkronizasyonunu başlat
+      if (oldIsPrivate !== updatedUser.isPrivate) {
+        this.hashtagService.syncUserHashtagsAfterPrivacyChange(userId, updatedUser.isPrivate)
+          .catch(err => console.error('Gizlilik değişimi hashtag senkronizasyon hatası:', err));
+      }
+
+      return updatedUser;
     } catch (error) {
       uploadedFiles.forEach((filePath) => {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
