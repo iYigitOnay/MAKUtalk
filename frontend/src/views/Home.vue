@@ -191,14 +191,14 @@
             </div>
           </div>
 
-          <div v-if="selectedImagePreview" class="relative mt-4 group">
+          <div v-if="selectedImagePreview" class="relative mt-4 group rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/20 bg-gray-50 dark:bg-gray-900/50 flex justify-center">
             <img
               :src="selectedImagePreview"
-              class="w-full max-h-80 object-cover rounded-2xl border border-gray-100 dark:border-primary-900/20 shadow-sm"
+              class="w-full h-auto max-h-[512px] object-contain shadow-sm"
             />
             <button
               @click="removeSelectedImage"
-              class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90"
+              class="absolute top-3 right-3 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90 z-10"
             >
               <svg
                 class="w-5 h-5"
@@ -217,15 +217,15 @@
           </div>
 
           <!-- Video Preview -->
-          <div v-if="selectedVideoPreview" class="relative mt-4 group">
+          <div v-if="selectedVideoPreview" class="relative mt-4 group rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/20 bg-gray-50 dark:bg-gray-900/50 flex justify-center">
             <video
               :src="selectedVideoPreview"
-              class="w-full max-h-80 object-cover rounded-2xl border border-gray-100 dark:border-primary-900/20 shadow-sm"
+              class="w-full h-auto max-h-[512px] object-contain shadow-sm"
               controls
             />
             <button
               @click="removeSelectedVideo"
-              class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90"
+              class="absolute top-3 right-3 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90 z-10"
             >
               <svg
                 class="w-5 h-5"
@@ -530,16 +530,32 @@
                 </div>
               </transition>
 
+              <!-- Upload Progress Bar -->
+              <div v-if="isUploading" class="flex-1 max-w-[200px] bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden relative">
+                <div 
+                  class="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300"
+                  :style="{ width: uploadProgress + '%' }"
+                ></div>
+              </div>
+
               <button
                 @click="handleCreatePost"
                 :disabled="
-                  (!newPostContent.trim() && !selectedImage) ||
+                  (!newPostContent.trim() && !selectedImage && !selectedVideo && !selectedDocument) ||
                   postsStore.loading ||
+                  isUploading ||
                   newPostContent.length > 750
                 "
-                class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50 disabled:grayscale transition-all"
+                class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50 disabled:grayscale transition-all flex items-center gap-2"
               >
-                PAYLAŞ
+                <template v-if="isUploading">
+                  <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  YÜKLENİYOR
+                </template>
+                <template v-else>PAYLAŞ</template>
               </button>
             </div>
           </div>
@@ -656,6 +672,7 @@ import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
 import { useCategoriesStore } from "@/stores/categories";
 import { useToast } from "vue-toastification";
+import { compressImage } from "@/common/utils/image-optimizer";
 import PostCard from "@/components/PostCard.vue";
 import CommentsModal from "@/components/CommentsModal.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
@@ -923,19 +940,42 @@ const handleCreatePost = async () => {
     !selectedDocument.value
   )
     return;
+
+  isUploading.value = true;
+  uploadProgress.value = 0;
+
   try {
     const isAcademicPost =
       activeFeedTab.value === "academic" && canPostToAcademic.value;
+
+    let imageToUpload = selectedImage.value || undefined;
+
+    // Fotoğraf sıkıştırma (Sadece fotoğraf varsa)
+    if (imageToUpload) {
+      try {
+        const compressed = await compressImage(imageToUpload);
+        imageToUpload = compressed;
+      } catch (e) {
+        console.error("Görsel sıkıştırılamadı, orijinali gönderiliyor:", e);
+      }
+    }
 
     await postsStore.createPost(
       newPostContent.value,
       true,
       isAcademicPost ? undefined : selectedCategoryId.value || undefined,
-      selectedImage.value || undefined,
+      imageToUpload,
       undefined, // parentId
       isAcademicPost,
       selectedDocument.value || undefined,
       selectedVideo.value || undefined,
+      (progressEvent: any) => {
+        if (progressEvent.total) {
+          uploadProgress.value = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total,
+          );
+        }
+      },
     );
 
     newPostContent.value = "";
@@ -948,8 +988,14 @@ const handleCreatePost = async () => {
   } catch (err: any) {
     const msg = err.message || err.response?.data?.message;
     toast.error(Array.isArray(msg) ? msg[0] : msg || "Hata!");
+  } finally {
+    isUploading.value = false;
+    uploadProgress.value = 0;
   }
 };
+
+const isUploading = ref(false);
+const uploadProgress = ref(0);
 
 const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);

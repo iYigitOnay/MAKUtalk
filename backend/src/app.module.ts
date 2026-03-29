@@ -17,6 +17,7 @@ import { AiModule } from './ai/ai.module';
 import { MailModule } from './mail/mail.module';
 import { CampusModule } from './campus/campus.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HashtagModule } from './hashtags/hashtag.module';
 import { ChatModule } from './chat/chat.module';
@@ -57,6 +58,7 @@ import { CommonModule } from './common/common.module';
       },
     ]),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     PrismaModule,
     UsersModule,
     AuthModule,

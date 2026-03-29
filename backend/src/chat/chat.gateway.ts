@@ -246,4 +246,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const serializedPost = this.convertBigIntToString(post);
     this.server.emit('new_post', serializedPost);
   }
+
+  broadcastPostUpdate(post: any) {
+    const serializedPost = this.convertBigIntToString(post);
+    this.server.emit('post_updated', serializedPost);
+  }
 }

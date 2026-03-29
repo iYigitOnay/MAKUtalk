@@ -23,8 +23,10 @@ export function useSocket() {
       return;
     }
 
-    const socketUrl = import.meta.env.VITE_API_URL?.replace("/api", "") || "http://localhost:3000";
-    
+    const socketUrl =
+      import.meta.env.VITE_API_URL?.replace("/api", "") ||
+      "http://localhost:3000";
+
     socket = io(socketUrl, {
       auth: { token: `Bearer ${authStore.token}` },
       transports: ["websocket", "polling"],
@@ -55,7 +57,7 @@ export function useSocket() {
 
     socket.on("new_message", (message: any) => {
       console.log("📥 Yeni mesaj socketten geldi:", message);
-      
+
       // TÜM ID'leri string'e zorla (Snowflake Güvenliği)
       const normalizedMessage = {
         ...message,
@@ -64,24 +66,28 @@ export function useSocket() {
         conversationId: String(message.conversationId),
       };
 
-      // 1. Eğer mesajlaştığımız kişi ise mesaj listesine ekle
-      // Karşılaştırmayı her zaman string olarak ve trimleyerek yapıyoruz.
-      const activeConvId = chatStore.activeConversation?.id ? String(chatStore.activeConversation.id).trim() : null;
+
+      const activeConvId = chatStore.activeConversation?.id
+        ? String(chatStore.activeConversation.id).trim()
+        : null;
       const incomingConvId = normalizedMessage.conversationId.trim();
-      
-      console.log(`🧐 Karşılaştırma: Aktif=${activeConvId} | Gelen=${incomingConvId}`);
-      
+
+      console.log(
+        `🧐 Karşılaştırma: Aktif=${activeConvId} | Gelen=${incomingConvId}`,
+      );
+
       if (activeConvId && activeConvId === incomingConvId) {
         console.log("✅ Aktif sohbete mesaj eklendi.");
         chatStore.addMessage(normalizedMessage);
       } else {
-        console.log("ℹ️ Mesaj aktif olmayan bir sohbete geldi veya karşılaştırma başarısız.");
+        console.log(
+          "ℹ️ Mesaj aktif olmayan bir sohbete geldi veya karşılaştırma başarısız.",
+        );
       }
 
-      // 2. Bildirim kartını göster (Benim göndermediğim mesajlar için)
       if (normalizedMessage.senderId !== authStore.userId) {
         notificationsStore.pushLiveNotification({
-          liveId: `msg-${message.id}-${Date.now()}`, // ID bazlı tekillik
+          liveId: `msg-${message.id}-${Date.now()}`,
           displayType: "MESSAGE",
           type: "MESSAGE",
           sender: message.sender,
@@ -90,14 +96,14 @@ export function useSocket() {
         });
       }
 
-      // 3. Konuşma listesini güncelle (Sadece 1 kez çağrılmasını garanti et)
       debounceFetchConversations();
     });
 
     socket.on("new_notification", (notification: any) => {
       console.log(`🔔 Yeni bildirim: ${notification.type}`);
-      // Çiftleme Kontrolü (Store içindeki listeye göre)
-      const exists = notificationsStore.notifications.some(n => n.id === notification.id);
+      const exists = notificationsStore.notifications.some(
+        (n) => n.id === notification.id,
+      );
       if (exists) return;
 
       notificationsStore.unreadCount++;
@@ -111,7 +117,10 @@ export function useSocket() {
         sender: notification.sender,
         postId: notification.postId,
         comment: notification.comment, // Eksik olan bu kısımdı
-        content: notification.type === 'COMMENT' ? notification.comment?.content : notification.post?.content,
+        content:
+          notification.type === "COMMENT"
+            ? notification.comment?.content
+            : notification.post?.content,
       });
     });
 
@@ -127,14 +136,46 @@ export function useSocket() {
     });
 
     socket.on("user_status", (data: { userId: string; isOnline: boolean }) => {
-      console.log(`👤 Kullanıcı durumu değişti: ${data.userId} -> ${data.isOnline ? 'ONLINE' : 'OFFLINE'}`);
+      console.log(
+        `👤 Kullanıcı durumu değişti: ${data.userId} -> ${data.isOnline ? "ONLINE" : "OFFLINE"}`,
+      );
       chatStore.updateUserStatus(data.userId, data.isOnline);
     });
 
-    socket.on('messages_read', (data: { conversationId: string; readByUserId: string }) => {
-      console.log(`👁️ Okundu sinyali geldi: Conv ${data.conversationId}`);
-      // Store'daki mesajları güncelle — bu konuşmadaki tüm gönderdiğim mesajlar okundu
-      chatStore.markMessagesAsRead(data.conversationId);
+    socket.on(
+      "messages_read",
+      (data: { conversationId: string; readByUserId: string }) => {
+        console.log(`👁️ Okundu sinyali geldi: Conv ${data.conversationId}`);
+        chatStore.markMessagesAsRead(data.conversationId);
+      },
+    );
+
+    socket.on("new_post", (post: any) => {
+      console.log("Yeni post socketten geldi:", post.id);
+
+      // KENDİ POSTUMUZ MU? (Kendi postumuzu zaten createPost içinde ekledik)
+      // Snowflake ID'ler string olduğu için karşılaştırmayı trimleyerek yapıyoruz.
+      const myId = authStore.userId ? String(authStore.userId).trim() : null;
+      const authorId = post.authorId ? String(post.authorId).trim() : null;
+
+      if (myId && authorId === myId) {
+        console.log("ℹ️ Kendi postumuz, socket eklemesi atlanıyor.");
+        return;
+      }
+
+      const postsStore = usePostsStore();
+      const exists = postsStore.posts.some(
+        (p) => String(p.id) === String(post.id),
+      );
+      if (!exists && !post.parentId) {
+        postsStore.posts.unshift(post);
+      }
+    });
+
+    socket.on("post_updated", (post: any) => {
+      console.log("Post güncellendi:", post.id, post.processingStatus);
+      const postsStore = usePostsStore();
+      postsStore.updatePostLocally(String(post.id), post);
     });
 
     listenersAttached = true;
@@ -160,32 +201,65 @@ export function useSocket() {
     }
   };
 
-  const sendMessage = (conversationId: string, content: string, receiverId: string, postId?: string, isForwarded: boolean = false, mediaUrl?: string, mediaType?: string, thumbnailUrl?: string) => {
+  const sendMessage = (
+    conversationId: string,
+    content: string,
+    receiverId: string,
+    postId?: string,
+    isForwarded: boolean = false,
+    mediaUrl?: string,
+    mediaType?: string,
+    thumbnailUrl?: string,
+  ) => {
     if (!socket?.connected) {
       console.error("❌ Mesaj gönderilemedi: Soket bağlı değil.");
       return;
     }
-    socket.emit("send_message", { conversationId, content, receiverId, postId, isForwarded, mediaUrl, mediaType, thumbnailUrl });
+    socket.emit("send_message", {
+      conversationId,
+      content,
+      receiverId,
+      postId,
+      isForwarded,
+      mediaUrl,
+      mediaType,
+      thumbnailUrl,
+    });
   };
 
-  const sendTyping = (conversationId: string, receiverId: string, isTyping: boolean) => {
+  const sendTyping = (
+    conversationId: string,
+    receiverId: string,
+    isTyping: boolean,
+  ) => {
     if (!socket?.connected) return;
     socket.emit("typing", { conversationId, receiverId, isTyping });
   };
 
   const sendMarkRead = (conversationId: string) => {
     if (!socket?.connected) return;
-    socket.emit('mark_read', { conversationId });
+    socket.emit("mark_read", { conversationId });
   };
 
   // GLOBAL WATCHER: Auth durumu değiştikçe bağlan/kop
   // Bu watcher useSocket her çağrıldığında değil, uygulama ömrü boyunca sadece 1 kez kurulmalı
   if (!(window as any).__socket_watcher_installed) {
-    watch(() => authStore.isAuthenticated, (val) => {
-      val ? connect() : disconnect();
-    }, { immediate: true });
+    watch(
+      () => authStore.isAuthenticated,
+      (val) => {
+        val ? connect() : disconnect();
+      },
+      { immediate: true },
+    );
     (window as any).__socket_watcher_installed = true;
   }
 
-  return { isConnected, connect, disconnect, sendMessage, sendTyping, sendMarkRead };
+  return {
+    isConnected,
+    connect,
+    disconnect,
+    sendMessage,
+    sendTyping,
+    sendMarkRead,
+  };
 }

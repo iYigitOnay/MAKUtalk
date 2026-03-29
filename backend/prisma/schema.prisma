@@ -231,7 +231,8 @@ model Post {
   sentiment      String?  
   sentimentScore Float?
   isDeleted  Boolean  @default(false)
-  deletedAt  DateTime? // Silinme tarihi (15 gün sonra kalıcı silinme için)
+  isProcessing Boolean  @default(false)
+  deletedAt  DateTime? 
   isPinned    Boolean   @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt

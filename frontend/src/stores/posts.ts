@@ -162,6 +162,7 @@ export const usePostsStore = defineStore("posts", () => {
     isAcademic: boolean = false,
     document?: File,
     video?: File,
+    onUploadProgress?: (progressEvent: any) => void,
   ) => {
     loading.value = true;
     try {
@@ -177,10 +178,18 @@ export const usePostsStore = defineStore("posts", () => {
 
       const response = await apiClient.post<Post>("/posts", formData, {
         headers: { "Content-Type": "multipart/form-data" },
+        onUploadProgress,
       });
       
       if (!parentId) {
-        posts.value.unshift(response.data);
+        // MÜKERRER KONTROLÜ (Socket bizden önce davranmış olabilir)
+        const exists = posts.value.some(p => String(p.id) === String(response.data.id));
+        if (!exists) {
+          posts.value.unshift(response.data);
+        } else {
+          // Eğer zaten varsa, sadece isProcessing durumunu veya veriyi güncelle
+          updatePostLocally(response.data.id, response.data);
+        }
       } else {
         // Eger bu bir yanitsa, parent postun reply sayacini her yerde artir
         const parent = [...posts.value, ...searchResults.value].find(p => p.id === parentId);
@@ -283,6 +292,11 @@ export const usePostsStore = defineStore("posts", () => {
         if (updates.sentimentScore !== undefined) p.sentimentScore = updates.sentimentScore;
         if (updates.category !== undefined) p.category = updates.category;
         if (updates.categoryId !== undefined) p.categoryId = updates.categoryId;
+        if (updates.isProcessing !== undefined) p.isProcessing = updates.isProcessing;
+        if (updates.processingStatus !== undefined) p.processingStatus = updates.processingStatus;
+        if (updates.imageUrl !== undefined) p.imageUrl = updates.imageUrl;
+        if (updates.videoUrl !== undefined) p.videoUrl = updates.videoUrl;
+        if (updates.thumbnailUrl !== undefined) p.thumbnailUrl = updates.thumbnailUrl;
         if (updates._count) p._count = { ...p._count, ...updates._count };
         updated = true;
       }
@@ -298,6 +312,11 @@ export const usePostsStore = defineStore("posts", () => {
         if (updates.sentimentScore !== undefined) r.sentimentScore = updates.sentimentScore;
         if (updates.category !== undefined) r.category = updates.category;
         if (updates.categoryId !== undefined) r.categoryId = updates.categoryId;
+        if (updates.isProcessing !== undefined) r.isProcessing = updates.isProcessing;
+        if (updates.processingStatus !== undefined) r.processingStatus = updates.processingStatus;
+        if (updates.imageUrl !== undefined) r.imageUrl = updates.imageUrl;
+        if (updates.videoUrl !== undefined) r.videoUrl = updates.videoUrl;
+        if (updates.thumbnailUrl !== undefined) r.thumbnailUrl = updates.thumbnailUrl;
         if (updates._count) r._count = { ...r._count, ...updates._count };
         
         // Remakü wrapper'ının sayaçlarını da orijinaliyle eşitlemeliyiz

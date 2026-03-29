@@ -44,7 +44,12 @@ export interface Post {
   parentId?: string; // TWITTER MANTIĞI: Yanıt verilen postun ID'si
   parent?: Post; // TWITTER MANTIĞI: Yanıt verilen ana post verisi
   isAcademic: boolean;
+  imageUrl?: string;
+  videoUrl?: string;
+  thumbnailUrl?: string;
   documentUrl?: string;
+  isProcessing?: boolean;
+  processingStatus?: 'PREPARING' | 'MEDIA' | 'AI' | 'FINALIZING';
   sentiment?: string;
   sentimentScore?: number;
   createdAt: string;

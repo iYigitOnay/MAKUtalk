@@ -22,6 +22,7 @@ import { ChatGateway } from '../chat/chat.gateway';
 import { SnowflakeService } from '../common/snowflake/snowflake.service';
 import { MediaProcessingService } from '../common/utils/media-processing.service';
 import { HashtagService } from '../hashtags/hashtag.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class PostsService {
@@ -34,6 +35,7 @@ export class PostsService {
     private snowflakeService: SnowflakeService,
     private mediaProcessingService: MediaProcessingService,
     private readonly hashtagService: HashtagService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async create(
@@ -55,99 +57,8 @@ export class PostsService {
 
     const isReply = !!createPostDto.parentId;
     const shouldIdentifyCategory = !createPostDto.categoryId && !isReply;
-    const aiAnalysis = await this.aiService.analyzePost(
-      cleanText,
-      shouldIdentifyCategory,
-    );
 
-    let categoryId: bigint | undefined = createPostDto.categoryId
-      ? BigInt(createPostDto.categoryId)
-      : undefined;
-
-    if (
-      shouldIdentifyCategory &&
-      !categoryId &&
-      aiAnalysis.suggestedCategorySlug
-    ) {
-      const suggestedCategory = await this.prisma.category.findUnique({
-        where: { slug: aiAnalysis.suggestedCategorySlug.toLowerCase().trim() },
-      });
-      categoryId = suggestedCategory?.id;
-    }
-
-    if (!categoryId && !isReply) {
-      const generalCategory = await this.prisma.category.findUnique({
-        where: { slug: 'genel' },
-      });
-      categoryId = generalCategory?.id;
-    }
-
-    let imageUrl: string | null = null;
     let documentUrl: string | null = null;
-    let videoUrl: string | null = null;
-    let thumbnailUrl: string | null = null;
-
-    if (files?.image?.[0]) {
-      const uploadDir = path.join(process.cwd(), 'uploads', 'posts');
-      if (!fs.existsSync(uploadDir))
-        fs.mkdirSync(uploadDir, { recursive: true });
-
-      const fileName = `post-${Date.now()}-${Math.round(Math.random() * 1e9)}.webp`;
-      const filePath = path.join(uploadDir, fileName);
-
-      try {
-        await sharp(files.image[0].buffer)
-          .resize(1200, null, { withoutEnlargement: true })
-          .webp({ quality: 80 })
-          .toFile(filePath);
-        imageUrl = `/uploads/posts/${fileName}`;
-      } catch (error) {
-        this.myLogger.error(
-          `Görsel işleme hatası: ${error.message}`,
-          error.stack,
-          'PostsService',
-        );
-      }
-    }
-
-    if (files?.video?.[0]) {
-      const uploadDir = path.join(process.cwd(), 'uploads', 'posts');
-      if (!fs.existsSync(uploadDir))
-        fs.mkdirSync(uploadDir, { recursive: true });
-
-      const fileName = `post-video-${Date.now()}-${files.video[0].originalname.replace(/\s+/g, '_')}`;
-      const tempPath = path.join(uploadDir, `temp-${fileName}`);
-
-      try {
-        // 1. Videoyu geçici olarak kaydet
-        fs.writeFileSync(tempPath, files.video[0].buffer);
-
-        // 2. Sıkıştır
-        const compressedPath = await this.mediaProcessingService.compressVideo(
-          tempPath,
-          fileName,
-        );
-        videoUrl = `/uploads/chat/${path.basename(compressedPath)}`; // MediaProcessingService 'uploads/chat' kullanıyor
-
-        // 3. Thumbnail üret
-        const thumbPath = await this.mediaProcessingService.generateThumbnail(
-          compressedPath,
-          fileName,
-        );
-        thumbnailUrl = `/uploads/covers/${path.basename(thumbPath)}`;
-
-        // 4. Geçici dosyayı sil
-        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-      } catch (error) {
-        this.myLogger.error(
-          `Video işleme hatası: ${error.message}`,
-          error.stack,
-          'PostsService',
-        );
-        if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
-      }
-    }
-
     if (files?.document?.[0]) {
       const uploadDir = path.join(process.cwd(), 'uploads', 'documents');
       if (!fs.existsSync(uploadDir))
@@ -160,56 +71,42 @@ export class PostsService {
       const safeName = originalName.replace(/[^a-zA-Z0-9.\-_]/g, '_');
       const fileName = `doc-${Date.now()}-${safeName}`;
       const filePath = path.join(uploadDir, fileName);
-
-      try {
-        fs.writeFileSync(filePath, files.document[0].buffer);
-        documentUrl = `/uploads/documents/${fileName}`;
-      } catch (error) {
-        this.myLogger.error(
-          `Döküman işleme hatası: ${error.message}`,
-          error.stack,
-          'PostsService',
-        );
-      }
+      fs.writeFileSync(filePath, files.document[0].buffer);
+      documentUrl = `/uploads/documents/${fileName}`;
     }
 
     let isAcademic = String(createPostDto.isAcademic) === 'true';
     if (isAcademic) {
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
-      if (user?.role !== 'ADMIN' && user?.role !== 'ACADEMIC') {
+      if (user?.role !== 'ADMIN' && user?.role !== 'ACADEMIC')
         isAcademic = false;
-      }
     }
 
-    // Parent post validation (reply ise)
     if (createPostDto.parentId) {
       const parentPost = await this.prisma.post.findUnique({
         where: { id: BigInt(createPostDto.parentId) },
-        select: { id: true, authorId: true, isDeleted: true },
+        select: { id: true, isDeleted: true },
       });
-
-      if (!parentPost || parentPost.isDeleted) {
-        throw new BadRequestException('Parent post bulunamadı veya silinmiş.');
-      }
+      if (!parentPost || parentPost.isDeleted)
+        throw new BadRequestException('Parent post bulunamadı.');
     }
 
+    // POSTU OLUŞTUR (isProcessing: true)
     const post = await this.prisma.post.create({
       data: {
-        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        id: this.snowflakeService.getNextId(),
         content: cleanText,
-        imageUrl: imageUrl,
-        videoUrl: videoUrl,
-        thumbnailUrl: thumbnailUrl,
         documentUrl: documentUrl,
         isAcademic: isAcademic,
         published: createPostDto.published ?? true,
         authorId: userId,
-        categoryId: categoryId,
+        categoryId: createPostDto.categoryId
+          ? BigInt(createPostDto.categoryId)
+          : null,
         parentId: createPostDto.parentId
           ? BigInt(createPostDto.parentId)
           : null,
-        sentiment: aiAnalysis.sentiment,
-        sentimentScore: aiAnalysis.sentimentScore,
+        isProcessing: true, // İŞLENİYOR İŞARETİ
       },
       include: {
         author: {
@@ -255,65 +152,77 @@ export class PostsService {
       },
     });
 
+    // BİLDİRİMLER (Senkron kalabilir, hızlıdır)
     if (createPostDto.parentId) {
-      const parentIdNum = BigInt(createPostDto.parentId);
       const parentPost = await this.prisma.post.findUnique({
-        where: { id: parentIdNum },
+        where: { id: BigInt(createPostDto.parentId) },
         select: { authorId: true },
       });
-
       if (parentPost && parentPost.authorId !== userId) {
         await this.notificationsService.createNotification(
           NotificationType.COMMENT,
           parentPost.authorId,
           userId,
-          parentIdNum,
+          post.id,
         );
       }
     }
 
-    if (!createPostDto.parentId) {
-      this.chatGateway.broadcastNewPost(post);
-    }
-
-    // Hashtag senkronizasyonu
-    await this.hashtagService.syncHashtags(post.id, post.content);
-
-    // --- MENTION RADARI: @username tespiti ve bildirim gönderimi ---
+    // MENTION TESPİTİ (Senkron kalabilir)
     if (cleanText) {
       const mentionRegex = /@(\w+)/g;
       const matches = [...cleanText.matchAll(mentionRegex)];
-      const mentionedUsernames = [...new Set(matches.map((m) => m[1]))]; // Tekilleştir
-
+      const mentionedUsernames = [...new Set(matches.map((m) => m[1]))];
       if (mentionedUsernames.length > 0) {
-        // Bahsedilen kullanıcıları DB'den bul (Toplu Sorgu)
         const mentionedUsers = await this.prisma.user.findMany({
-          where: {
-            username: { in: mentionedUsernames },
-            id: { not: userId }, // Kendisini etiketlemişse bildirim gitmesin
-          },
+          where: { username: { in: mentionedUsernames }, id: { not: userId } },
           select: { id: true },
         });
-
-        // Her birine bildirim gönder
         for (const targetUser of mentionedUsers) {
-          try {
-            await this.notificationsService.createNotification(
+          this.notificationsService
+            .createNotification(
               NotificationType.MENTION,
               targetUser.id,
               userId,
               post.id,
-            );
-          } catch (err) {
-            this.myLogger.error(
-              `Mention bildirimi gönderilemedi: ${err.message}`,
-            );
-          }
+            )
+            .catch(() => {});
         }
       }
     }
 
-    return post;
+    // SOCKET BROADCAST (Hemen gönder!)
+    if (!createPostDto.parentId) {
+      this.chatGateway.broadcastNewPost(post);
+    }
+
+    // HASHTAG SENKRONİZASYONU (Hızlıdır)
+    await this.hashtagService.syncHashtags(post.id, post.content);
+
+    // --- ARKAPLAN İŞLEMLERİNİ BAŞLAT ---
+    // Dosya buffer'larını kopyalayalım (Multer temizleyebilir)
+    const filesToProcess = {
+      image: files?.image?.map((f) => ({
+        ...f,
+        buffer: Buffer.from(f.buffer),
+      })),
+      video: files?.video?.map((f) => ({
+        ...f,
+        buffer: Buffer.from(f.buffer),
+      })),
+    };
+
+    this.eventEmitter.emit('post.created', {
+      postId: post.id,
+      userId: userId,
+      content: cleanText,
+      files: filesToProcess,
+      isReply,
+      categoryId: createPostDto.categoryId,
+      shouldIdentifyCategory,
+    });
+
+    return post; // KULLANICIYA HEMEN DÖN!
   }
 
   async toggleRepost(userId: bigint, postId: bigint) {

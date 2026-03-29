@@ -2,6 +2,21 @@
 
 Tüm zamanların en güncel ve havalı kampüs uygulamasının gelişim süreci.
 
+## [v1.5.0] - 29-03-2026
+
+### Eklendi
+
+- **Profesyonel Post Atma:** Post atma süreci tamamen asenkron hale getirildi. Artık video ve büyük fotoğraflar arka planda işlenirken kullanıcı bekletilmiyor.
+- **Client-side Optimizasyon:** Fotoğraflar sunucuya gitmeden tarayıcıda otomatik sıkıştırılıyor (Hızlı upload).
+- **Aşamalı İlerleme:** Medya işleme süreci "Hazırlanıyor", "Optimize Ediliyor", "AI Analiz Ediliyor" gibi canlı aşamalarla takip edilebiliyor.
+- **Canlı Güncelleme:** Socket.io entegrasyonu ile arka planda biten işlemler sayfayı yenilemeden (F5 gerekmeden) anında akışa yansıyor.
+
+### Düzeltildi
+
+- **Medya Önizleme:** Post atma alanındaki medya boyutları "object-contain" ile iyileştirildi, kırpılmalar önlendi.
+- **Buton Kontrolü:** Sadece video veya döküman paylaşımlarında butonun aktif olmaması sorunu giderildi.
+- **Mükerrer Post:** Kendi paylaştığımız postların socket üzerinden ikinci kez eklenmesi (duplication) engellendi.
+
 ## [v1.4.2] - 28-03-2026
 
 ### Eklendi
