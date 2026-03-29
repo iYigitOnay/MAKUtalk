@@ -55,7 +55,7 @@
 
       <!-- 2. MAIN POST -->
       <article
-        class="p-4 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-white/[0.05] relative overflow-hidden"
+        class="p-4 bg-white dark:bg-gray-950 border-b border-gray-100 dark:border-white/[0.05] relative"
         :class="{
           'academic-unread shadow-sm z-10': post.isAcademic && !post.isRead,
         }"
@@ -85,24 +85,24 @@
                 <!-- BADGES -->
                 <div
                   v-if="
-                    post.author.badges?.length || post.author.role === 'ADMIN'
+                    post.author.badges?.length ||
+                    post.author.role === 'ADMIN' ||
+                    post.author.role === 'Kurucu'
                   "
                   class="flex gap-1 items-center"
                 >
                   <div
-                    v-if="post.author.role === 'ADMIN'"
+                    v-if="
+                      post.author.role === 'ADMIN' ||
+                      post.author.role === 'Kurucu'
+                    "
                     class="group relative flex items-center justify-center"
                   >
-                    <div
-                      class="p-0.5 rounded-full text-white bg-[#1E3A8A] shadow-sm"
-                    >
-                      <component
-                        :is="getBadgeComponent('crown')"
-                        class="w-2.5 h-2.5"
-                      />
+                    <div class="p-0.5 rounded-full text-white bg-[#1E3A8A] shadow-sm cursor-help">
+                      <component :is="getBadgeComponent('Crown')" class="w-2.5 h-2.5" />
                     </div>
                     <div
-                      class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[100] pointer-events-none uppercase"
+                      class="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[110] pointer-events-none uppercase shadow-lg border border-white/10"
                     >
                       Kurucu
                     </div>
@@ -113,7 +113,7 @@
                     class="group relative flex items-center justify-center"
                   >
                     <div
-                      class="p-0.5 rounded-full border border-gray-100 shadow-sm"
+                      class="p-0.5 rounded-full border border-gray-100 shadow-sm cursor-help"
                       :style="{
                         backgroundColor: ub.badge?.color || '#3b82f6',
                         color: 'white',
@@ -125,7 +125,7 @@
                       />
                     </div>
                     <div
-                      class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[100] pointer-events-none uppercase"
+                      class="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[110] pointer-events-none uppercase shadow-lg border border-white/10"
                     >
                       {{ ub.badge?.name }}
                     </div>
@@ -237,18 +237,18 @@
             class="w-full h-auto max-h-[1080px] object-contain cursor-zoom-in hover:opacity-95 transition-opacity"
             @click="showImageModal = true"
           />
-          <ImageModal 
-            :is-open="showImageModal" 
-            :image-url="getImageUrl(post.imageUrl)" 
-            @close="showImageModal = false" 
+          <ImageModal
+            :is-open="showImageModal"
+            :image-url="getImageUrl(post.imageUrl)"
+            @close="showImageModal = false"
           />
         </div>
 
         <!-- Video Attachment -->
         <div v-if="post.videoUrl" class="mb-4">
-          <VideoPlayer 
-            :video-url="post.videoUrl" 
-            :thumbnail-url="post.thumbnailUrl" 
+          <VideoPlayer
+            :video-url="post.videoUrl"
+            :thumbnail-url="post.thumbnailUrl"
           />
         </div>
 
@@ -788,7 +788,7 @@ const submitReply = async () => {
       selectedImage.value || undefined,
       targetParentId,
     );
-    
+
     // Artık lokal 'replies' listesine değil, store'daki listeye unshift yapıyoruz
     postsStore.currentThread.replies.unshift(newReply);
     commentContent.value = "";
