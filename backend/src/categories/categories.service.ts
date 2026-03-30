@@ -10,7 +10,9 @@ export class CategoriesService {
       orderBy: { name: 'asc' },
       include: {
         _count: {
-          select: { posts: true },
+          select: { 
+            posts: { where: { isDeleted: false } } 
+          },
         },
       },
     });
@@ -32,6 +34,7 @@ export class CategoriesService {
         const count = await this.prisma.post.count({
           where: {
             categoryId: category.id,
+            isDeleted: false,
             createdAt: { gte: sevenDaysAgo },
           },
         });

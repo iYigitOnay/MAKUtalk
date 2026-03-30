@@ -1226,6 +1226,9 @@ export class PostsService {
       data: { isDeleted: true, deletedAt: new Date() },
     });
 
+    // SOKET BROADCAST: Silinen postu bildir
+    this.chatGateway.broadcastPostUpdate({ id, isDeleted: true });
+
     // Hashtag sayaçlarını düşür
     await this.hashtagService.decrementHashtagCounts(id);
 

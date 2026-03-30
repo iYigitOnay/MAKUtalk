@@ -4,6 +4,7 @@ import { useAuthStore } from "@/stores/auth";
 import { useChatStore } from "@/stores/chat";
 import { useNotificationsStore } from "@/stores/notifications";
 import { usePostsStore } from "@/stores/posts";
+import { useCategoriesStore } from "@/stores/categories";
 
 // GLOBAL STATE - Fonksiyon dışında tanımlıyoruz ki her yerde AYNI kalsın
 let socket: Socket | null = null;
@@ -153,6 +154,9 @@ export function useSocket() {
     socket.on("new_post", (post: any) => {
       console.log("Yeni post socketten geldi:", post.id);
 
+      const categoriesStore = useCategoriesStore();
+      categoriesStore.fetchTrendingCategories();
+
       // KENDİ POSTUMUZ MU? (Kendi postumuzu zaten createPost içinde ekledik)
       // Snowflake ID'ler string olduğu için karşılaştırmayı trimleyerek yapıyoruz.
       const myId = authStore.userId ? String(authStore.userId).trim() : null;
@@ -176,6 +180,9 @@ export function useSocket() {
       console.log("Post güncellendi:", post.id, post.processingStatus);
       const postsStore = usePostsStore();
       postsStore.updatePostLocally(String(post.id), post);
+
+      const categoriesStore = useCategoriesStore();
+      categoriesStore.fetchTrendingCategories();
     });
 
     listenersAttached = true;
