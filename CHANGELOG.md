@@ -1,6 +1,22 @@
 # MAKUtalk Güncelleme Geçmişi (Changelog)
 
-Tüm zamanların en güncel ve havalı kampüs uygulamasının gelişim süreci.
+Tüm zamanların en güncel ve işlevsel kampüs uygulamasının gelişim süreci.
+
+## [v1.7.0] - 30-03-2026
+
+### Eklendi
+
+- **Akıllı Video Deneyimi (Mutual Exclusion):** Artık anasayfada gezinirken bir videoyu başlattığınızda, oynamakta olan diğer tüm videolar otomatik olarak duruyor. Ses karmaşasına son!
+- **Kesintisiz İzleme (State Persistence):** Bir videoyu izlerken "Post Detay" sayfasına geçtiğinizde, video tam kaldığı saniyeden otomatik olarak oynamaya devam ediyor. Tekrar tıklamanıza gerek kalmadı.
+- **Senkronize Klavye Kontrolleri:** Video oynatıcıdaki 5 saniye atlama (Sağ/Sol ok) ve durdurma (Boşluk) tuşları artık tüm sayfalarda tutarlı ve tekil çalışıyor.
+
+## [v1.6.2] - 30-03-2026
+
+### Eklendi
+
+- **Işık Hızında Paylaşım (Asenkron İşleme):** Artık video veya büyük resim paylaştığınızda uygulama donmuyor. Paylaşım arka planda işlenirken siz gezinmeye devam edebiliyorsunuz. (İşleme bittiğinde otomatik yayınlanıyor!)
+- **Canlı İlerleme Çubuğu:** Yüklediğiniz medyanın durumunu (İşleniyor, Optimize Ediliyor vb.) anlık olarak görebiliyorsunuz.
+- **Haftanın Nabzı 2.0:** Trend kategoriler ve post sayıları artık saniyelik (socket üzerinden) güncelleniyor. F5 atmanıza gerek kalmadı.
 
 ## [v1.5.0] - 29-03-2026
 

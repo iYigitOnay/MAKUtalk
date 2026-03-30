@@ -39,14 +39,14 @@ export class MediaProcessingService {
         .audioCodec('aac')
         .audioBitrate('128k')
         .on('start', (commandLine: string) => {
-          this.logger.log('FFmpeg SÄ±kÄ±ÅŸtÄ±rma BaÅŸladÄ±: ' + commandLine);
+          this.logger.log('FFmpeg sıkıştırma başladı: ' + commandLine);
         })
         .on('end', () => {
-          this.logger.log('FFmpeg SÄ±kÄ±ÅŸtÄ±rma TamamlandÄ±: ' + outputPath);
+          this.logger.log('FFmpeg sıkıştırma başarılı: ' + outputPath);
           resolve(outputPath);
         })
         .on('error', (err: any) => {
-          this.logger.error('FFmpeg HatasÄ±: ' + err.message);
+          this.logger.error('FFmpeg Hatası: ' + err.message);
           reject(err);
         })
         .save(outputPath);
@@ -73,11 +73,11 @@ export class MediaProcessingService {
         })
         .on('end', () => {
           const outputPath = path.join(outputDir, thumbnailName);
-          this.logger.log('Thumbnail OluÅŸturuldu: ' + outputPath);
+          this.logger.log('Thumbnail Oluşturuldu: ' + outputPath);
           resolve(outputPath);
         })
         .on('error', (err: any) => {
-          this.logger.error('Thumbnail HatasÄ±: ' + err.message);
+          this.logger.error('Thumbnail Hatası: ' + err.message);
           reject(err);
         });
     });

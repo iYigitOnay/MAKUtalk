@@ -32,7 +32,7 @@ export const useChatStore = defineStore("chat", () => {
   };
 
   const unreadCount = computed(() => {
-    return conversations.value.filter(conv => {
+    return conversations.value.filter((conv) => {
       const lastMsg = conv.lastMessage;
       if (!lastMsg) return false;
       return !lastMsg.isRead && lastMsg.senderId !== authStore.userId;
@@ -59,7 +59,11 @@ export const useChatStore = defineStore("chat", () => {
     }
   };
 
-  const selectConversation = async (targetUserId: string, fromSpot: boolean = false, listingId?: string) => {
+  const selectConversation = async (
+    targetUserId: string,
+    fromSpot: boolean = false,
+    listingId?: string,
+  ) => {
     if (!targetUserId) {
       console.warn("⚠️ Geçersiz targetUserId ile selectConversation çağrıldı.");
       return;
@@ -72,22 +76,29 @@ export const useChatStore = defineStore("chat", () => {
       // fromSpot ve listingId bilgilerini API'ye gönderiyoruz (Güvenlik doğrulaması için)
       let url = `/chat/conversation/${targetUserId}?fromSpot=${fromSpot}`;
       if (listingId) url += `&listingId=${listingId}`;
-      
+
       const convRes = await apiClient.get(url);
       activeConversation.value = convRes.data;
 
       // Eğer id "0" gelirse (Gizli hesap engeli), mesajları çekmeye çalışma
-      if (activeConversation.value.id === "0" || activeConversation.value.id === 0) {
+      if (
+        activeConversation.value.id === "0" ||
+        activeConversation.value.id === 0
+      ) {
         loading.value = false;
         return;
       }
 
-      const msgRes = await apiClient.get(`/chat/messages/${activeConversation.value.id}`);
+      const msgRes = await apiClient.get(
+        `/chat/messages/${activeConversation.value.id}`,
+      );
       messages.value = msgRes.data;
 
       await apiClient.post(`/chat/${activeConversation.value.id}/read`);
-      
-      const conv = conversations.value.find(c => c.id === activeConversation.value.id);
+
+      const conv = conversations.value.find(
+        (c) => c.id === activeConversation.value.id,
+      );
       if (conv && conv.lastMessage) {
         conv.lastMessage.isRead = true;
       }
@@ -100,12 +111,16 @@ export const useChatStore = defineStore("chat", () => {
 
   const addMessage = (message: any) => {
     // Snowflake ID Güvenliği: Karşılaştırmayı her zaman string olarak yap
-    const exists = messages.value.some(m => String(m.id) === String(message.id));
+    const exists = messages.value.some(
+      (m) => String(m.id) === String(message.id),
+    );
     if (!exists) {
       messages.value.push(message);
-      
+
       // ✅ KONUŞMA LİSTESİNİ ANLIK GÜNCELLE (State Management)
-      const convIndex = conversations.value.findIndex(c => String(c.id) === String(message.conversationId));
+      const convIndex = conversations.value.findIndex(
+        (c) => String(c.id) === String(message.conversationId),
+      );
       if (convIndex !== -1) {
         conversations.value[convIndex].lastMessage = message;
         // Konuşmayı listenin en üstüne taşı
@@ -117,7 +132,7 @@ export const useChatStore = defineStore("chat", () => {
 
   const markMessagesAsRead = (conversationId: string) => {
     // Aktif sohbetin mesajlarını güncelle
-    messages.value = messages.value.map(msg => {
+    messages.value = messages.value.map((msg) => {
       if (msg.conversationId === conversationId) {
         return { ...msg, isRead: true };
       }
@@ -125,7 +140,7 @@ export const useChatStore = defineStore("chat", () => {
     });
 
     // Konuşma listesindeki lastMessage'ı da güncelle
-    const conv = conversations.value.find(c => c.id === conversationId);
+    const conv = conversations.value.find((c) => c.id === conversationId);
     if (conv?.lastMessage) {
       conv.lastMessage.isRead = true;
     }
@@ -134,18 +149,25 @@ export const useChatStore = defineStore("chat", () => {
   const deleteConversation = async (conversationId: string) => {
     try {
       await apiClient.post(`/chat/delete/${conversationId}`);
-      conversations.value = conversations.value.filter(c => c.id !== conversationId);
+      conversations.value = conversations.value.filter(
+        (c) => c.id !== conversationId,
+      );
       if (activeConversation.value?.id === conversationId) {
         activeConversation.value = null;
         messages.value = [];
       }
-    } catch (error) { console.error(error); throw error; }
+    } catch (error) {
+      console.error(error);
+      throw error;
+    }
   };
 
   const updateUserInChat = (userId: string, updates: any) => {
-    conversations.value = conversations.value.map(conv => {
+    conversations.value = conversations.value.map((conv) => {
       if (conv.participants) {
-        conv.participants = conv.participants.map((p: any) => p.id === userId ? { ...p, ...updates } : p);
+        conv.participants = conv.participants.map((p: any) =>
+          p.id === userId ? { ...p, ...updates } : p,
+        );
       }
       if (conv.lastMessage && conv.lastMessage.senderId === userId) {
         conv.lastMessage.sender = { ...conv.lastMessage.sender, ...updates };
@@ -153,33 +175,37 @@ export const useChatStore = defineStore("chat", () => {
       return conv;
     });
     if (activeConversation.value && activeConversation.value.participants) {
-      activeConversation.value.participants = activeConversation.value.participants.map((p: any) => p.id === userId ? { ...p, ...updates } : p);
+      activeConversation.value.participants =
+        activeConversation.value.participants.map((p: any) =>
+          p.id === userId ? { ...p, ...updates } : p,
+        );
     }
-    messages.value = messages.value.map(msg => {
-      if (msg.senderId === userId && msg.sender) msg.sender = { ...msg.sender, ...updates };
+    messages.value = messages.value.map((msg) => {
+      if (msg.senderId === userId && msg.sender)
+        msg.sender = { ...msg.sender, ...updates };
       return msg;
     });
   };
 
-  return { 
-    conversations, 
-    activeConversation, 
-    messages, 
-    loading, 
-    unreadCount, 
+  return {
+    conversations,
+    activeConversation,
+    messages,
+    loading,
+    unreadCount,
     latestIncomingMessage,
-    resetStore, 
-    fetchConversations, 
-    selectConversation, 
-    addMessage, 
-    deleteConversation, 
-    updateUserInChat, 
-    typingUsers, 
+    resetStore,
+    fetchConversations,
+    selectConversation,
+    addMessage,
+    deleteConversation,
+    updateUserInChat,
+    typingUsers,
     setTypingStatus,
     markMessagesAsRead,
     onlineUsers,
     setOnlineUsers,
     updateUserStatus,
-    isUserOnline
+    isUserOnline,
   };
 });

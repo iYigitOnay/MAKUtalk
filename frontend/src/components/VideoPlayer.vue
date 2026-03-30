@@ -15,9 +15,6 @@
     @mouseenter="showControlsTemporarily"
     @mousemove="showControlsTemporarily"
     @mouseleave="handleMouseLeave"
-    @keydown.space.prevent="togglePlay"
-    @keydown.right.prevent="seek(5)"
-    @keydown.left.prevent="seek(-5)"
   >
     <!-- Video Element -->
     <video
@@ -281,6 +278,12 @@ onMounted(() => {
 onUnmounted(() => {
   window.removeEventListener("click", handleClickOutside);
   window.removeEventListener("keydown", handleGlobalKeyDown);
+
+  // Sayfadan ayrılırken son durumu kaydet
+  if (videoRef.value) {
+    videoStore.setPlaybackTime(props.videoUrl, videoRef.value.currentTime);
+    videoStore.setPlayingState(props.videoUrl, isPlaying.value);
+  }
 });
 
 const playbackRate = ref(1);
@@ -307,13 +310,21 @@ const togglePlay = () => {
   showControlsTemporarily();
 };
 
-const playVideo = () => {
+const playVideo = async () => {
   if (!videoRef.value) return;
-  videoRef.value.play();
-  isPlaying.value = true;
-  isEnded.value = false;
-  videoStore.setCurrentlyPlaying(props.videoUrl);
-  videoStore.setPlayingState(props.videoUrl, true);
+  try {
+    // Diğerlerini durdurmak için store'u güncelle
+    videoStore.setCurrentlyPlaying(props.videoUrl);
+    videoStore.setPlayingState(props.videoUrl, true);
+    
+    await videoRef.value.play();
+    isPlaying.value = true;
+    isEnded.value = false;
+  } catch (error) {
+    console.warn("Video oynatılamadı:", error);
+    isPlaying.value = false;
+    videoStore.setPlayingState(props.videoUrl, false);
+  }
 };
 
 const pauseVideo = () => {
@@ -383,16 +394,18 @@ const updateProgress = () => {
   if (!videoRef.value) return;
   currentTime.value = videoRef.value.currentTime;
   progress.value = (currentTime.value / duration.value) * 100;
-  
+
   // Saniyeyi store'a kaydet
-  videoStore.setPlaybackTime(props.videoUrl, currentTime.value);
+  if (isPlaying.value) {
+    videoStore.setPlaybackTime(props.videoUrl, currentTime.value);
+  }
 };
 
 const onMetadataLoaded = () => {
   if (videoRef.value) {
     duration.value = videoRef.value.duration;
     videoRef.value.volume = volume.value;
-    
+
     // ESKİ KONUMDAN DEVAM ET
     const savedTime = videoStore.getPlaybackTime(props.videoUrl);
     if (savedTime > 0 && savedTime < duration.value) {
@@ -402,7 +415,9 @@ const onMetadataLoaded = () => {
 
     // EĞER ÖNCEKİ SAYFADA OYNUYORSA BURADA DA OYNAT
     if (videoStore.getPlayingState(props.videoUrl)) {
-      playVideo();
+      setTimeout(() => {
+        playVideo();
+      }, 100);
     }
 
     if (videoRef.value.videoWidth && videoRef.value.videoHeight) {

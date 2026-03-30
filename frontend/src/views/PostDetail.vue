@@ -98,8 +98,13 @@
                     "
                     class="group relative flex items-center justify-center"
                   >
-                    <div class="p-0.5 rounded-full text-white bg-[#1E3A8A] shadow-sm cursor-help">
-                      <component :is="getBadgeComponent('Crown')" class="w-2.5 h-2.5" />
+                    <div
+                      class="p-0.5 rounded-full text-white bg-[#1E3A8A] shadow-sm cursor-help"
+                    >
+                      <component
+                        :is="getBadgeComponent('Crown')"
+                        class="w-2.5 h-2.5"
+                      />
                     </div>
                     <div
                       class="absolute -top-6 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-2 py-0.5 rounded text-[8px] font-black opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-[110] pointer-events-none uppercase shadow-lg border border-white/10"
@@ -947,6 +952,9 @@ const translateSentiment = (s: string) => {
     Neşeli: "Neşeli",
     Kızgın: "Kızgın",
     Hüzünlü: "Hüzünlü",
+    Endişeli: "Endişeli",
+    Meraklı: "Meraklı",
+    Ciddi: "Ciddi",
   };
   return t[s] || s;
 };
@@ -957,21 +965,41 @@ const getSentimentStyles = (sentiment: string) => {
       class:
         "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200",
     },
+    positive: {
+      class:
+        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200",
+    },
+    Hüzünlü: {
+      class:
+        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200",
+    },
+    negative: {
+      class:
+        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200",
+    },
     Kızgın: {
       class:
         "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200",
+    },
+    Endişeli: {
+      class:
+        "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200",
+    },
+    Meraklı: {
+      class:
+        "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200",
     },
     Sakin: {
       class:
         "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200",
     },
-    positive: {
+    neutral: {
       class:
-        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200",
+        "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200",
     },
-    negative: {
+    Ciddi: {
       class:
-        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200",
+        "bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300 border-gray-200",
     },
   };
   return (

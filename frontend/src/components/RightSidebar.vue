@@ -34,12 +34,16 @@
       v-if="categoriesStore.trendingCategories.length > 0"
       class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-primary-900/20 overflow-hidden shadow-sm"
     >
-      <div class="px-4 py-3 border-b border-gray-100 dark:border-primary-900/10 bg-gray-50/50 dark:bg-gray-800/50">
-        <h2 class="font-black text-gray-900 dark:text-white text-[11px] uppercase tracking-[0.15em]">
+      <div
+        class="px-4 py-3 border-b border-gray-100 dark:border-primary-900/10 bg-gray-50/50 dark:bg-gray-800/50"
+      >
+        <h2
+          class="font-black text-gray-900 dark:text-white text-[11px] uppercase tracking-[0.15em]"
+        >
           Haftanın Nabzı
         </h2>
       </div>
-      
+
       <div class="p-2 space-y-2">
         <button
           v-for="cat in categoriesStore.trendingCategories.slice(0, 3)"
@@ -48,50 +52,60 @@
           class="w-full text-left relative px-4 py-3 rounded-xl border border-gray-100 dark:border-primary-900/10 transition-all hover:shadow-md hover:-translate-y-0.5 overflow-hidden group bg-white dark:bg-gray-900"
         >
           <!-- Kategori Renk Şeridi -->
-          <div 
+          <div
             class="absolute left-0 top-0 bottom-0 w-1.5"
             :style="{ backgroundColor: cat.color }"
           ></div>
 
           <div class="flex items-center justify-between">
             <div>
-              <p class="font-black text-gray-900 dark:text-white text-[13px] leading-tight mb-1">
+              <p
+                class="font-black text-gray-900 dark:text-white text-[13px] leading-tight mb-1"
+              >
                 {{ cat.name }}
               </p>
               <div class="flex items-center gap-2.5">
                 <!-- Canlı Nabız Göstergesi -->
                 <div class="relative flex h-2 w-2">
-                  <span 
+                  <span
                     class="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
                     :style="{ backgroundColor: cat.color }"
                   ></span>
-                  <span 
+                  <span
                     class="relative inline-flex rounded-full h-2 w-2"
                     :style="{ backgroundColor: cat.color }"
                   ></span>
                 </div>
-                <p class="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                <p
+                  class="text-[10px] font-black uppercase tracking-wider text-gray-500 dark:text-gray-400"
+                >
                   {{ cat.weeklyPostCount }} YENİ PAYLAŞIM
                 </p>
               </div>
             </div>
-            
-            <div class="relative group-hover:scale-110 transition-transform duration-300">
-              <div 
+
+            <div
+              class="relative group-hover:scale-110 transition-transform duration-300"
+            >
+              <div
                 class="absolute inset-0 blur-md opacity-25 animate-pulse"
                 :style="{ color: cat.color }"
               >
                 <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                  <path
+                    d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"
+                  />
                 </svg>
               </div>
-              <svg 
-                class="w-7 h-7 relative z-10" 
-                :style="{ color: cat.color }" 
-                fill="currentColor" 
+              <svg
+                class="w-7 h-7 relative z-10"
+                :style="{ color: cat.color }"
+                fill="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+                <path
+                  d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"
+                />
               </svg>
             </div>
           </div>
@@ -106,8 +120,10 @@
       <div
         class="px-4 py-3 border-b border-gray-200 dark:border-primary-900/20"
       >
-        <h2 class="font-black text-gray-900 dark:text-white">
-          Popüler Hashtagler
+        <h2
+          class="font-black text-gray-900 dark:text-white text-[11px] uppercase tracking-[0.15em]"
+        >
+          Popüler Etiketler
         </h2>
       </div>
 
@@ -195,14 +211,14 @@ const sortedCategories = computed(() => {
 const refreshData = async () => {
   await Promise.all([
     categoriesStore.fetchTrendingCategories(),
-    fetchHashtags()
+    fetchHashtags(),
   ]);
 };
 
 onMounted(async () => {
   await categoriesStore.fetchCategories();
   await refreshData();
-  
+
   postsStore.onPostCreated(() => {
     console.log("🔥 Yeni post algılandı, trendler güncelleniyor...");
     refreshData();
@@ -234,13 +250,13 @@ async function selectTrendingCategory(categoryId: string) {
   if (route.path !== "/") {
     await router.push("/");
   }
-  
+
   // 2. Sayfayı en üste kaydır
   window.scrollTo({ top: 0, behavior: "smooth" });
 
   // 3. Kategoriyi seç ve verileri çek
   postsStore.activeCategory = categoryId;
-  postsStore.posts = []; 
+  postsStore.posts = [];
   await postsStore.fetchPostsByCategory(categoryId, authStore.user?.id);
 }
 
