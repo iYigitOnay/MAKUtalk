@@ -2,6 +2,7 @@
 <template>
   <!-- Global Portal Container -->
   <div
+    ref="containerRef"
     class="fixed bottom-24 sm:bottom-10 right-6 z-[200] flex flex-col items-end pointer-events-none"
   >
     <!-- Expansion Panel (Minimalist Area) -->
@@ -43,13 +44,21 @@
             v-model="message"
             ref="inputRef"
             rows="3"
-            placeholder="Neler eksik ya da eklenmeli? Yaz inceleyelim..."
+            maxlength="500"
+            placeholder="Hata ve Eksikleri yaz ve düzeltileceğini bil..."
             class="w-full px-4 py-3.5 rounded-2xl bg-gray-50 dark:bg-black/20 border border-transparent focus:border-blue-500/20 text-sm font-medium text-gray-900 dark:text-white placeholder-gray-400 outline-none transition-all resize-none no-scrollbar shadow-inner"
           ></textarea>
 
           <!-- Submit Button (Minimal) -->
           <div class="flex items-center justify-between gap-4">
-            <span class="text-[9px] font-black text-gray-300 tracking-widest">
+            <span
+              class="text-[9px] font-black tracking-widest transition-colors duration-300"
+              :class="
+                message.length >= 500
+                  ? 'text-red-500 animate-pulse'
+                  : 'text-gray-300'
+              "
+            >
               {{ message.length }}/500
             </span>
             <button
@@ -71,7 +80,7 @@
 
     <!-- Simple Floating Button -->
     <button
-      @click="isOpen = !isOpen"
+      @click="togglePanel"
       class="pointer-events-auto group relative flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 ease-out shadow-lg"
       :class="
         isOpen
@@ -116,7 +125,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from "vue";
+import { ref, nextTick, onMounted, onUnmounted } from "vue";
 import { useToast } from "vue-toastification";
 import apiClient from "@/api/client";
 
@@ -125,12 +134,36 @@ const isOpen = ref(false);
 const message = ref("");
 const loading = ref(false);
 const inputRef = ref<HTMLTextAreaElement | null>(null);
+const containerRef = ref<HTMLElement | null>(null);
 
 const onPanelOpen = () => {
   nextTick(() => {
     inputRef.value?.focus();
   });
 };
+
+const togglePanel = (e: Event) => {
+  e.stopPropagation();
+  isOpen.value = !isOpen.value;
+};
+
+const handleClickOutside = (event: MouseEvent) => {
+  if (
+    isOpen.value &&
+    containerRef.value &&
+    !containerRef.value.contains(event.target as Node)
+  ) {
+    isOpen.value = false;
+  }
+};
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 
 const submitFeedback = async () => {
   if (!message.value.trim()) return;
@@ -141,7 +174,7 @@ const submitFeedback = async () => {
       type: "magic_feedback",
       message: message.value.trim(),
     });
-    toast.success("Mesajın alındı ve incelenecek!");
+    toast.success("Mesajın alındı emin ol değerlendirilecek!");
     message.value = "";
     isOpen.value = false;
   } catch (error) {
