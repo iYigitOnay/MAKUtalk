@@ -188,17 +188,25 @@ const router = createRouter({
 
 router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
+  
+  console.log('[Router] Gidilen Rota:', to.path);
+  console.log('[Router] Auth Durumu:', authStore.isAuthenticated);
+  console.log('[Router] Rota Meta:', to.meta);
 
   // YASAKLI KULLANICI KONTROLÜ
   if (authStore.isAuthenticated && authStore.user?.isBanned && to.name !== "Banned") {
+    console.log('[Router] Kullanıcı yasaklı, Banned sayfasına yönlendiriliyor');
     return next("/banned");
   }
 
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    console.log('[Router] Auth gerekli ama kullanıcı login değil, /auth yönlendirmesi');
     next("/auth");
   } else if (to.meta.guest && authStore.isAuthenticated) {
+    console.log('[Router] Guest sayfası ama kullanıcı login, Anasayfa yönlendirmesi');
     next("/");
   } else {
+    console.log('[Router] Geçişe izin verildi');
     next();
   }
 });

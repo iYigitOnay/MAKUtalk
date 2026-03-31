@@ -44,7 +44,6 @@ export class PostsController {
   }
 
   @Get()
-  @UseGuards(JwtAuthGuard)
   findAll(@Query('currentUserId') currentUserId?: string) {
     return this.postsService.findAll(
       currentUserId ? BigInt(currentUserId) : undefined,
@@ -52,9 +51,8 @@ export class PostsController {
   }
 
   @Get('academic')
-  @UseGuards(JwtAuthGuard)
-  findAcademicFeed(@Query('currentUserId') currentUserId?: string) {
-    return this.postsService.findAcademicFeed(
+  findAcademic(@Query('currentUserId') currentUserId?: string) {
+    return this.postsService.findAcademic(
       currentUserId ? BigInt(currentUserId) : undefined,
     );
   }

@@ -545,7 +545,7 @@ export class PostsService {
 
     await this.prisma.bookmark.create({
       data: {
-        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        id: this.snowflakeService.getNextId(),
         userId,
         postId: targetPostId,
       },
