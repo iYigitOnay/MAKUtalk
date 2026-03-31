@@ -41,6 +41,9 @@
 
       <!-- Mobile Bottom Navigation -->
       <MobileBottomNav v-if="!hideNavbar" />
+
+      <!-- Quick Feedback (Global) -->
+      <QuickFeedback />
     </div>
 
     <!-- Auth Pages (Login/Register - no sidebar) -->
@@ -67,6 +70,7 @@ import Navbar from "@/components/Navbar.vue";
 import MobileBottomNav from "@/components/MobileBottomNav.vue";
 import GlobalNotification from "@/components/GlobalNotification.vue";
 import ShareModal from "@/components/ShareModal.vue";
+import QuickFeedback from "@/components/QuickFeedback.vue";
 import { useDarkMode } from "@/composables/useDarkMode";
 import { useSocket } from "@/composables/useSocket";
 import { useChatStore } from "@/stores/chat";
