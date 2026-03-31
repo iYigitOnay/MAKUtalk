@@ -21,23 +21,7 @@
     <!-- KONTROL PANELİ (Filtreler) -->
     <section class="max-w-4xl mx-auto mb-12 space-y-10 text-center">
       
-      <!-- 1. Hafta Filtresi (Pill Style) -->
-      <div class="flex justify-center">
-        <div class="flex p-1.5 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 w-full max-w-xs font-black">
-          <button 
-            @click="activeWeek = 'this'" 
-            class="flex-1 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300"
-            :class="activeWeek === 'this' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'"
-          >Bu Hafta</button>
-          <button 
-            @click="activeWeek = 'next'" 
-            class="flex-1 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300"
-            :class="activeWeek === 'next' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'"
-          >Gelecek Hafta</button>
-        </div>
-      </div>
-
-      <!-- 2. Yerleşke Filtresi (Carousel Style) -->
+      <!-- 1. Kampüs Seçimi (Carousel Style - MERKEZ ORTADA) -->
       <div class="flex flex-col items-center gap-6">
         <div class="relative w-full overflow-hidden h-24 flex items-center">
           <div
@@ -53,7 +37,7 @@
               <button
                 @click="selectedLocation = loc.id; centerCarouselItem(index);"
                 :class="[
-                  'w-40 h-14 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-500 border-2 px-4',
+                  'w-44 h-14 rounded-2xl flex flex-col items-center justify-center gap-1 transition-all duration-500 border-2 px-4',
                   selectedLocation === loc.id
                     ? 'bg-orange-600 border-orange-600 text-white shadow-xl scale-110'
                     : 'bg-white dark:bg-gray-800 border-gray-100 dark:border-white/5 text-gray-400 scale-90 opacity-60',
@@ -66,10 +50,31 @@
           </div>
         </div>
       </div>
+
+      <!-- 2. Hafta Filtresi (Pill Style) -->
+      <div class="flex justify-center">
+        <div class="flex p-1.5 bg-white dark:bg-gray-900 rounded-2xl shadow-sm border border-gray-100 dark:border-white/5 w-full max-w-xs font-black">
+          <button 
+            @click="activeWeek = 'this'" 
+            class="flex-1 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300"
+            :class="activeWeek === 'this' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'"
+          >Bu Hafta</button>
+          <button 
+            @click="activeWeek = 'next'" 
+            class="flex-1 px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300"
+            :class="activeWeek === 'next' ? 'bg-orange-500 text-white shadow-lg' : 'text-gray-400 hover:text-gray-600'"
+          >Gelecek Hafta</button>
+        </div>
+      </div>
     </section>
 
     <!-- CONTENT -->
-    <div v-if="currentMenuData.length > 0" class="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div v-if="loading" class="py-32 text-center flex flex-col items-center">
+      <div class="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin mb-4"></div>
+      <p class="text-[9px] font-black uppercase tracking-[0.4em] text-gray-400">Menü Alınıyor</p>
+    </div>
+
+    <div v-else-if="currentMenuData.length > 0" class="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-4 duration-700">
       
       <!-- BUGÜNÜN MENÜSÜ -->
       <div v-if="activeWeek === 'this' && todayMenu" class="group relative p-8 md:p-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-[3rem] text-white shadow-2xl overflow-hidden hover:scale-[1.01] transition-all duration-500">
@@ -85,15 +90,11 @@
                 <div class="w-8 h-8 bg-white/10 rounded-xl flex items-center justify-center font-black text-xs group-hover/item:bg-white group-hover/item:text-orange-600 transition-all duration-300 flex-shrink-0">
                   {{ i + 1 }}
                 </div>
-                <p class="text-lg font-black tracking-tight leading-tight line-clamp-2 group-hover/item:translate-x-1 transition-transform">
+                <p class="text-lg font-black tracking-tight leading-tight line-clamp-2 group-hover/item:translate-x-1 transition-transform uppercase italic">
                   {{ item }}
                 </p>
               </div>
             </div>
-          </div>
-          <div v-if="todayMenu.calorie" class="flex flex-col items-center md:items-end gap-1 bg-black/10 p-6 rounded-[2.5rem] backdrop-blur-sm border border-white/5">
-            <span class="text-5xl font-black tracking-tighter">{{ todayMenu.calorie.split(' ')[0] }}</span>
-            <span class="text-[9px] font-black uppercase tracking-[0.4em] opacity-70">KALORİ / KCAL</span>
           </div>
         </div>
       </div>
@@ -112,14 +113,13 @@
               <div v-if="isToday(day.day) && activeWeek === 'this'" class="px-3 py-1 bg-orange-500 text-white text-[8px] font-black rounded-full uppercase tracking-widest shadow-sm">BUGÜN</div>
             </div>
             <div class="space-y-3">
-              <p v-for="item in day.items" :key="item" class="text-[14px] font-bold text-gray-700 dark:text-gray-300 leading-tight group-hover:text-orange-600 transition-colors flex items-start gap-3">
+              <p v-for="item in day.items" :key="item" class="text-[13px] font-bold text-gray-700 dark:text-gray-300 leading-tight group-hover:text-orange-600 transition-colors flex items-start gap-3 uppercase italic">
                 <span class="w-1.5 h-1.5 rounded-full bg-orange-200 dark:bg-orange-900 mt-1.5 flex-shrink-0"></span>
                 {{ item }}
               </p>
             </div>
           </div>
-          <div v-if="day.calorie" class="mt-8 pt-6 border-t border-gray-50 dark:border-white/5 flex items-center justify-between">
-            <span class="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">{{ day.calorie }}</span>
+          <div class="mt-8 pt-6 border-t border-gray-50 dark:border-white/5 flex items-center justify-end">
             <svg class="w-5 h-5 text-gray-100 dark:text-gray-800" fill="currentColor" viewBox="0 0 24 24"><path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
           </div>
         </div>
@@ -131,15 +131,15 @@
           <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
         </div>
         <div class="text-center md:text-left">
-          <h4 class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">SKS Daire Başkanlığı</h4>
-          <p class="text-[11px] text-gray-500 dark:text-gray-400 font-bold leading-relaxed mt-1 italic">"Yemek rezervasyonlarınızı OBS üzerinden yapmayı unutmayınız."</p>
+          <h4 class="text-xs font-black text-gray-900 dark:text-white uppercase tracking-widest">Üniversite Yemekhane Servisi</h4>
+          <p class="text-[11px] text-gray-500 dark:text-gray-400 font-bold leading-relaxed mt-1 italic">"Bu veriler mehmetakif.edu.tr adresinden anlık olarak çekilmektedir."</p>
         </div>
       </div>
     </div>
 
     <!-- EMPTY STATE -->
     <div v-else class="py-32 text-center bg-white dark:bg-gray-900 rounded-[3rem] border-2 border-dashed border-gray-100 dark:border-white/5 max-w-4xl mx-auto">
-      <p class="text-gray-400 font-black uppercase tracking-widest text-xs italic">Menü şu an güncelleniyor.</p>
+      <p class="text-gray-400 font-black uppercase tracking-widest text-xs italic">Seçilen kampüs için menü şu an güncelleniyor.</p>
     </div>
   </div>
 </template>
@@ -151,17 +151,21 @@ import apiClient from '@/api/client';
 
 const toast = useToast();
 const activeWeek = ref<'this' | 'next'>('this');
-const selectedLocation = ref<'central' | 'district'>('central');
+const selectedLocation = ref<string>('merkez');
 const loading = ref(false);
 const locationNavRef = ref<HTMLElement | null>(null);
 
 const locations = [
-  { id: 'central', name: 'Merkez Yerleşkeler', desc: 'Avşar, Merkez, İlahiyat' },
-  { id: 'district', name: 'İlçe Yemekhaneleri', desc: 'Bucak, Gölhisar ve Diğer' }
+  { id: 'bucak', name: 'Bucak Kampüsü', desc: 'Bucak Yemekhaneleri' },
+  { id: 'merkez', name: 'Merkez Kampüs', desc: 'Avşar Han / Merkez' },
+  { id: 'ilceler', name: 'İlçe Kampüsleri', desc: 'Gölhisar ve Diğer' }
 ];
 
-// BACKEND VERİLERİ İÇİN REF
-const menuData = ref<any>({ thisWeek: [], nextWeek: [] });
+const menuData = ref<any>({
+  merkez: { thisWeek: [], nextWeek: [] },
+  bucak: { thisWeek: [], nextWeek: [] },
+  ilceler: { thisWeek: [], nextWeek: [] }
+});
 
 const fetchMenu = async () => {
   loading.value = true;
@@ -201,8 +205,9 @@ const centerCarouselItem = (index: number) => {
 };
 
 const currentMenuData = computed(() => {
-  const group = menuData.value;
-  return activeWeek.value === 'this' ? (group.thisWeek || []) : (group.nextWeek || []);
+  const locationData = menuData.value[selectedLocation.value];
+  if (!locationData) return [];
+  return activeWeek.value === 'this' ? (locationData.thisWeek || []) : (locationData.nextWeek || []);
 });
 
 const todayMenu = computed(() => {
@@ -221,7 +226,8 @@ const isToday = (dayName: string) => {
 
 onMounted(async () => {
   await fetchMenu();
-  setTimeout(() => { centerCarouselItem(0); handleCarouselScroll(); }, 300);
+  // Merkez kampüsün indexini (1) ortalıyoruz
+  setTimeout(() => { centerCarouselItem(1); handleCarouselScroll(); }, 300);
 });
 </script>
 

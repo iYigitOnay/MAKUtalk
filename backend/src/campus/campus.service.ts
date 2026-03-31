@@ -10,9 +10,10 @@ export class CampusService implements OnModuleInit {
   private readonly YEMEKHANE_URL =
     'https://mehmetakif.edu.tr/tr/content/10606/haftalik-yemek-listesi';
 
-  private cachedMenu: { thisWeek: any[]; nextWeek: any[] } = {
-    thisWeek: [],
-    nextWeek: [],
+  private cachedMenu: any = {
+    merkez: { thisWeek: [], nextWeek: [] },
+    bucak: { thisWeek: [], nextWeek: [] },
+    ilceler: { thisWeek: [], nextWeek: [] },
   };
 
   constructor(
@@ -166,7 +167,7 @@ export class CampusService implements OnModuleInit {
       .map((s) => ({
         label: s.category.replace('_', ' '),
         count: s._count.id,
-        impactScore: s._count.id * 15, // Etki katsayısını 15'e çıkardım
+        impactScore: s._count.id * 15,
         color:
           s.category === 'AL_SAT'
             ? '#f59e0b'
@@ -346,17 +347,6 @@ export class CampusService implements OnModuleInit {
           where: { id: stat.authorId },
           select: { username: true, fullName: true, avatarUrl: true },
         });
-        const topCatGroup = await this.prisma.post.groupBy({
-          by: ['categoryId'],
-          where: {
-            authorId: stat.authorId,
-            createdAt: { gte: startDate },
-            categoryId: { not: null },
-          },
-          _count: { id: true },
-          orderBy: { _count: { id: 'desc' } },
-          take: 1,
-        });
         return {
           username: user?.username || 'Bilinmeyen',
           fullName: user?.fullName || '',
@@ -470,38 +460,67 @@ export class CampusService implements OnModuleInit {
     try {
       const { data } = await axios.get(this.YEMEKHANE_URL, { timeout: 10000 });
       const $ = cheerio.load(data);
-      const allDays: any[] = [];
-      $('.grid.grid-cols-1.md\\:grid-cols-5')
-        .find('> div')
-        .each((i, dayDiv) => {
-          const dayName = $(dayDiv)
-            .find('.text-md.text-slate-700.font-semibold')
-            .first()
-            .text()
-            .trim();
+      
+      const allGrids: any[] = [];
+
+      $('.grid.grid-cols-1.md\\:grid-cols-5').each((i, grid) => {
+        // En geniş kapsamlı başlık taraması: 
+        // 1. Üstteki h2
+        // 2. Kapsayıcının içindeki herhangi bir başlık metni
+        // 3. Yakındaki metin düğümleri
+        const parentDiv = $(grid).closest('div').parent();
+        const headerText = $(grid).prevAll('h2').first().text().toLowerCase() || 
+                          parentDiv.find('h2').first().text().toLowerCase() ||
+                          parentDiv.text().toLowerCase();
+        
+        const days: any[] = [];
+        $(grid).find('> div').each((__, dayDiv) => {
+          const dayName = $(dayDiv).find('.text-md.text-slate-700.font-semibold').first().text().trim();
           if (dayName) {
             const items: string[] = [];
-            $(dayDiv)
-              .find('.text-md.border-b')
-              .each((j, itemDiv) => {
-                const text = $(itemDiv).text().trim();
-                if (
-                  text &&
-                  text !== dayName &&
-                  !text.toLowerCase().includes('kalori')
-                )
-                  items.push(text);
-              });
-            allDays.push({ day: dayName, items });
+            $(dayDiv).find('.text-md.border-b').each((___, itemDiv) => {
+              const text = $(itemDiv).text().trim();
+              if (text && text !== dayName && !text.toLowerCase().includes('kalori')) {
+                items.push(text);
+              }
+            });
+            if (items.length > 0) days.push({ day: dayName, items });
           }
         });
-      if (allDays.length >= 5)
-        this.cachedMenu = {
-          thisWeek: allDays.slice(0, 5),
-          nextWeek: allDays.slice(5, 10),
-        };
+
+        if (days.length > 0) {
+          allGrids.push({ header: headerText, days });
+        }
+      });
+
+      const results: any = { merkez: [], bucak: [], ilceler: [] };
+      
+      allGrids.forEach(item => {
+        const h = item.header;
+        if (h.includes('avşar han') || h.includes('merkez')) {
+          results.merkez.push(...item.days);
+        } else if (h.includes('bucak')) {
+          results.bucak.push(...item.days);
+        } else {
+          // Ne Merkez ne de Bucak ise, büyük ihtimalle İlçe Yemekhanesidir
+          results.ilceler.push(...item.days);
+        }
+      });
+
+      const processWeeks = (days: any[]) => ({
+        thisWeek: days.slice(0, 5),
+        nextWeek: days.slice(5, 10)
+      });
+
+      this.cachedMenu = {
+        merkez: processWeeks(results.merkez),
+        bucak: processWeeks(results.bucak),
+        ilceler: processWeeks(results.ilceler)
+      };
+
+      this.logger.log('Yemekhane tüm kampüsler için güncellendi (İlçe Safe-Fall).');
     } catch (e) {
-      this.logger.error('Scraper error');
+      this.logger.error('Yemekhane scraper hatası:', e.message);
     }
   }
 
