@@ -52,7 +52,7 @@ export class PostsController {
 
   @Get('academic')
   findAcademic(@Query('currentUserId') currentUserId?: string) {
-    return this.postsService.findAcademic(
+    return this.postsService.findAcademicFeed(
       currentUserId ? BigInt(currentUserId) : undefined,
     );
   }
