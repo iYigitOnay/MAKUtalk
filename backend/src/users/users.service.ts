@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
 import { SnowflakeService } from '../common/snowflake/snowflake.service';
@@ -154,7 +155,7 @@ export class UsersService {
         isBlockedMe: true,
         isBlockedByMe: false, // O beni engellediği için benim engelim önemsiz kalabilir
         isPrivate: true,
-        _count: { posts: 0, followers: 0, following: 0 }
+        _count: { posts: 0, followers: 0, following: 0 },
       };
     }
 
@@ -197,7 +198,7 @@ export class UsersService {
   async updateProfile(
     userId: bigint,
     currentUserId: bigint,
-    data: any,
+    updateUserDto: UpdateUserDto,
     files?: {
       avatar?: Express.Multer.File[];
       cover?: Express.Multer.File[];
@@ -217,8 +218,21 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
 
-    const updateData = { ...data };
+    const updateData: any = {
+      fullName: updateUserDto.fullName,
+      bio: updateUserDto.bio,
+      department: updateUserDto.department,
+      class: updateUserDto.class,
+    };
+
+    // isPrivate alanını kesin olarak boolean'a zorla (String "false" -> false)
+    if (updateUserDto.isPrivate !== undefined) {
+      updateData.isPrivate = String(updateUserDto.isPrivate) === 'true';
+    }
+
     const uploadedFiles: string[] = [];
+    console.log('[UsersService] Gelen DTO isPrivate:', updateUserDto.isPrivate, typeof updateUserDto.isPrivate);
+    console.log('[UsersService] Prisma Update Öncesi Veri:', updateData);
 
     try {
       if (files?.avatar?.[0]) {
@@ -269,13 +283,6 @@ export class UsersService {
         }
       }
 
-      const oldIsPrivate = user.isPrivate;
-      let newIsPrivate = oldIsPrivate;
-      
-      if (data.isPrivate !== undefined) {
-        newIsPrivate = String(data.isPrivate) === 'true';
-      }
-
       const updatedUser = await this.prisma.user.update({
         where: { id: userId },
         data: updateData,
@@ -294,9 +301,16 @@ export class UsersService {
       });
 
       // Eğer gizlilik durumu değişmişse, arka planda hashtag senkronizasyonunu başlat
-      if (oldIsPrivate !== updatedUser.isPrivate) {
-        this.hashtagService.syncUserHashtagsAfterPrivacyChange(userId, updatedUser.isPrivate)
-          .catch(err => console.error('Gizlilik değişimi hashtag senkronizasyon hatası:', err));
+      if (user.isPrivate !== updatedUser.isPrivate) {
+        console.log('[UsersService] Gizlilik Değişti! Hashtag Senkronizasyonu Başlatılıyor...');
+        this.hashtagService
+          .syncUserHashtagsAfterPrivacyChange(userId, updatedUser.isPrivate)
+          .catch((err) =>
+            console.error(
+              'Gizlilik değişimi hashtag senkronizasyon hatası:',
+              err,
+            ),
+          );
       }
 
       return updatedUser;

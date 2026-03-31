@@ -1025,6 +1025,11 @@ const handleToggleBadge = async (badgeId: number) => {
 
 const handleSaveProfile = async (data: any) => {
   try {
+    console.log('[Profile.vue] API ye giden FormData içeriği:');
+    for (let [key, value] of data.entries()) {
+      console.log(`${key}: ${value} (${typeof value})`);
+    }
+
     const res = await apiClient.patch(
       `/users/${displayedUser.value?.id}`,
       data,
