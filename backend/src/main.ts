@@ -70,31 +70,34 @@ async function bootstrap() {
   app.use(json({ limit: '10mb' }));
   app.use(urlencoded({ extended: true, limit: '10mb' }));
 
-  // 2. Helmet Zırhı (En sıkı ayarlar)
+  // 2. Helmet Zırhı (Swagger uyumlu ayarlar)
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "https://cdn.jsdelivr.net"],
           styleSrc: [
             "'self'",
             "'unsafe-inline'",
             'https://fonts.googleapis.com',
+            'https://cdn.jsdelivr.net',
           ],
           fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-          imgSrc: ["'self'", 'data:', 'http://localhost:3000', 'https://*'],
+          imgSrc: ["'self'", 'data:', 'https://*'],
           connectSrc: [
             "'self'",
+            'https://*',
+            'wss://*',
             'http://localhost:3000',
             'ws://localhost:3000',
           ],
         },
       },
-      xssFilter: true, // XSS Koruması
-      noSniff: true, // MIME sniffing engeli
-      hidePoweredBy: true, // "X-Powered-By: Express" başlığını gizle
+      xssFilter: true,
+      noSniff: true,
+      hidePoweredBy: true,
     }),
   );
 
