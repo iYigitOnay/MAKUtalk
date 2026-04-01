@@ -10,6 +10,7 @@ import morgan from 'morgan';
 import { json, urlencoded } from 'express';
 import { MyLogger } from './common/logger/logger.service';
 import { BigIntInterceptor } from './common/interceptors/bigint.interceptor';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
@@ -34,7 +35,36 @@ async function bootstrap() {
     ),
   );
 
+  // --- SWAGGER YAPILANDIRMASI ---
+  const config = new DocumentBuilder()
+    .setTitle('MAKUtalk API')
+    .setDescription(
+      'MAKUtalk Mobil ve Web istemcileri için merkezi API dökümantasyonu. Tüm endpointler ve veri yapıları burada tanımlanmıştır.',
+    )
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Lütfen JWT tokeninizi buraya girin',
+        in: 'header',
+      },
+      'JWT-auth', // Bu isim daha sonra Controller'larda kullanılacak
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api/docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true, // Sayfa yenilense de tokeni hatırlar, test yaparken çok rahat edersin
+    },
+    customSiteTitle: 'MAKUtalk API Documentation',
+  });
+
   // --- KATMAN 5: API KALKANI VE GÜVENLIK ---
+
 
   // 1. JSON Limitleri (Dosya şişirme saldırılarına karşı)
   app.use(json({ limit: '10mb' }));
