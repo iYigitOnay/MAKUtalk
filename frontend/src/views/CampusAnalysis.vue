@@ -16,9 +16,14 @@
       >
         <div class="flex items-center w-full md:w-auto">
           <!-- Logo: Daha Küçük ve Zarif -->
-          <div class="flex items-center px-3 py-1 mr-2 group cursor-default border-r border-white/[0.03]">
+          <div
+            class="flex items-center px-3 py-1 mr-2 group cursor-default border-r border-white/[0.03]"
+          >
             <Zap class="w-4 h-4 text-blue-500 mr-2 group-hover:animate-pulse" />
-            <span class="text-[10px] font-black text-white tracking-[0.3em] uppercase">MAKÜ</span>
+            <span
+              class="text-[10px] font-black text-white tracking-[0.3em] uppercase"
+              >MAKÜ</span
+            >
           </div>
 
           <!-- Navigasyon: İnce ve Modern -->
@@ -29,42 +34,62 @@
               @click="activeTab = m.id"
               :class="[
                 'h-9 px-4 rounded-full flex items-center transition-all duration-300 group relative border',
-                activeTab === m.id 
-                  ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)]' 
-                  : 'bg-transparent border-transparent text-slate-500 hover:text-slate-200'
+                activeTab === m.id
+                  ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)]'
+                  : 'bg-transparent border-transparent text-slate-500 hover:text-slate-200',
               ]"
             >
-              <component :is="m.icon" :class="['w-3.5 h-3.5 transition-colors', activeTab === m.id ? 'text-blue-400' : 'text-slate-600 group-hover:text-slate-400']" />
-              <span class="ml-2 font-black uppercase tracking-[0.2em] text-[10px]">{{ m.label }}</span>
-              
+              <component
+                :is="m.icon"
+                :class="[
+                  'w-3.5 h-3.5 transition-colors',
+                  activeTab === m.id
+                    ? 'text-blue-400'
+                    : 'text-slate-600 group-hover:text-slate-400',
+                ]"
+              />
+              <span
+                class="ml-2 font-black uppercase tracking-[0.2em] text-[10px]"
+                >{{ m.label }}</span
+              >
+
               <!-- Seçili İndikatörü: Parlayan Çizgi -->
-              <div 
-                v-if="activeTab === m.id" 
+              <div
+                v-if="activeTab === m.id"
                 class="absolute -bottom-[2px] left-1/2 -translate-x-1/2 w-4 h-[2px] bg-blue-400 rounded-full shadow-[0_0_10px_#3b82f6] animate-pulse"
               ></div>
             </button>
           </div>
 
           <!-- Ayrıl: Minimalist Kırmızı Pill -->
-          <button 
+          <button
             @click="$router.push('/campus')"
             class="h-8.5 px-4 ml-3 rounded-full border border-red-500/10 hover:border-red-500/30 bg-red-500/[0.02] hover:bg-red-500/5 text-red-500/60 hover:text-red-400 transition-all flex items-center gap-2 group"
           >
             <LogOut class="w-3 h-3" />
-            <span class="text-[10px] font-black uppercase tracking-widest">AYRIL</span>
+            <span class="text-[10px] font-black uppercase tracking-widest"
+              >AYRIL</span
+            >
           </button>
         </div>
 
         <!-- Zaman Filtresi: En Sağda İnce Tasarım -->
         <div class="flex md:contents">
-          <div class="w-full md:w-auto mt-2 md:mt-0 flex bg-white/[0.02] p-1 rounded-full border border-white/[0.03] md:ml-4">
+          <div
+            class="w-full md:w-auto mt-2 md:mt-0 flex bg-white/[0.02] p-1 rounded-full border border-white/[0.03] md:ml-4"
+          >
             <button
               v-for="t in timeOptions"
               :key="t.id"
-              @click="interval = t.id; fetchAnalytics();"
+              @click="
+                interval = t.id;
+                fetchAnalytics();
+              "
               :class="[
                 'px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all',
-                interval === t.id ? 'bg-white/10 text-white' : 'text-slate-600 hover:text-slate-400',
+                interval === t.id
+                  ? 'bg-white/10 text-white'
+                  : 'text-slate-600 hover:text-slate-400',
               ]"
             >
               {{ t.label }}
@@ -340,6 +365,10 @@
                     <div class="w-1.5 h-1.5 rounded-full bg-purple-500"></div>
                     Döküman
                   </div>
+                  <div class="flex items-center gap-1.5">
+                    <div class="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
+                    Metin
+                  </div>
                 </div>
               </div>
               <p
@@ -497,7 +526,7 @@
 
             <!-- Kategori Detay / Son Postlar -->
             <section
-              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden flex flex-col"
+              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] p-8 shadow-2xl relative overflow-hidden flex flex-col h-[800px]"
             >
               <div
                 v-if="!selectedCategoryId"
@@ -567,7 +596,7 @@
 
                 <div
                   v-else-if="categoryPosts.length"
-                  class="space-y-3 overflow-y-auto no-scrollbar max-h-[450px]"
+                  class="space-y-3 overflow-y-auto no-scrollbar max-h-[650px]"
                 >
                   <div
                     v-for="post in categoryPosts"
@@ -621,51 +650,148 @@
         <div v-if="activeTab === 'PSİKOLOJİ'" class="space-y-12 text-left">
           <!-- Psikoloji Üst Bilgi Kartları -->
           <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl group relative overflow-hidden text-left">
-              <div class="absolute -right-2 -top-2 text-6xl opacity-10 group-hover:scale-125 transition-transform">{{ data?.psychology?.forecast?.icon || "☀️" }}</div>
-              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest relative z-10">HAVA DURUMU</span>
-              <div class="text-2xl font-black italic text-white relative z-10 uppercase">{{ data?.psychology?.forecast?.label || "STABİL" }}</div>
-              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10">Gelecek 6 Saat Tahmini</p>
-            </div>
-            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl text-left relative overflow-hidden">
-              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest">DUYGU DENGESİ</span>
-              <div class="text-4xl font-medium italic text-emerald-400 tabular-nums">%{{ data?.psychology?.emotionalBalance || 0 }}</div>
-              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10">Pozitif Sinyal Oranı</p>
-            </div>
-            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl text-left relative overflow-hidden">
-              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest text-left">VOLATİLİTE</span>
-              <div class="flex items-end gap-2 text-left">
-                <div class="text-4xl font-medium italic text-orange-400">{{ data?.psychology?.volatility || 0 }}</div>
-                <span class="text-[10px] font-black text-slate-600 mb-2 uppercase">/ 10</span>
+            <div
+              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl group relative overflow-hidden text-left"
+            >
+              <div
+                class="absolute -right-2 -top-2 text-6xl opacity-10 group-hover:scale-125 transition-transform"
+              >
+                {{ data?.psychology?.forecast?.icon || "☀️" }}
               </div>
-              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10 text-left">Ruh Hali Değişkenliği</p>
+              <span
+                class="text-[9px] font-black text-slate-500 uppercase tracking-widest relative z-10"
+                >HAVA DURUMU</span
+              >
+              <div
+                class="text-2xl font-black italic text-white relative z-10 uppercase"
+              >
+                {{ data?.psychology?.forecast?.label || "STABİL" }}
+              </div>
+              <p
+                class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10"
+              >
+                Gelecek 6 Saat Tahmini
+              </p>
             </div>
-            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl text-left relative overflow-hidden">
-              <span class="text-[9px] font-black text-slate-500 uppercase tracking-widest text-left">RADİKAL ALAN</span>
-              <div class="text-2xl font-medium italic text-purple-400 uppercase truncate text-left">{{ data?.psychology?.mostPolarizedCategory || "KAMPÜS" }}</div>
-              <p class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10 text-left">Duyguların En Uç Yaşandığı Alan</p>
+            <div
+              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl text-left relative overflow-hidden"
+            >
+              <span
+                class="text-[9px] font-black text-slate-500 uppercase tracking-widest"
+                >DUYGU DENGESİ</span
+              >
+              <div
+                class="text-4xl font-medium italic text-emerald-400 tabular-nums"
+              >
+                %{{ data?.psychology?.emotionalBalance || 0 }}
+              </div>
+              <p
+                class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10"
+              >
+                Pozitif Sinyal Oranı
+              </p>
+            </div>
+            <div
+              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl text-left relative overflow-hidden"
+            >
+              <span
+                class="text-[9px] font-black text-slate-500 uppercase tracking-widest text-left"
+                >VOLATİLİTE</span
+              >
+              <div class="flex items-end gap-2 text-left">
+                <div class="text-4xl font-medium italic text-orange-400">
+                  {{ data?.psychology?.volatility || 0 }}
+                </div>
+                <span
+                  class="text-[10px] font-black text-slate-600 mb-2 uppercase"
+                  >/ 10</span
+                >
+              </div>
+              <p
+                class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10 text-left"
+              >
+                Ruh Hali Değişkenliği
+              </p>
+            </div>
+            <div
+              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 flex flex-col justify-between h-[160px] shadow-xl text-left relative overflow-hidden"
+            >
+              <span
+                class="text-[9px] font-black text-slate-500 uppercase tracking-widest text-left"
+                >RADİKAL ALAN</span
+              >
+              <div
+                class="text-2xl font-medium italic text-purple-400 uppercase truncate text-left"
+              >
+                {{ data?.psychology?.mostPolarizedCategory || "KAMPÜS" }}
+              </div>
+              <p
+                class="text-[8px] text-slate-600 font-bold uppercase tracking-widest relative z-10 text-left"
+              >
+                Duyguların En Uç Yaşandığı Alan
+              </p>
             </div>
           </div>
 
           <!-- DUYGU LİDERLERİ -->
-          <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] p-10 shadow-2xl space-y-8">
-            <div class="flex items-center justify-between border-b border-white/[0.02] pb-6">
+          <div
+            class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] p-10 shadow-2xl space-y-8"
+          >
+            <div
+              class="flex items-center justify-between border-b border-white/[0.02] pb-6"
+            >
               <div>
-                <h3 class="text-white font-medium text-2xl tracking-tight uppercase italic leading-none">Duygu Liderleri</h3>
-                <p class="text-[10px] text-slate-600 uppercase font-black tracking-[0.2em] mt-2">Kampüsün Modunu En Çok Etkileyenler</p>
+                <h3
+                  class="text-white font-medium text-2xl tracking-tight uppercase italic leading-none"
+                >
+                  Duygu Liderleri
+                </h3>
+                <p
+                  class="text-[10px] text-slate-600 uppercase font-black tracking-[0.2em] mt-2"
+                >
+                  Kampüsün Modunu En Çok Etkileyenler
+                </p>
               </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div v-for="inf in data?.psychology?.influencers" :key="inf.username" class="p-6 bg-white/[0.01] border border-white/[0.03] rounded-[2rem] flex items-center gap-5 hover:bg-white/[0.03] transition-all group text-left">
-                <div class="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex-shrink-0">
-                  <img v-if="inf.avatarUrl" :src="getAvatarUrl(inf.avatarUrl)" class="w-full h-full object-cover" />
-                  <div v-else class="w-full h-full flex items-center justify-center font-black text-slate-600">{{ inf.username.charAt(0) }}</div>
+              <div
+                v-for="inf in data?.psychology?.influencers"
+                :key="inf.username"
+                class="p-6 bg-white/[0.01] border border-white/[0.03] rounded-[2rem] flex items-center gap-5 hover:bg-white/[0.03] transition-all group text-left"
+              >
+                <div
+                  class="w-14 h-14 rounded-2xl bg-white/5 overflow-hidden flex-shrink-0"
+                >
+                  <img
+                    v-if="inf.avatarUrl"
+                    :src="getAvatarUrl(inf.avatarUrl)"
+                    class="w-full h-full object-cover"
+                  />
+                  <div
+                    v-else
+                    class="w-full h-full flex items-center justify-center font-black text-slate-600"
+                  >
+                    {{ inf.username.charAt(0) }}
+                  </div>
                 </div>
                 <div>
-                  <h4 class="text-sm font-bold text-white">@{{ inf.username }}</h4>
+                  <h4 class="text-sm font-bold text-white">
+                    @{{ inf.username }}
+                  </h4>
                   <div class="flex items-center gap-2 mt-1">
-                    <span class="text-[8px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 uppercase">ETKİ: {{ inf.impact }}</span>
-                    <span :class="['text-[8px] font-black px-2 py-0.5 rounded-full uppercase', inf.dominantMood === 'Pozitif' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400']">{{ inf.dominantMood }}</span>
+                    <span
+                      class="text-[8px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 uppercase"
+                      >ETKİ: {{ inf.impact }}</span
+                    >
+                    <span
+                      :class="[
+                        'text-[8px] font-black px-2 py-0.5 rounded-full uppercase',
+                        inf.dominantMood === 'Pozitif'
+                          ? 'bg-emerald-500/10 text-emerald-400'
+                          : 'bg-red-500/10 text-red-400',
+                      ]"
+                      >{{ inf.dominantMood }}</span
+                    >
                   </div>
                 </div>
               </div>
@@ -673,59 +799,174 @@
           </div>
 
           <!-- DUYGU MERCEĞİ -->
-          <section class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3.5rem] p-10 lg:p-16 shadow-2xl space-y-12 text-left relative overflow-hidden">
-            <div class="absolute top-0 right-0 w-96 h-96 bg-blue-500/[0.02] rounded-full blur-[100px] pointer-events-none"></div>
-            
-            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-white/[0.03] pb-10">
+          <section
+            class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3.5rem] p-10 lg:p-16 shadow-2xl space-y-12 text-left relative overflow-hidden"
+          >
+            <div
+              class="absolute top-0 right-0 w-96 h-96 bg-blue-500/[0.02] rounded-full blur-[100px] pointer-events-none"
+            ></div>
+
+            <div
+              class="flex flex-col lg:flex-row lg:items-end justify-between gap-8 border-b border-white/[0.03] pb-10"
+            >
               <div>
-                <h3 class="text-white font-medium text-3xl tracking-tight uppercase italic leading-none">Duygu Merceği</h3>
-                <p class="text-[11px] text-slate-600 uppercase font-black tracking-[0.3em] mt-3">Korelasyon ve AI Tutarlılık Testi</p>
+                <h3
+                  class="text-white font-medium text-3xl tracking-tight uppercase italic leading-none"
+                >
+                  Duygu Merceği
+                </h3>
+                <p
+                  class="text-[11px] text-slate-600 uppercase font-black tracking-[0.3em] mt-3"
+                >
+                  Korelasyon ve AI Tutarlılık Testi
+                </p>
               </div>
               <div class="flex flex-wrap gap-2">
-                <button v-for="s in sentiments" :key="s.name" @click="selectedSentiment = s.name; fetchTopPosts();"
-                  :class="['px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2', selectedSentiment === s.name ? 'bg-white/[0.05]' : 'bg-transparent border-white/[0.03] text-slate-600 hover:border-white/10']"
-                  :style="{ borderColor: selectedSentiment === s.name ? s.color : '', color: selectedSentiment === s.name ? s.color : '' }">{{ s.name }}</button>
+                <button
+                  v-for="s in sentiments"
+                  :key="s.name"
+                  @click="
+                    selectedSentiment = s.name;
+                    fetchTopPosts();
+                  "
+                  :class="[
+                    'px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border-2',
+                    selectedSentiment === s.name
+                      ? 'bg-white/[0.05]'
+                      : 'bg-transparent border-white/[0.03] text-slate-600 hover:border-white/10',
+                  ]"
+                  :style="{
+                    borderColor: selectedSentiment === s.name ? s.color : '',
+                    color: selectedSentiment === s.name ? s.color : '',
+                  }"
+                >
+                  {{ s.name }}
+                </button>
               </div>
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-               <div class="bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] p-8 flex flex-col items-center">
-                  <h4 class="text-[10px] font-black text-slate-600 uppercase tracking-widest w-full mb-6 text-left">Duygu Profili</h4>
-                  <div class="w-full h-[300px]"><apexchart type="radar" height="100%" :options="radarChartOptions" :series="radarChartSeries" /></div>
-               </div>
-               <div class="bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] p-8 flex flex-col text-left">
-                  <h4 class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-6 text-left">Skor vs. Etkileşim Korelasyonu</h4>
-                  <div class="flex-1 w-full h-[300px]"><apexchart type="scatter" height="100%" :options="correlationChartOptions" :series="correlationChartSeries" /></div>
-                  <p class="text-[7px] text-slate-700 font-bold uppercase mt-4 text-center">X: SKOR | Y: ETKİLEŞİM | NEON: SİNYAL GÜCÜ</p>
-               </div>
+              <div
+                class="bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] p-8 flex flex-col items-center"
+              >
+                <h4
+                  class="text-[10px] font-black text-slate-600 uppercase tracking-widest w-full mb-6 text-left"
+                >
+                  Duygu Profili
+                </h4>
+                <div class="w-full h-[300px]">
+                  <apexchart
+                    type="radar"
+                    height="100%"
+                    :options="radarChartOptions"
+                    :series="radarChartSeries"
+                  />
+                </div>
+              </div>
+              <div
+                class="bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] p-8 flex flex-col text-left"
+              >
+                <h4
+                  class="text-[10px] font-black text-slate-600 uppercase tracking-widest mb-6 text-left"
+                >
+                  Skor vs. Etkileşim Korelasyonu
+                </h4>
+                <div class="flex-1 w-full h-[300px]">
+                  <apexchart
+                    type="scatter"
+                    height="100%"
+                    :options="correlationChartOptions"
+                    :series="correlationChartSeries"
+                  />
+                </div>
+                <p
+                  class="text-[7px] text-slate-700 font-bold uppercase mt-4 text-center"
+                >
+                  X: SKOR | Y: ETKİLEŞİM | NEON: SİNYAL GÜCÜ
+                </p>
+              </div>
             </div>
 
-            <div class="bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] p-10 text-left">
-               <div class="flex items-center justify-between mb-8">
-                  <h4 class="text-[10px] font-black text-slate-600 uppercase tracking-widest">Zaman Bazlı Skor Dağılımı</h4>
-                  <div class="flex gap-6">
-                    <div v-for="stat in currentSentimentStats" :key="stat.label">
-                      <p class="text-[8px] font-black text-slate-700 uppercase tracking-widest text-left">{{ stat.label }}</p>
-                      <p :class="['text-lg font-bold tabular-nums mt-0.5 text-left', stat.color || 'text-white']">{{ stat.value }}</p>
-                    </div>
+            <div
+              class="bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] p-10 text-left"
+            >
+              <div class="flex items-center justify-between mb-8">
+                <h4
+                  class="text-[10px] font-black text-slate-600 uppercase tracking-widest"
+                >
+                  Zaman Bazlı Skor Dağılımı
+                </h4>
+                <div class="flex gap-6">
+                  <div v-for="stat in currentSentimentStats" :key="stat.label">
+                    <p
+                      class="text-[8px] font-black text-slate-700 uppercase tracking-widest text-left"
+                    >
+                      {{ stat.label }}
+                    </p>
+                    <p
+                      :class="[
+                        'text-lg font-bold tabular-nums mt-0.5 text-left',
+                        stat.color || 'text-white',
+                      ]"
+                    >
+                      {{ stat.value }}
+                    </p>
                   </div>
-               </div>
-               <div class="w-full h-[250px]"><apexchart type="line" height="100%" :options="anomalyChartOptions" :series="anomalyChartSeries" /></div>
+                </div>
+              </div>
+              <div class="w-full h-[250px]">
+                <apexchart
+                  type="line"
+                  height="100%"
+                  :options="anomalyChartOptions"
+                  :series="anomalyChartSeries"
+                />
+              </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-              <div v-for="post in topPosts" :key="post.id" @click="$router.push('/post/' + post.id)" class="p-8 bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] flex gap-6 hover:bg-white/[0.03] transition-all group cursor-pointer relative overflow-hidden text-left">
-                <div class="absolute top-0 right-0 px-5 py-2.5 rounded-bl-3xl text-[11px] font-black tabular-nums border-l border-b border-white/[0.05]"
-                  :class="[post.sentimentScore > 0.7 ? 'text-emerald-400 bg-emerald-500/10' : post.sentimentScore < 0.4 ? 'text-red-400 bg-red-500/10' : 'text-blue-400 bg-blue-500/10']">
+              <div
+                v-for="post in topPosts"
+                :key="post.id"
+                @click="$router.push('/post/' + post.id)"
+                class="p-8 bg-white/[0.01] border border-white/[0.03] rounded-[2.5rem] flex gap-6 hover:bg-white/[0.03] transition-all group cursor-pointer relative overflow-hidden text-left"
+              >
+                <div
+                  class="absolute top-0 right-0 px-5 py-2.5 rounded-bl-3xl text-[11px] font-black tabular-nums border-l border-b border-white/[0.05]"
+                  :class="[
+                    post.sentimentScore > 0.7
+                      ? 'text-emerald-400 bg-emerald-500/10'
+                      : post.sentimentScore < 0.4
+                        ? 'text-red-400 bg-red-500/10'
+                        : 'text-blue-400 bg-blue-500/10',
+                  ]"
+                >
                   SKOR: {{ post.sentimentScore?.toFixed(2) }}
                 </div>
-                <div class="w-14 h-14 rounded-2xl bg-white/[0.02] border border-white/[0.05] overflow-hidden flex-shrink-0">
-                  <img v-if="post.author.avatarUrl" :src="getAvatarUrl(post.author.avatarUrl)" class="w-full h-full object-cover" />
-                  <div v-else class="w-full h-full flex items-center justify-center text-sm font-black text-slate-600">{{ post.author.username.charAt(0) }}</div>
+                <div
+                  class="w-14 h-14 rounded-2xl bg-white/[0.02] border border-white/[0.05] overflow-hidden flex-shrink-0"
+                >
+                  <img
+                    v-if="post.author.avatarUrl"
+                    :src="getAvatarUrl(post.author.avatarUrl)"
+                    class="w-full h-full object-cover"
+                  />
+                  <div
+                    v-else
+                    class="w-full h-full flex items-center justify-center text-sm font-black text-slate-600"
+                  >
+                    {{ post.author.username.charAt(0) }}
+                  </div>
                 </div>
                 <div class="flex-1 space-y-3 pt-1">
-                  <span class="text-sm font-bold text-white tracking-tight">@{{ post.author.username }}</span>
-                  <p class="text-sm text-slate-400 italic leading-relaxed line-clamp-2 pr-12">"{{ post.content }}"</p>
+                  <span class="text-sm font-bold text-white tracking-tight"
+                    >@{{ post.author.username }}</span
+                  >
+                  <p
+                    class="text-sm text-slate-400 italic leading-relaxed line-clamp-2 pr-12"
+                  >
+                    "{{ post.content }}"
+                  </p>
                 </div>
               </div>
             </div>
@@ -733,36 +974,107 @@
 
           <!-- Alt Katman Grafikler -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
-            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-12 flex flex-col items-center shadow-2xl relative overflow-hidden text-left">
-              <h3 class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-12 relative z-10">Genel Dağılım</h3>
-              <div class="relative w-full aspect-square max-w-[260px] z-10"><apexchart type="donut" height="100%" :options="sentimentDonutOptions" :series="sentimentDonutSeries" /></div>
+            <div
+              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-12 flex flex-col items-center shadow-2xl relative overflow-hidden text-left"
+            >
+              <h3
+                class="text-slate-600 font-black text-[10px] uppercase tracking-[0.3em] w-full text-left mb-12 relative z-10"
+              >
+                Genel Dağılım
+              </h3>
+              <div class="relative w-full aspect-square max-w-[260px] z-10">
+                <apexchart
+                  type="donut"
+                  height="100%"
+                  :options="sentimentDonutOptions"
+                  :series="sentimentDonutSeries"
+                />
+              </div>
             </div>
-            <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-12 flex flex-col h-[400px] shadow-2xl relative overflow-hidden group text-left">
-              <h3 class="text-white font-medium text-xl tracking-tight mb-2 text-left">Duygu Yoğunluk Haritası</h3>
-              <div class="flex-1 w-full h-[250px]"><apexchart type="heatmap" height="100%" :options="heatmapOptions" :series="heatmapSeries" /></div>
+            <div
+              class="bg-[#0A0A0C] border border-white/[0.03] rounded-[3rem] p-12 flex flex-col h-[400px] shadow-2xl relative overflow-hidden group text-left"
+            >
+              <h3
+                class="text-white font-medium text-xl tracking-tight mb-2 text-left"
+              >
+                Duygu Yoğunluk Haritası
+              </h3>
+              <div class="flex-1 w-full h-[250px]">
+                <apexchart
+                  type="heatmap"
+                  height="100%"
+                  :options="heatmapOptions"
+                  :series="heatmapSeries"
+                />
+              </div>
             </div>
           </div>
 
           <!-- Kategori Bazlı Duygu Karnesi -->
-          <section class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] overflow-hidden shadow-2xl">
-            <div class="p-8 border-b border-white/[0.02] flex items-center justify-between">
+          <section
+            class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2.5rem] overflow-hidden shadow-2xl"
+          >
+            <div
+              class="p-8 border-b border-white/[0.02] flex items-center justify-between"
+            >
               <div>
-                <h4 class="text-white font-medium tracking-tight">Duygu Karnesi</h4>
-                <p class="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Kategorilerin Ortalama Pozitiflik Puanları</p>
+                <h4 class="text-white font-medium tracking-tight">
+                  Duygu Karnesi
+                </h4>
+                <p
+                  class="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1"
+                >
+                  Kategorilerin Ortalama Pozitiflik Puanları
+                </p>
               </div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.02]">
-              <div v-for="cat in data?.psychology?.categorySentiments" :key="cat.name" class="bg-[#0A0A0C] p-8 group hover:bg-white/[0.01] transition-colors text-left">
+            <div
+              class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-px bg-white/[0.02]"
+            >
+              <div
+                v-for="cat in data?.psychology?.categorySentiments"
+                :key="cat.name"
+                class="bg-[#0A0A0C] p-8 group hover:bg-white/[0.01] transition-colors text-left"
+              >
                 <div class="flex items-center justify-between mb-4">
-                  <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">{{ cat.name }}</span>
-                  <div :class="['text-lg font-black italic tracking-tighter', cat.avgScore > 0.6 ? 'text-emerald-500' : cat.avgScore < 0.4 ? 'text-red-500' : 'text-blue-500']">{{ cat.avgScore }}</div>
+                  <span
+                    class="text-[10px] font-black text-slate-400 uppercase tracking-widest"
+                    >{{ cat.name }}</span
+                  >
+                  <div
+                    :class="[
+                      'text-lg font-black italic tracking-tighter',
+                      cat.avgScore > 0.6
+                        ? 'text-emerald-500'
+                        : cat.avgScore < 0.4
+                          ? 'text-red-500'
+                          : 'text-blue-500',
+                    ]"
+                  >
+                    {{ cat.avgScore }}
+                  </div>
                 </div>
                 <div class="w-full h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div :style="{ width: cat.avgScore * 100 + '%', backgroundColor: cat.avgScore > 0.6 ? '#10b981' : cat.avgScore < 0.4 ? '#ef4444' : '#3b82f6' }" class="h-full transition-all duration-1000"></div>
+                  <div
+                    :style="{
+                      width: cat.avgScore * 100 + '%',
+                      backgroundColor:
+                        cat.avgScore > 0.6
+                          ? '#10b981'
+                          : cat.avgScore < 0.4
+                            ? '#ef4444'
+                            : '#3b82f6',
+                    }"
+                    class="h-full transition-all duration-1000"
+                  ></div>
                 </div>
-                <div class="flex items-center justify-between mt-3 text-[7px] font-black uppercase tracking-widest">
+                <div
+                  class="flex items-center justify-between mt-3 text-[7px] font-black uppercase tracking-widest"
+                >
                   <span class="text-slate-700">{{ cat.postCount }} VERİ</span>
-                  <span class="text-purple-500/40 italic">RADİKALLİK: {{ cat.polarization }}</span>
+                  <span class="text-purple-500/40 italic"
+                    >RADİKALLİK: {{ cat.polarization }}</span
+                  >
                 </div>
               </div>
             </div>
@@ -926,13 +1238,13 @@ const apexchart = VueApexCharts;
 const toast = useToast();
 const campusStore = useCampusStore();
 
-import { 
-  LayoutDashboard, 
-  Users, 
-  Brain, 
-  HandHelping, 
+import {
+  LayoutDashboard,
+  Users,
+  Brain,
+  HandHelping,
   LogOut,
-  ChevronLeft
+  ChevronLeft,
 } from "lucide-vue-next";
 
 const activeTab = ref("GENEL");
@@ -1065,7 +1377,11 @@ const fetchCategoryPosts = async (catId: number, catName: string) => {
 const getAvatarUrl = (path: string) => campusStore.getAvatarUrl(path);
 
 watch(activeTab, (newTab) => {
-  if (newTab === "PSİKOLOJİ") fetchTopPosts();
+  if (newTab === "PSİKOLOJİ") {
+    fetchTopPosts();
+  } else if (newTab === "SOSYAL" && selectedCategoryId.value) {
+    fetchCategoryPosts(selectedCategoryId.value, selectedCategoryName.value);
+  }
 });
 
 const categoryDonutOptions = computed(() => ({
@@ -1375,25 +1691,50 @@ const solidarityDonutSeries = computed(
 
 const radarChartOptions = computed(() => ({
   chart: { toolbar: { show: false }, background: "transparent" },
-  xaxis: { categories: ["YOĞUNLUK", "ETKİLEŞİM", "İSTİKRAR"], labels: { style: { colors: ["#64748b", "#64748b", "#64748b"], fontSize: "9px", fontWeight: 900 } } },
+  xaxis: {
+    categories: ["YOĞUNLUK", "ETKİLEŞİM", "İSTİKRAR"],
+    labels: {
+      style: {
+        colors: ["#64748b", "#64748b", "#64748b"],
+        fontSize: "9px",
+        fontWeight: 900,
+      },
+    },
+  },
   yaxis: { show: false, min: 0, max: 1 },
-  colors: [sentiments.find(s => s.name === selectedSentiment.value)?.color || "#3b82f6"],
-  fill: { opacity: 0.4 }
+  colors: [
+    sentiments.find((s) => s.name === selectedSentiment.value)?.color ||
+      "#3b82f6",
+  ],
+  fill: { opacity: 0.4 },
 }));
 
 const radarChartSeries = computed(() => {
-  const dive = data.value?.psychology?.deepDive?.find((d: any) => d.label === selectedSentiment.value);
+  const dive = data.value?.psychology?.deepDive?.find(
+    (d: any) => d.label === selectedSentiment.value,
+  );
   // Etkileşimi 0-1 arasına normalize ediyoruz (max 20 etkileşim gibi varsayıyoruz)
-  return [{ name: dive?.label || "Duygu", data: [dive?.avgIntensity || 0, Math.min((dive?.avgEngagement || 0) / 20, 1), dive?.stability || 0] }];
+  return [
+    {
+      name: dive?.label || "Duygu",
+      data: [
+        dive?.avgIntensity || 0,
+        Math.min((dive?.avgEngagement || 0) / 20, 1),
+        dive?.stability || 0,
+      ],
+    },
+  ];
 });
 
 const correlationChartOptions = computed(() => {
-  const themeColor = sentiments.find(s => s.name === selectedSentiment.value)?.color || "#3b82f6";
-  
+  const themeColor =
+    sentiments.find((s) => s.name === selectedSentiment.value)?.color ||
+    "#3b82f6";
+
   return {
-    chart: { 
-      type: 'scatter',
-      toolbar: { show: false }, 
+    chart: {
+      type: "scatter",
+      toolbar: { show: false },
       background: "transparent",
       dropShadow: {
         enabled: true,
@@ -1401,107 +1742,178 @@ const correlationChartOptions = computed(() => {
         left: 0,
         top: 0,
         color: themeColor,
-        opacity: 0.7
-      }
+        opacity: 0.7,
+      },
     },
-    xaxis: { 
-      type: 'numeric', // Eksen tipini sayısal olarak sabitledik
-      min: 0, 
-      max: 1, 
+    xaxis: {
+      type: "numeric", // Eksen tipini sayısal olarak sabitledik
+      min: 0,
+      max: 1,
       tickAmount: 5, // 0.2'lik dilimler için 5 tick
       decimalsInFloat: 1, // Ondalık basamak sayısını zorladık
-      labels: { 
-        style: { colors: '#475569', fontSize: '9px', fontWeight: 900 },
+      labels: {
+        style: { colors: "#475569", fontSize: "9px", fontWeight: 900 },
         formatter: (val: any) => {
           return parseFloat(val).toFixed(1); // Kesin ondalık formatı
-        }
-      }, 
-      title: { text: 'AI DUYGU PUANI', style: { color: '#334155', fontSize: '8px', fontWeight: 900, letterSpacing: '0.2em' } },
-      axisBorder: { show: true, color: '#ffffff05' },
-      axisTicks: { show: false }
+        },
+      },
+      title: {
+        text: "AI DUYGU PUANI",
+        style: {
+          color: "#334155",
+          fontSize: "8px",
+          fontWeight: 900,
+          letterSpacing: "0.2em",
+        },
+      },
+      axisBorder: { show: true, color: "#ffffff05" },
+      axisTicks: { show: false },
     },
-    yaxis: { 
-      min: 0, 
+    yaxis: {
+      min: 0,
       forceNiceScale: true,
-      labels: { 
-        style: { colors: '#475569', fontSize: '9px', fontWeight: 900 },
-        formatter: (val: number) => Math.floor(val).toString() // Sadece tam sayı göster
-      }, 
-      title: { text: 'ETKİLEŞİM', style: { color: '#334155', fontSize: '8px', fontWeight: 900, letterSpacing: '0.2em' } } 
+      labels: {
+        style: { colors: "#475569", fontSize: "9px", fontWeight: 900 },
+        formatter: (val: number) => Math.floor(val).toString(), // Sadece tam sayı göster
+      },
+      title: {
+        text: "ETKİLEŞİM",
+        style: {
+          color: "#334155",
+          fontSize: "8px",
+          fontWeight: 900,
+          letterSpacing: "0.2em",
+        },
+      },
     },
     colors: [themeColor],
-    markers: { 
-      size: 7, 
-      strokeWidth: 2, 
-      strokeColors: "#fff", 
+    markers: {
+      size: 7,
+      strokeWidth: 2,
+      strokeColors: "#fff",
       strokeOpacity: 1,
       fillOpacity: 1,
       shape: "square", // Noktalar artık teknik kare bloklar
       radius: 0,
-      hover: { 
-        size: 10, 
-        strokeWidth: 0
-      }
+      hover: {
+        size: 10,
+        strokeWidth: 0,
+      },
     },
-    grid: { 
-      borderColor: "#ffffff03", 
+    grid: {
+      borderColor: "#ffffff03",
       xaxis: { lines: { show: true } },
-      yaxis: { lines: { show: true } }
+      yaxis: { lines: { show: true } },
     },
     annotations: {
-      position: 'back',
-      xaxis: [{ x: 0.5, borderColor: themeColor + '30', strokeDashArray: 4 }],
-      yaxis: [{ y: 15, borderColor: themeColor + '30', strokeDashArray: 4 }],
+      position: "back",
+      xaxis: [{ x: 0.5, borderColor: themeColor + "30", strokeDashArray: 4 }],
+      yaxis: [{ y: 15, borderColor: themeColor + "30", strokeDashArray: 4 }],
       points: [
-        { x: 0.85, y: 35, label: { text: 'VİRAL PAYLAŞIMLAR', style: { background: themeColor, color: '#fff', fontSize: '7px', fontWeight: 900 } } },
-        { x: 0.15, y: 35, label: { text: 'ANOMALİ / TARTIŞMALI', style: { background: '#ef4444', color: '#fff', fontSize: '7px', fontWeight: 900 } } }
-      ]
+        {
+          x: 0.85,
+          y: 35,
+          label: {
+            text: "VİRAL PAYLAŞIMLAR",
+            style: {
+              background: themeColor,
+              color: "#fff",
+              fontSize: "7px",
+              fontWeight: 900,
+            },
+          },
+        },
+        {
+          x: 0.15,
+          y: 35,
+          label: {
+            text: "ANOMALİ / TARTIŞMALI",
+            style: {
+              background: "#ef4444",
+              color: "#fff",
+              fontSize: "7px",
+              fontWeight: 900,
+            },
+          },
+        },
+      ],
     },
-    tooltip: { 
-      theme: 'dark',
-      custom: function({ series, seriesIndex, dataPointIndex, w }: any) {
+    tooltip: {
+      theme: "dark",
+      custom: function ({ series, seriesIndex, dataPointIndex, w }: any) {
         const d = w.config.series[seriesIndex].data[dataPointIndex];
-        return '<div class="px-4 py-3 bg-[#0A0A0C]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl">' +
+        return (
+          '<div class="px-4 py-3 bg-[#0A0A0C]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl">' +
           '<div class="flex items-center gap-2 mb-2"><div class="w-2 h-2 bg-white"></div>' +
           '<span class="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Veri Bloğu</span></div>' +
-          '<div class="text-[12px] text-white">Duygu Puanı: <span class="font-black" style="color:'+themeColor+'">' + d.x + '</span></div>' +
-          '<div class="text-[12px] text-white">Etkileşim: <span class="font-black text-blue-400">' + d.y + '</span></div>' +
-          '</div>';
-      }
-    }
+          '<div class="text-[12px] text-white">Duygu Puanı: <span class="font-black" style="color:' +
+          themeColor +
+          '">' +
+          d.x +
+          "</span></div>" +
+          '<div class="text-[12px] text-white">Etkileşim: <span class="font-black text-blue-400">' +
+          d.y +
+          "</span></div>" +
+          "</div>"
+        );
+      },
+    },
   };
 });
 
 const correlationChartSeries = computed(() => {
-  const dive = data.value?.psychology?.deepDive?.find((d: any) => d.label === selectedSentiment.value);
-  if (!dive?.samples) return [{ name: 'Veri', data: [] }];
-  return [{ 
-    name: 'Analiz Noktası', 
-    data: dive.samples.map((s: any) => ({ x: parseFloat(s.score || 0), y: parseInt(s.engagement || 0) }))
-  }];
+  const dive = data.value?.psychology?.deepDive?.find(
+    (d: any) => d.label === selectedSentiment.value,
+  );
+  if (!dive?.samples) return [{ name: "Veri", data: [] }];
+  return [
+    {
+      name: "Analiz Noktası",
+      data: dive.samples.map((s: any) => ({
+        x: parseFloat(s.score || 0),
+        y: parseInt(s.engagement || 0),
+      })),
+    },
+  ];
 });
 
 const anomalyChartOptions = computed(() => ({
   chart: { toolbar: { show: false }, background: "transparent" },
   stroke: { curve: "smooth", width: 3 },
-  xaxis: { categories: Array.from({ length: 20 }, (_, i) => i + 1), labels: { show: false } },
+  xaxis: {
+    categories: Array.from({ length: 20 }, (_, i) => i + 1),
+    labels: { show: false },
+  },
   yaxis: { min: 0, max: 1, labels: { style: { colors: "#475569" } } },
   grid: { borderColor: "#ffffff03" },
-  colors: [sentiments.find(s => s.name === selectedSentiment.value)?.color || "#3b82f6"]
+  colors: [
+    sentiments.find((s) => s.name === selectedSentiment.value)?.color ||
+      "#3b82f6",
+  ],
 }));
 
 const anomalyChartSeries = computed(() => {
-  const dive = data.value?.psychology?.deepDive?.find((d: any) => d.label === selectedSentiment.value);
-  return [{ name: "Skor", data: dive?.samples?.map((s: any) => s.score) || [] }];
+  const dive = data.value?.psychology?.deepDive?.find(
+    (d: any) => d.label === selectedSentiment.value,
+  );
+  return [
+    { name: "Skor", data: dive?.samples?.map((s: any) => s.score) || [] },
+  ];
 });
 
 const currentSentimentStats = computed(() => {
-  const dive = data.value?.psychology?.deepDive?.find((d: any) => d.label === selectedSentiment.value);
+  const dive = data.value?.psychology?.deepDive?.find(
+    (d: any) => d.label === selectedSentiment.value,
+  );
   if (!dive) return [];
   return [
     { label: "YOĞUNLUK", value: dive.avgIntensity, color: "text-blue-500" },
     { label: "ETKİLEŞİM", value: dive.avgEngagement, color: "text-amber-500" },
-    { label: "GÜVEN", value: "%" + Math.round(dive.stability * 100), color: "text-emerald-500" }
+    {
+      label: "GÜVEN",
+      value: "%" + Math.round(dive.stability * 100),
+      color: "text-emerald-500",
+    },
   ];
 });
 

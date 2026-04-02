@@ -100,6 +100,9 @@ export class CampusService implements OnModuleInit {
         select: {
           id: true,
           content: true,
+          imageUrl: true,
+          videoUrl: true,
+          documentUrl: true,
           createdAt: true,
           categoryId: true,
           sentiment: true,
@@ -423,6 +426,31 @@ export class CampusService implements OnModuleInit {
       activeInteractions: likesCount + commentsCount + repostsCount,
     });
 
+    // --- SOSYAL ANALİZ EKLEMELERİ (TAM HASSASİYET) ---
+    const hourlyActivity = new Array(24).fill(0);
+    let mediaCount = 0;
+    let docCount = 0;
+    let textOnlyCount = 0;
+
+    posts.forEach((p) => {
+      const hr = new Date(p.createdAt).getHours();
+      hourlyActivity[hr]++;
+
+      // contentMix hesaplama: Öncelik Medya > Döküman > Metin
+      if (p.imageUrl || p.videoUrl) {
+        mediaCount++;
+      } else if (p.documentUrl) {
+        docCount++;
+      } else {
+        textOnlyCount++;
+      }
+    });
+
+    const maxActivity = Math.max(...hourlyActivity);
+    const peakHourIndex = maxActivity > 0 ? hourlyActivity.indexOf(maxActivity) : 22;
+    const peakHour = `${peakHourIndex.toString().padStart(2, '0')}:00`;
+
+    // --- SONUÇ DÖNÜŞÜ ---
     return {
       summary: {
         totalPosts: posts.length,
@@ -443,15 +471,20 @@ export class CampusService implements OnModuleInit {
       social: {
         categories: categories
           .map((c) => ({
-            id: c.id,
+            id: c.id.toString(), 
             name: c.name,
             count: c._count.posts,
             color: c.color || '#3b82f6',
-            engagementRate: (Math.random() * 5 + 1).toFixed(1),
+            engagementRate: (Math.random() * 5 + 1).toFixed(1), 
           }))
           .sort((a, b) => b.count - a.count),
         topUsers,
-        peakHour: '22:00',
+        peakHour,
+        contentMix: {
+          media: mediaCount,
+          docs: docCount,
+          textOnly: textOnlyCount,
+        },
       },
       psychology: {
         distribution: sentimentStats.map((s) => ({
@@ -477,9 +510,18 @@ export class CampusService implements OnModuleInit {
     };
   }
 
-  async getRecentPostsByCategory(categoryId: bigint, interval: string = 'day') {
+  private getStartDateFromInterval(interval: string): Date {
     const now = new Date();
-    const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (interval === 'hour') return new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    if (interval === 'day') return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (interval === 'week') return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    if (interval === '7months') return new Date(now.getFullYear(), now.getMonth() - 7, 1);
+    if (interval === '4years') return new Date(now.getFullYear() - 4, now.getMonth(), 1);
+    return new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+  }
+
+  async getRecentPostsByCategory(categoryId: bigint, interval: string = 'day') {
+    const startDate = this.getStartDateFromInterval(interval);
     return this.prisma.post.findMany({
       where: {
         categoryId,
@@ -487,18 +529,17 @@ export class CampusService implements OnModuleInit {
         isDeleted: false,
         published: true,
       },
-      take: 5,
+      take: 10,
       include: {
         author: { select: { username: true, fullName: true, avatarUrl: true } },
         _count: { select: { likes: true, comments: true, reposts: true } },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { likes: { _count: 'desc' } }, // En çok etkileşim alanlar
     });
   }
 
   async getTopPostsBySentiment(sentiment: string, interval: string = 'day') {
-    const now = new Date();
-    const startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startDate = this.getStartDateFromInterval(interval);
     return this.prisma.post.findMany({
       where: {
         sentiment,
