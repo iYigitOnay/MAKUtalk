@@ -257,6 +257,81 @@
               :thumbnail-url="displayPost.thumbnailUrl"
             />
           </div>
+
+          <!-- Document Attachment (Academic) -->
+          <div v-if="displayPost.documentUrl" class="mb-3" @click.stop>
+            <a
+              :href="getImageUrl(displayPost.documentUrl)"
+              target="_blank"
+              download
+              class="flex items-center gap-3 p-3 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all group overflow-hidden relative"
+            >
+              <!-- Extension-based Background Accent -->
+              <div
+                class="absolute left-0 top-0 w-1 h-full"
+                :class="{
+                  'bg-red-500': getFileExt(displayPost.documentUrl) === 'pdf',
+                  'bg-blue-500': ['doc', 'docx'].includes(
+                    getFileExt(displayPost.documentUrl),
+                  ),
+                  'bg-green-500': ['xls', 'xlsx'].includes(
+                    getFileExt(displayPost.documentUrl),
+                  ),
+                  'bg-orange-500': ![
+                    'pdf',
+                    'doc',
+                    'docx',
+                    'xls',
+                    'xlsx',
+                  ].includes(getFileExt(displayPost.documentUrl)),
+                }"
+              ></div>
+
+              <div
+                class="p-2 rounded-lg group-hover:scale-110 transition-transform"
+                :class="{
+                  'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400':
+                    getFileExt(displayPost.documentUrl) === 'pdf',
+                  'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400':
+                    ['doc', 'docx'].includes(getFileExt(displayPost.documentUrl)),
+                  'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400':
+                    ['xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl)),
+                  'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400':
+                    !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(
+                      getFileExt(displayPost.documentUrl),
+                    ),
+                }"
+              >
+                <component
+                  :is="
+                    getBadgeComponent(
+                      getFileExt(displayPost.documentUrl) === 'pdf'
+                        ? 'file-text'
+                        : 'file',
+                    )
+                  "
+                  class="w-6 h-6"
+                />
+              </div>
+              <div class="flex-1 min-w-0">
+                <p
+                  class="text-sm font-black text-gray-900 dark:text-white truncate"
+                >
+                  {{ getFileName(displayPost.documentUrl) }}
+                </p>
+                <p
+                  class="text-[10px] text-gray-500 dark:text-gray-400 font-bold uppercase tracking-wider"
+                >
+                  {{ getFileExt(displayPost.documentUrl) }} Dökümanı · İndirmek
+                  için tıklayın
+                </p>
+              </div>
+              <component
+                :is="getBadgeComponent('download')"
+                class="w-5 h-5 text-gray-400 group-hover:text-emerald-500 transition-colors"
+              />
+            </a>
+          </div>
         </div>
       </div>
     </div>
@@ -467,6 +542,17 @@ const getImageUrl = (path: string) => {
   const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:3000/api";
   const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
   return `${baseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
+const getFileExt = (path: string) => {
+  if (!path) return "";
+  return path.split(".").pop()?.toLowerCase() || "";
+};
+
+const getFileName = (path: string) => {
+  if (!path) return "Döküman";
+  const parts = path.split("-");
+  return parts.length > 2 ? parts.slice(2).join("-") : "Ekli Döküman";
 };
 
 const getSentimentStyles = (sentiment: string) => {
