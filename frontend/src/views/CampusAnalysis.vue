@@ -8,119 +8,63 @@
       class="fixed inset-0 z-0 pointer-events-none opacity-[0.015] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay"
     ></div>
 
-    <!-- YÜZEN DOCK MENÜ -->
     <header
-      class="fixed top-4 md:top-8 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-50 transition-all duration-700 w-full md:max-w-fit px-4"
+      class="fixed top-6 left-0 right-0 md:left-1/2 md:-translate-x-1/2 z-50 w-full md:max-w-fit px-6"
     >
       <nav
-        class="bg-[#0A0A0C]/90 backdrop-blur-2xl border border-white/[0.04] rounded-2xl md:rounded-full p-1.5 flex flex-col md:flex-row items-center shadow-[0_20px_40px_rgba(0,0,0,0.5)] relative overflow-hidden"
+        class="bg-[#0A0A0C]/80 backdrop-blur-2xl border border-white/[0.05] rounded-2xl md:rounded-full p-1.5 flex flex-col md:flex-row items-center shadow-2xl relative overflow-hidden"
       >
         <div class="flex items-center w-full md:w-auto">
-          <!-- Logo -->
-          <div
-            class="flex items-center px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.05] mr-3 group cursor-default ml-1"
-          >
-            <div
-              class="w-7 h-7 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center mr-3 group-hover:rotate-[15deg] transition-transform"
-            >
-              <svg
-                class="w-4 h-4 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2.5"
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
-            </div>
-            <div class="flex flex-col items-start leading-none text-left">
-              <span
-                class="text-[10px] font-black text-white tracking-[0.2em] uppercase"
-                >MAKÜ</span
-              >
-              <span
-                class="text-[7px] font-black text-blue-400 tracking-widest uppercase mt-1 opacity-60"
-                >ANALİZ</span
-              >
-            </div>
+          <!-- Logo: Daha Küçük ve Zarif -->
+          <div class="flex items-center px-3 py-1 mr-2 group cursor-default border-r border-white/[0.03]">
+            <Zap class="w-4 h-4 text-blue-500 mr-2 group-hover:animate-pulse" />
+            <span class="text-[10px] font-black text-white tracking-[0.3em] uppercase">MAKÜ</span>
           </div>
 
-          <!-- Menü Butonları -->
-          <div
-            class="flex-1 flex items-center gap-1 overflow-x-auto no-scrollbar"
-          >
+          <!-- Navigasyon: İnce ve Modern -->
+          <div class="flex items-center gap-1">
             <button
               v-for="m in menuItems"
               :key="m.id"
               @click="activeTab = m.id"
               :class="[
-                'h-10 rounded-full flex items-center justify-center transition-all duration-500 relative group flex-shrink-0',
-                activeTab === m.id
-                  ? 'px-5 text-white bg-white/[0.02]'
-                  : 'w-10 text-slate-500 hover:text-slate-200',
+                'h-9 px-4 rounded-full flex items-center transition-all duration-300 group relative border',
+                activeTab === m.id 
+                  ? 'bg-blue-500/10 border-blue-500/20 text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.15)]' 
+                  : 'bg-transparent border-transparent text-slate-500 hover:text-slate-200'
               ]"
             >
-              <component
-                :is="m.icon"
-                :class="[
-                  'w-4 h-4 transition-all',
-                  activeTab === m.id ? 'text-blue-400' : '',
-                ]"
-              />
-              <span
-                :class="[
-                  'font-black uppercase tracking-[0.2em] text-[9px] overflow-hidden transition-all duration-500',
-                  activeTab === m.id
-                    ? 'max-w-[120px] ml-2 opacity-100'
-                    : 'max-w-0 ml-0 opacity-0',
-                ]"
-                >{{ m.label }}</span
-              >
+              <component :is="m.icon" :class="['w-3.5 h-3.5 transition-colors', activeTab === m.id ? 'text-blue-400' : 'text-slate-600 group-hover:text-slate-400']" />
+              <span class="ml-2 font-black uppercase tracking-[0.2em] text-[10px]">{{ m.label }}</span>
+              
+              <!-- Seçili İndikatörü: Parlayan Çizgi -->
+              <div 
+                v-if="activeTab === m.id" 
+                class="absolute -bottom-[2px] left-1/2 -translate-x-1/2 w-4 h-[2px] bg-blue-400 rounded-full shadow-[0_0_10px_#3b82f6] animate-pulse"
+              ></div>
             </button>
           </div>
 
-          <div class="hidden md:block w-px h-6 bg-white/[0.04] mx-3"></div>
-          <button
+          <!-- Ayrıl: Minimalist Kırmızı Pill -->
+          <button 
             @click="$router.push('/campus')"
-            class="w-10 h-10 flex items-center justify-center text-slate-500"
+            class="h-8.5 px-4 ml-3 rounded-full border border-red-500/10 hover:border-red-500/30 bg-red-500/[0.02] hover:bg-red-500/5 text-red-500/60 hover:text-red-400 transition-all flex items-center gap-2 group"
           >
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2.5"
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
-            </svg>
+            <LogOut class="w-3 h-3" />
+            <span class="text-[10px] font-black uppercase tracking-widest">AYRIL</span>
           </button>
         </div>
 
-        <!-- ZAMAN SEÇİCİ -->
+        <!-- Zaman Filtresi: En Sağda İnce Tasarım -->
         <div class="flex md:contents">
-          <div
-            class="w-full md:w-auto mt-1 md:mt-0 flex bg-white/[0.02] p-1 rounded-full border border-white/[0.05] md:mr-2"
-          >
+          <div class="w-full md:w-auto mt-2 md:mt-0 flex bg-white/[0.02] p-1 rounded-full border border-white/[0.03] md:ml-4">
             <button
               v-for="t in timeOptions"
               :key="t.id"
-              @click="
-                interval = t.id;
-                fetchAnalytics();
-              "
+              @click="interval = t.id; fetchAnalytics();"
               :class="[
-                'flex-1 px-3 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all',
-                interval === t.id
-                  ? 'bg-blue-600 text-white shadow-lg'
-                  : 'text-slate-500 hover:text-slate-300',
+                'px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest transition-all',
+                interval === t.id ? 'bg-white/10 text-white' : 'text-slate-600 hover:text-slate-400',
               ]"
             >
               {{ t.label }}
@@ -982,70 +926,14 @@ const apexchart = VueApexCharts;
 const toast = useToast();
 const campusStore = useCampusStore();
 
-const DashIcon = defineComponent({
-  render: () =>
-    h(
-      "svg",
-      {
-        fill: "none",
-        stroke: "currentColor",
-        "stroke-width": "2",
-        viewBox: "0 0 24 24",
-      },
-      [
-        h("path", {
-          d: "M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z",
-        }),
-      ],
-    ),
-});
-const SocialIcon = defineComponent({
-  render: () =>
-    h(
-      "svg",
-      {
-        fill: "none",
-        stroke: "currentColor",
-        "stroke-width": "2",
-        viewBox: "0 0 24 24",
-      },
-      [
-        h("path", {
-          d: "M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z",
-        }),
-      ],
-    ),
-});
-const VibeIcon = defineComponent({
-  render: () =>
-    h(
-      "svg",
-      {
-        fill: "none",
-        stroke: "currentColor",
-        "stroke-width": "2",
-        viewBox: "0 0 24 24",
-      },
-      [h("path", { d: "M13 10V3L4 14h7v7l9-11h-7z" })],
-    ),
-});
-const EconIcon = defineComponent({
-  render: () =>
-    h(
-      "svg",
-      {
-        fill: "none",
-        stroke: "currentColor",
-        "stroke-width": "2",
-        viewBox: "0 0 24 24",
-      },
-      [
-        h("path", {
-          d: "M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z",
-        }),
-      ],
-    ),
-});
+import { 
+  LayoutDashboard, 
+  Users, 
+  Brain, 
+  HandHelping, 
+  LogOut,
+  ChevronLeft
+} from "lucide-vue-next";
 
 const activeTab = ref("GENEL");
 const interval = ref("day");
@@ -1072,10 +960,10 @@ const categoryPosts = ref<any[]>([]);
 const catPostsLoading = ref(false);
 
 const menuItems = [
-  { id: "GENEL", label: "Özet Panel", icon: DashIcon },
-  { id: "SOSYAL", label: "Sosyal", icon: SocialIcon },
-  { id: "PSİKOLOJİ", label: "Psikoloji", icon: VibeIcon },
-  { id: "EKONOMİ", label: "Dayanışma", icon: EconIcon },
+  { id: "GENEL", label: "ÖZET", icon: LayoutDashboard },
+  { id: "SOSYAL", label: "SOSYAL", icon: Users },
+  { id: "PSİKOLOJİ", label: "PSİKOLOJİ", icon: Brain },
+  { id: "EKONOMİ", label: "DAYANIŞMA", icon: HandHelping },
 ];
 
 const timeOptions = [
