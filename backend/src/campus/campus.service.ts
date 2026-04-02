@@ -98,6 +98,8 @@ export class CampusService implements OnModuleInit {
       this.prisma.post.findMany({
         where: { createdAt: { gte: startDate }, isDeleted: false },
         select: {
+          id: true,
+          content: true,
           createdAt: true,
           categoryId: true,
           sentiment: true,
@@ -322,6 +324,62 @@ export class CampusService implements OnModuleInit {
       (sentimentScores.length || 1);
     const volatility = Math.sqrt(volVar);
 
+    // --- YENİ: Duygu Bazlı Derin Analiz (Deep Dive) ---
+    const sentimentDeepDive = await Promise.all(
+      standardSentiments.map(async (sent) => {
+        const sentimentPosts = posts.filter(
+          (p) => p.sentiment?.toLowerCase() === sent.toLowerCase(),
+        );
+        
+        const scores = sentimentPosts.map((p) => p.sentimentScore || 0.5);
+        const avgScore = scores.length > 0 
+          ? scores.reduce((a, b) => a + b, 0) / scores.length 
+          : 0.5;
+        
+        // Etkileşim korelasyonu (Like + Comment + Repost ortalaması)
+        // Not: 'posts' içinde bu veriler yok, o yüzden DB'den o duyguya özel örnek alalım
+        const samples = await this.prisma.post.findMany({
+          where: { 
+            sentiment: sent, 
+            createdAt: { gte: startDate },
+            isDeleted: false 
+          },
+          take: 20,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            sentimentScore: true,
+            createdAt: true,
+            _count: { select: { likes: true, comments: true, reposts: true } }
+          }
+        });
+
+        const avgEngagement = samples.length > 0
+          ? samples.reduce((acc, curr) => acc + (curr._count.likes + curr._count.comments + curr._count.reposts), 0) / samples.length
+          : 0;
+
+        return {
+          label: sent,
+          count: sentimentPosts.length,
+          avgIntensity: parseFloat(avgScore.toFixed(2)),
+          avgEngagement: parseFloat(avgEngagement.toFixed(1)),
+          stability: scores.length > 1 
+            ? parseFloat((1 - (Math.sqrt(scores.reduce((a, b) => a + Math.pow(b - avgScore, 2), 0) / scores.length))).toFixed(2))
+            : 1.0,
+          samples: samples.map(s => {
+            const postContent = posts.find(p => p.id === s.id)?.content || "";
+            return {
+              id: s.id.toString(),
+              score: s.sentimentScore,
+              engagement: s._count.likes + s._count.comments + s._count.reposts,
+              time: s.createdAt,
+              wordCount: postContent.split(/\s+/).length // Kelime sayısını ekledik
+            };
+          })
+        };
+      })
+    );
+
     let forecast = 'STABİL';
     let forecastIcon = '☀️';
     if (totalSentimentPosts === 0) {
@@ -411,6 +469,7 @@ export class CampusService implements OnModuleInit {
         forecast: { label: forecast, icon: forecastIcon },
         influencers: moodInfluencers,
         matrix: moodMatrix,
+        deepDive: sentimentDeepDive, // YENİ EKLENEN
       },
       solidarity: { categories: solidarityCategories, series: spotSeries },
       aiSummary,
