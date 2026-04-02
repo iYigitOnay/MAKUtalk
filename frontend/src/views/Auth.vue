@@ -1025,7 +1025,7 @@ const checkUsername = async () => {
       return;
     try {
       const res = await apiClient.get(
-        `/users/check-username/${registerForm.value.username}`,
+        `/auth/check-username/${registerForm.value.username}`,
       );
       isUsernameTaken.value = !res.data.available;
     } catch {

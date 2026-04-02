@@ -15,7 +15,7 @@ export const useAuthStore = defineStore("auth", () => {
 
   // Computed
   const isAuthenticated = computed(() => !!token.value && !!user.value);
-  
+
   // Snowflake ID'ler string olarak saklanmalı
   const userId = computed(() => user.value?.id || null);
 
@@ -78,7 +78,7 @@ export const useAuthStore = defineStore("auth", () => {
   const register = async (data: RegisterData) => {
     loading.value = true;
     try {
-      const response = await apiClient.post<User>("/users/register", data);
+      const response = await apiClient.post<User>("/auth/register", data);
       return response.data;
     } catch (error: any) {
       console.error("Register error:", error);
