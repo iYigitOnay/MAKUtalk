@@ -104,6 +104,7 @@ CREATE TABLE "Message" (
     "postId" BIGINT,
     "mediaUrl" TEXT,
     "mediaType" TEXT,
+    "thumbnailUrl" TEXT,
     "isRead" BOOLEAN NOT NULL DEFAULT false,
     "isForwarded" BOOLEAN NOT NULL DEFAULT false,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
@@ -174,6 +175,8 @@ CREATE TABLE "Post" (
     "id" BIGINT NOT NULL,
     "content" TEXT,
     "imageUrl" TEXT,
+    "videoUrl" TEXT,
+    "thumbnailUrl" TEXT,
     "documentUrl" TEXT,
     "isAcademic" BOOLEAN NOT NULL DEFAULT false,
     "published" BOOLEAN NOT NULL DEFAULT true,
@@ -184,11 +187,24 @@ CREATE TABLE "Post" (
     "sentiment" TEXT,
     "sentimentScore" DOUBLE PRECISION,
     "isDeleted" BOOLEAN NOT NULL DEFAULT false,
+    "isProcessing" BOOLEAN NOT NULL DEFAULT false,
+    "deletedAt" TIMESTAMP(3),
     "isPinned" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Post_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Hashtag" (
+    "id" BIGINT NOT NULL,
+    "name" TEXT NOT NULL,
+    "usageCount" INTEGER NOT NULL DEFAULT 0,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Hashtag_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -343,6 +359,14 @@ CREATE TABLE "Bookmark" (
     CONSTRAINT "Bookmark_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "_PostHashtags" (
+    "A" BIGINT NOT NULL,
+    "B" BIGINT NOT NULL,
+
+    CONSTRAINT "_PostHashtags_AB_pkey" PRIMARY KEY ("A","B")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
 
@@ -407,6 +431,12 @@ CREATE INDEX "Post_parentId_idx" ON "Post"("parentId");
 CREATE INDEX "Post_isAcademic_idx" ON "Post"("isAcademic");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "Hashtag_name_key" ON "Hashtag"("name");
+
+-- CreateIndex
+CREATE INDEX "Hashtag_usageCount_idx" ON "Hashtag"("usageCount");
+
+-- CreateIndex
 CREATE INDEX "Like_postId_idx" ON "Like"("postId");
 
 -- CreateIndex
@@ -465,6 +495,9 @@ CREATE INDEX "Bookmark_postId_idx" ON "Bookmark"("postId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Bookmark_userId_postId_key" ON "Bookmark"("userId", "postId");
+
+-- CreateIndex
+CREATE INDEX "_PostHashtags_B_index" ON "_PostHashtags"("B");
 
 -- AddForeignKey
 ALTER TABLE "Event" ADD CONSTRAINT "Event_creatorId_fkey" FOREIGN KEY ("creatorId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -597,3 +630,9 @@ ALTER TABLE "Bookmark" ADD CONSTRAINT "Bookmark_userId_fkey" FOREIGN KEY ("userI
 
 -- AddForeignKey
 ALTER TABLE "Bookmark" ADD CONSTRAINT "Bookmark_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_PostHashtags" ADD CONSTRAINT "_PostHashtags_A_fkey" FOREIGN KEY ("A") REFERENCES "Hashtag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "_PostHashtags" ADD CONSTRAINT "_PostHashtags_B_fkey" FOREIGN KEY ("B") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
