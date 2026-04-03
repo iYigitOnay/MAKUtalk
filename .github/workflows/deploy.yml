@@ -15,7 +15,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: DB_PASSWORD,DATABASE_URL,JWT_SECRET,RESEND_API_KEY,GEMINI_API_KEY,SMTP_FROM,FRONTEND_URL,VITE_API_URL
+          envs: DB_PASSWORD,DATABASE_URL,JWT_SECRET,RESEND_API_KEY,GEMINI_API_KEY,SMTP_FROM,FRONTEND_URL,VITE_API_URL,VITE_CLARITY_ID
           script: |
             set -e
 
@@ -40,6 +40,7 @@ jobs:
             SMTP_FROM=${SMTP_FROM}
             FRONTEND_URL=${FRONTEND_URL}
             VITE_API_URL=${VITE_API_URL}
+            VITE_CLARITY_ID=${VITE_CLARITY_ID}
             ENVEOF
 
             docker compose down --remove-orphans
@@ -89,3 +90,4 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_CLARITY_ID: ${{ secrets.VITE_CLARITY_ID }}

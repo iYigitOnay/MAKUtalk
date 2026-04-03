@@ -10,7 +10,7 @@ import clarity from "@microsoft/clarity";
 
 // Microsoft Clarity Initialization (Only in Production)
 const clarityId = import.meta.env.VITE_CLARITY_ID;
-if (clarityId && import.meta.env.PROD) {
+if (clarityId) {
   clarity.init(clarityId);
 }
 

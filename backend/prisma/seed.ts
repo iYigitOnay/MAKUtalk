@@ -179,7 +179,7 @@ async function main() {
     {
       name: 'Mucit',
       icon: 'brain',
-      color: '#FFFFFF',
+      color: '#000',
       description: 'Üstün zeka, yaratıcı fikir ve teknik deha.',
       type: BadgeType.USER,
     },
