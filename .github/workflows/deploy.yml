@@ -15,7 +15,7 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: DB_PASSWORD,DATABASE_URL,JWT_SECRET,RESEND_API_KEY,GEMINI_API_KEY,SMTP_FROM,FRONTEND_URL,VITE_API_URL,VITE_CLARITY_ID
+          command_timeout: 30m
           script: |
             set -e
 
@@ -43,41 +43,42 @@ jobs:
             VITE_CLARITY_ID=${VITE_CLARITY_ID}
             ENVEOF
 
-            docker compose down --remove-orphans
+            # DB'yi kapatma — sadece backend/frontend'i durdur
+            docker compose stop backend frontend
 
-            # ── 1. Sadece DB ayağa kaldır ──────────────────────────────────
-            echo "🐘 Veritabanı başlatılıyor..."
-            docker compose up -d db
+            # DB zaten çalışıyorsa atlat, yoksa başlat
+            if ! docker compose ps db | grep -q "Up"; then
+              echo "🐘 Veritabanı başlatılıyor..."
+              docker compose up -d db
 
-            echo "⏳ DB hazır olana kadar bekleniyor..."
-            for i in $(seq 1 30); do
-              docker compose exec -T db pg_isready -U admin -d makutalk_db && break
-              echo "  ($i/30) Bekleniyor..."
-              sleep 2
-            done
+              echo "⏳ DB hazır olana kadar bekleniyor..."
+              for i in $(seq 1 30); do
+                docker compose exec -T db pg_isready -U admin -d makutalk_db && break
+                echo "  ($i/30) Bekleniyor..."
+                sleep 2
+              done
+            else
+              echo "✅ DB zaten çalışıyor, atlanıyor."
+            fi
 
-            # ── 2. Sadece backend image'ını build et (container başlatma) ──
+            # Build'leri sırayla çalıştır (RAM dostu)
             echo "⚙️ Backend image build ediliyor..."
             docker compose build backend
 
-            # ── 3. Migration'ı izole, tek seferlik container'da çalıştır ──
-            # Backend app çalışmıyor → Prisma binary tek başına RAM kullanır
-            echo "🗄️ Prisma schema güncelleniyor (izole container)..."
+            echo "🎨 Frontend image build ediliyor..."
+            docker compose build frontend
+
+            # Migration
+            echo "🗄️ Prisma schema güncelleniyor..."
             docker compose run --rm \
               -e NODE_OPTIONS="--max-old-space-size=256" \
               backend \
               npx prisma db push --accept-data-loss
 
-            # ── 4. Migration bitti, şimdi backend'i başlat ────────────────
-            echo "🚀 Backend başlatılıyor..."
-            docker compose up -d backend
+            # Servisleri başlat
+            echo "🚀 Servisler başlatılıyor..."
+            docker compose up -d backend frontend
 
-            # ── 5. Frontend: build bitince eski container'ı değiştir ──────
-            echo "🎨 Frontend build ediliyor..."
-            docker compose build frontend
-            docker compose up -d frontend
-
-            # ── 6. Temizlik ───────────────────────────────────────────────
             docker image prune -f
 
             echo "✅ Deploy tamamlandı!"
