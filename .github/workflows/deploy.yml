@@ -15,7 +15,8 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          command_timeout: 30m
+          command_timeout: 45m
+          envs: DB_PASSWORD,DATABASE_URL,JWT_SECRET,RESEND_API_KEY,GEMINI_API_KEY,SMTP_FROM,FRONTEND_URL,VITE_API_URL,VITE_CLARITY_ID
           script: |
             set -e
 
