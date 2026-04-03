@@ -229,34 +229,82 @@
 
           <p
             class="text-gray-900 dark:text-white text-[15px] leading-normal whitespace-pre-wrap mb-3"
+            :class="{ 'blur-[2px] opacity-50': displayPost.isProcessing }"
           >
             <HashtagText :text="displayPost.content || ''" />
           </p>
 
           <div
-            v-if="displayPost.imageUrl"
-            class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 bg-slate-50 dark:bg-gray-800 flex justify-center"
+            v-if="displayPost.isProcessing"
+            class="mb-3 aspect-video rounded-2xl bg-gray-50 dark:bg-gray-900/50 border border-dashed border-gray-200 dark:border-white/10 flex flex-col items-center justify-center gap-3 relative overflow-hidden"
           >
-            <img
-              :src="getImageUrl(displayPost.imageUrl)"
-              class="w-full h-auto max-h-[720px] object-contain cursor-zoom-in hover:opacity-95 transition-opacity"
-              loading="lazy"
-              @click.stop="showImageModal = true"
-            />
-            <ImageModal
-              :is-open="showImageModal"
-              :image-url="getImageUrl(displayPost.imageUrl)"
-              @close="showImageModal = false"
-            />
+            <div
+              class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 animate-pulse"
+            ></div>
+
+            <div
+              class="w-48 h-1 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden relative"
+            >
+              <div
+                class="absolute inset-y-0 left-0 bg-blue-500 transition-all duration-700"
+                :class="{
+                  'w-[10%]':
+                    !displayPost.processingStatus ||
+                    displayPost.processingStatus === 'PREPARING',
+                  'w-[40%]': displayPost.processingStatus === 'MEDIA',
+                  'w-[70%]': displayPost.processingStatus === 'AI',
+                  'w-[95%]': displayPost.processingStatus === 'FINALIZING',
+                }"
+              ></div>
+            </div>
+
+            <div class="relative flex flex-col items-center gap-1">
+              <span
+                class="text-[10px] font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest animate-pulse"
+              >
+                {{
+                  displayPost.processingStatus === "MEDIA"
+                    ? "Medya Optimize Ediliyor"
+                    : displayPost.processingStatus === "AI"
+                      ? "Yapay Zeka Analiz Ediyor"
+                      : displayPost.processingStatus === "FINALIZING"
+                        ? "Yayına Alınıyor"
+                        : "Hazırlanıyor"
+                }}
+              </span>
+              <span
+                class="text-[8px] font-bold text-gray-400 uppercase tracking-tighter"
+                >Lütfen Bekleyin</span
+              >
+            </div>
           </div>
 
-          <!-- Video Attachment -->
-          <div v-if="displayPost.videoUrl" class="mb-3" @click.stop>
-            <VideoPlayer
-              :video-url="displayPost.videoUrl"
-              :thumbnail-url="displayPost.thumbnailUrl"
-            />
-          </div>
+          <template v-else>
+            <div
+              v-if="displayPost.imageUrl"
+              class="mb-3 rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/10 bg-slate-50 dark:bg-gray-800 flex justify-center"
+            >
+              <img
+                :src="getImageUrl(displayPost.imageUrl)"
+                class="w-full h-auto max-h-[720px] object-contain cursor-zoom-in hover:opacity-95 transition-opacity"
+                loading="lazy"
+                @click.stop="showImageModal = true"
+              />
+              <ImageModal
+                :is-open="showImageModal"
+                :image-url="getImageUrl(displayPost.imageUrl)"
+                @close="showImageModal = false"
+              />
+            </div>
+
+            <!-- Video Attachment -->
+            <div v-if="displayPost.videoUrl" class="mb-3" @click.stop>
+              <VideoPlayer
+                :video-url="displayPost.videoUrl"
+                :thumbnail-url="displayPost.thumbnailUrl"
+              />
+            </div>
+          </template>
 
           <!-- Document Attachment (Academic) -->
           <div v-if="displayPost.documentUrl" class="mb-3" @click.stop>
