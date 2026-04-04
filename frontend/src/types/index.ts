@@ -49,7 +49,7 @@ export interface Post {
   thumbnailUrl?: string;
   documentUrl?: string;
   isProcessing?: boolean;
-  processingStatus?: 'PREPARING' | 'MEDIA' | 'AI' | 'FINALIZING';
+  processingStatus?: "PREPARING" | "MEDIA" | "AI" | "FINALIZING";
   sentiment?: string;
   sentimentScore?: number;
   createdAt: string;

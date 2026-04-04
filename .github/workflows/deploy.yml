@@ -30,19 +30,19 @@ jobs:
               git reset --hard origin/main
             fi
 
-            cat > .env << ENVEOF
-            DB_USERNAME=admin
-            DB_PASSWORD=${DB_PASSWORD}
-            DB_NAME=makutalk_db
-            DATABASE_URL=${DATABASE_URL}
-            JWT_SECRET=${JWT_SECRET}
-            RESEND_API_KEY=${RESEND_API_KEY}
-            GEMINI_API_KEY=${GEMINI_API_KEY}
-            SMTP_FROM=${SMTP_FROM}
-            FRONTEND_URL=${FRONTEND_URL}
-            VITE_API_URL=${VITE_API_URL}
-            VITE_CLARITY_ID=${VITE_CLARITY_ID}
-            ENVEOF
+            cat > .env << 'ENVEOF'
+DB_USERNAME=admin
+DB_PASSWORD=$DB_PASSWORD
+DB_NAME=makutalk_db
+DATABASE_URL=$DATABASE_URL
+JWT_SECRET=$JWT_SECRET
+RESEND_API_KEY=$RESEND_API_KEY
+GEMINI_API_KEY=$GEMINI_API_KEY
+SMTP_FROM=$SMTP_FROM
+FRONTEND_URL=$FRONTEND_URL
+VITE_API_URL=$VITE_API_URL
+VITE_CLARITY_ID=$VITE_CLARITY_ID
+ENVEOF
 
             # DB'yi kapatma — sadece backend/frontend'i durdur
             docker compose stop backend frontend
@@ -62,7 +62,7 @@ jobs:
               echo "✅ DB zaten çalışıyor, atlanıyor."
             fi
 
-            # Build'leri sırayla çalıştır (RAM dostu)
+            # Container'lar çalışırken image'ları build et
             echo "⚙️ Backend image build ediliyor..."
             docker compose build backend
 
@@ -76,9 +76,15 @@ jobs:
               backend \
               npx prisma db push --accept-data-loss
 
-            # Servisleri başlat
-            echo "🚀 Servisler başlatılıyor..."
-            docker compose up -d backend frontend
+            # Hızlı switch — downtime ~3-5 sn
+            echo "🚀 Backend güncelleniyor..."
+            docker compose up -d --force-recreate --no-deps backend
+
+            echo "⏳ Backend hazırlanıyor..."
+            sleep 10
+
+            echo "🎨 Frontend güncelleniyor..."
+            docker compose up -d --force-recreate --no-deps frontend
 
             docker image prune -f
 

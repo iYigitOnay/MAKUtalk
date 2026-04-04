@@ -1256,6 +1256,7 @@ watch(
     const isNewSingleMessage = newLen - oldLen === 1;
     scrollToBottom(isNewSingleMessage);
     const activeId = chatStore.activeConversation?.id;
+    const lastMsg = chatStore.messages[newLen - 1];
     if (lastMsg && lastMsg.senderId !== currentUserId.value)
       sendMarkRead(activeId);
   },
