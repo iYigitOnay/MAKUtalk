@@ -5,35 +5,33 @@
   >
     <!-- Header -->
     <div
-      class="sticky top-0 z-40 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-100 dark:border-white/5 p-4 flex items-center gap-6"
+      class="sticky top-0 z-40 backdrop-blur bg-gradient-to-b from-white/95 via-white/90 to-white/85 dark:from-gray-950/95 dark:via-gray-950/90 dark:to-primary-950/50 border-b border-gray-200 dark:border-primary-900/30 p-6"
     >
-      <button
-        @click="$router.back()"
-        class="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-      >
-        <svg
-          class="w-5 h-5 text-gray-700 dark:text-gray-200"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      <div class="flex items-center gap-3">
+        <div
+          class="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15 19l-7-7 7-7"
-          />
-        </svg>
-      </button>
-      <div>
-        <h1 class="text-xl font-black text-gray-900 dark:text-white">
-          Kaydedilenler
-        </h1>
-        <p
-          class="text-xs text-gray-500 dark:text-gray-400 font-bold uppercase tracking-widest"
-        >
-          @{{ authStore.user?.username }}
-        </p>
+          <svg
+            class="w-6 h-6 text-white"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
+            />
+          </svg>
+        </div>
+        <div>
+          <h2
+            class="text-2xl font-black text-slate-900 dark:text-white tracking-tight"
+          >
+            Kaydedilenler
+          </h2>
+        </div>
       </div>
     </div>
 
