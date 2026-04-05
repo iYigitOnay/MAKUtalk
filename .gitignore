@@ -4,6 +4,12 @@ node_modules/
 dist/
 **/dist/
 build/
+/dist
+/build
+
+# Uploads
+backend/uploads/
+uploads/
 
 .env
 **/.env
