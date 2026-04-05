@@ -30,19 +30,19 @@ jobs:
               git reset --hard origin/main
             fi
 
-            cat > .env << ENVEOF
-DB_USERNAME=admin
-DB_PASSWORD=\${DB_PASSWORD}
-DB_NAME=makutalk_db
-DATABASE_URL=\${DATABASE_URL}
-JWT_SECRET=\${JWT_SECRET}
-RESEND_API_KEY=\${RESEND_API_KEY}
-GEMINI_API_KEY=\${GEMINI_API_KEY}
-SMTP_FROM=\${SMTP_FROM}
-FRONTEND_URL=\${FRONTEND_URL}
-VITE_API_URL=\${VITE_API_URL}
-VITE_CLARITY_ID=\${VITE_CLARITY_ID}
-ENVEOF
+            cat > .env << 'ENVEOF'
+            DB_USERNAME=admin
+            DB_PASSWORD=$DB_PASSWORD
+            DB_NAME=makutalk_db
+            DATABASE_URL=$DATABASE_URL
+            JWT_SECRET=$JWT_SECRET
+            RESEND_API_KEY=$RESEND_API_KEY
+            GEMINI_API_KEY=$GEMINI_API_KEY
+            SMTP_FROM=$SMTP_FROM
+            FRONTEND_URL=$FRONTEND_URL
+            VITE_API_URL=$VITE_API_URL
+            VITE_CLARITY_ID=$VITE_CLARITY_ID
+            ENVEOF
 
             # DB'yi kapatma — sadece backend/frontend'i durdur
             docker compose stop backend frontend
