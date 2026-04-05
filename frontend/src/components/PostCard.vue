@@ -51,8 +51,9 @@
           <button
             @click.stop="handleProfileClick(displayPost.parent.author.username)"
             class="text-blue-500 hover:underline"
-            >@{{ displayPost.parent.author.username }}</button
           >
+            @{{ displayPost.parent.author.username }}
+          </button>
           yanitlanıyor
         </span>
       </div>
@@ -67,10 +68,9 @@
         <button
           @click.stop="handleProfileClick(post.author?.username)"
           class="hover:underline font-bold"
-          >{{
-            isMe ? "Sen" : post.author?.fullName || post.author?.username
-          }}</button
         >
+          {{ isMe ? "Sen" : post.author?.fullName || post.author?.username }}
+        </button>
         remaküledi
       </div>
 
@@ -99,10 +99,9 @@
               <button
                 @click.stop="handleProfileClick(displayPost.author.username)"
                 class="hover:underline"
-                >{{
-                  displayPost.author.fullName || displayPost.author.username
-                }}</button
               >
+                {{ displayPost.author.fullName || displayPost.author.username }}
+              </button>
               <div
                 v-if="displayPost.isAcademic"
                 class="flex-shrink-0 flex items-center gap-1.5"
@@ -116,8 +115,9 @@
               <button
                 @click.stop="handleProfileClick(displayPost.author.username)"
                 class="text-gray-500 dark:text-gray-400 truncate text-sm font-normal"
-                >@{{ displayPost.author.username }}</button
               >
+                @{{ displayPost.author.username }}
+              </button>
               <p
                 class="text-gray-500 dark:text-gray-400 text-xs flex-shrink-0 font-normal"
               >
@@ -341,9 +341,13 @@
                   'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400':
                     getFileExt(displayPost.documentUrl) === 'pdf',
                   'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400':
-                    ['doc', 'docx'].includes(getFileExt(displayPost.documentUrl)),
+                    ['doc', 'docx'].includes(
+                      getFileExt(displayPost.documentUrl),
+                    ),
                   'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400':
-                    ['xls', 'xlsx'].includes(getFileExt(displayPost.documentUrl)),
+                    ['xls', 'xlsx'].includes(
+                      getFileExt(displayPost.documentUrl),
+                    ),
                   'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400':
                     !['pdf', 'doc', 'docx', 'xls', 'xlsx'].includes(
                       getFileExt(displayPost.documentUrl),
@@ -385,9 +389,7 @@
     </div>
 
     <!-- Aksiyon Butonları Alanı -->
-    <div
-      class="px-4 pb-4 ml-14 sm:ml-16"
-    >
+    <div class="px-4 pb-4 ml-14 sm:ml-16">
       <div
         class="flex justify-between items-center text-gray-500 dark:text-gray-400 pt-2 border-t border-gray-50 dark:border-primary-900/10"
       >
@@ -396,20 +398,47 @@
           :disabled="likeLoading"
           class="flex items-center gap-2 px-3 py-2 rounded-full transition-all group"
           :class="[
-            displayPost.isAcademic ? 'hover:bg-green-50 dark:hover:bg-green-900/20' : 'hover:bg-red-50 dark:hover:bg-red-900/20',
-            (post.isLiked || displayPost.isLiked) ? (displayPost.isAcademic ? 'text-green-600' : 'text-red-600') : '',
+            displayPost.isAcademic
+              ? 'hover:bg-green-50 dark:hover:bg-green-900/20'
+              : 'hover:bg-red-50 dark:hover:bg-red-900/20',
+            post.isLiked || displayPost.isLiked
+              ? displayPost.isAcademic
+                ? 'text-green-600'
+                : 'text-red-600'
+              : '',
           ]"
         >
-          <component :is="getBadgeComponent(displayPost.isAcademic ? 'check-circle' : 'heart')" class="w-5 h-5" :class="[(post.isLiked || displayPost.isLiked) ? (displayPost.isAcademic ? 'text-green-600' : 'fill-red-600 text-red-600') : 'fill-none']" />
-          <span class="text-xs font-black">{{ displayPost._count?.likes || 0 }}</span>
+          <component
+            :is="
+              getBadgeComponent(
+                displayPost.isAcademic ? 'check-circle' : 'heart',
+              )
+            "
+            class="w-5 h-5"
+            :class="[
+              post.isLiked || displayPost.isLiked
+                ? displayPost.isAcademic
+                  ? 'text-green-600'
+                  : 'fill-red-600 text-red-600'
+                : 'fill-none',
+            ]"
+          />
+          <span class="text-xs font-black">{{
+            displayPost._count?.likes || 0
+          }}</span>
         </button>
 
         <button
           @click.stop="handleCommentsClick"
           class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-600 group"
         >
-          <component :is="getBadgeComponent('message-square')" class="w-5 h-5" />
-          <span class="text-xs font-black">{{ displayPost._count?.replies || 0 }}</span>
+          <component
+            :is="getBadgeComponent('message-square')"
+            class="w-5 h-5"
+          />
+          <span class="text-xs font-black">{{
+            displayPost._count?.replies || 0
+          }}</span>
         </button>
 
         <button
@@ -417,19 +446,35 @@
           @click.stop="handleBookmark"
           :disabled="bookmarkLoading"
           class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-yellow-50 dark:hover:bg-yellow-900/20 group"
-          :class="(post.isBookmarked || displayPost.isBookmarked) ? 'text-yellow-600' : ''"
+          :class="
+            post.isBookmarked || displayPost.isBookmarked
+              ? 'text-yellow-600'
+              : ''
+          "
         >
-          <component :is="getBadgeComponent('bookmark')" class="w-5 h-5" :class="(post.isBookmarked || displayPost.isBookmarked) ? 'fill-yellow-600 text-yellow-600' : 'fill-none'" />
+          <component
+            :is="getBadgeComponent('bookmark')"
+            class="w-5 h-5"
+            :class="
+              post.isBookmarked || displayPost.isBookmarked
+                ? 'fill-yellow-600 text-yellow-600'
+                : 'fill-none'
+            "
+          />
         </button>
         <button
           v-else
           @click.stop="handleRepost"
           :disabled="repostLoading"
           class="flex items-center gap-2 px-3 py-2 rounded-full transition-all hover:bg-green-50 dark:hover:bg-green-900/20 group"
-          :class="(post.isReposted || displayPost.isReposted) ? 'text-green-600' : ''"
+          :class="
+            post.isReposted || displayPost.isReposted ? 'text-green-600' : ''
+          "
         >
           <component :is="getBadgeComponent('repeat')" class="w-5 h-5" />
-          <span class="text-xs font-black">{{ displayPost._count?.reposts || 0 }}</span>
+          <span class="text-xs font-black">{{
+            displayPost._count?.reposts || 0
+          }}</span>
         </button>
 
         <button
@@ -457,8 +502,20 @@ import ImageModal from "./ImageModal.vue";
 import type { Post } from "@/types";
 import * as LucideIcons from "lucide-vue-next";
 
-const props = withDefaults(defineProps<{ post: Post; isThreadParent?: boolean; isProfileView?: boolean; }>(), { isThreadParent: false, isProfileView: false });
-const emit = defineEmits<{ edit: [post: Post]; delete: [postId: number]; report: [postId: number]; showComments: [postId: number]; }>();
+const props = withDefaults(
+  defineProps<{
+    post: Post;
+    isThreadParent?: boolean;
+    isProfileView?: boolean;
+  }>(),
+  { isThreadParent: false, isProfileView: false },
+);
+const emit = defineEmits<{
+  edit: [post: Post];
+  delete: [postId: number];
+  report: [postId: number];
+  showComments: [postId: number];
+}>();
 
 const authStore = useAuthStore();
 const likesStore = useLikesStore();
@@ -478,7 +535,10 @@ const isMe = computed(() => authStore.user?.id === props.post.authorId);
 const isOwner = computed(() => authStore.user?.id === props.post.authorId);
 const isAdmin = computed(() => authStore.user?.role === "ADMIN");
 
-const handleClickOutside = (event: MouseEvent) => { if (menuRef.value && !menuRef.value.contains(event.target as Node)) showMenu.value = false; };
+const handleClickOutside = (event: MouseEvent) => {
+  if (menuRef.value && !menuRef.value.contains(event.target as Node))
+    showMenu.value = false;
+};
 onMounted(() => document.addEventListener("click", handleClickOutside));
 onUnmounted(() => document.removeEventListener("click", handleClickOutside));
 
@@ -497,9 +557,15 @@ const handleTogglePin = async () => {
   if (!checkAuth() || !displayPost.value) return;
   try {
     await postsStore.togglePin(displayPost.value.id);
-    toast.success(displayPost.value.isPinned ? "Profiline sabitlendi!" : "Sabit kaldırıldı.");
+    toast.success(
+      displayPost.value.isPinned
+        ? "Profiline sabitlendi!"
+        : "Sabit kaldırıldı.",
+    );
     showMenu.value = false;
-  } catch { toast.error("İşlem başarısız."); }
+  } catch {
+    toast.error("İşlem başarısız.");
+  }
 };
 
 const handleBookmark = async () => {
@@ -509,17 +575,28 @@ const handleBookmark = async () => {
   try {
     const res = await postsStore.toggleBookmark(displayPost.value.id);
     if (res.bookmarked) toast.success("Kaydedilenlere eklendi!");
-  } catch { toast.error("Hata!"); } finally { bookmarkLoading.value = false; }
+  } catch {
+    toast.error("Hata!");
+  } finally {
+    bookmarkLoading.value = false;
+  }
 };
 
 const handleRefreshAI = async () => {
   if (!displayPost.value) return;
   try {
     const res = await postsStore.refreshAI(displayPost.value.id);
-    postsStore.updatePostLocally(displayPost.value.id, { sentiment: res.sentiment, sentimentScore: res.sentimentScore, category: res.category, categoryId: res.categoryId });
+    postsStore.updatePostLocally(displayPost.value.id, {
+      sentiment: res.sentiment,
+      sentimentScore: res.sentimentScore,
+      category: res.category,
+      categoryId: res.categoryId,
+    });
     toast.success("AI Analizi yenilendi!");
     showMenu.value = false;
-  } catch { toast.error("AI yenileme hatası!"); }
+  } catch {
+    toast.error("AI yenileme hatası!");
+  }
 };
 
 const handleCommentsClick = () => {
@@ -533,8 +610,13 @@ const handleLikeToggle = async () => {
   likeLoading.value = true;
   try {
     await likesStore.toggleLike(displayPost.value.id);
-    if (displayPost.value.isAcademic && !displayPost.value.isRead) await postsStore.markAsRead(displayPost.value.id);
-  } catch { toast.error("Hata!"); } finally { likeLoading.value = false; }
+    if (displayPost.value.isAcademic && !displayPost.value.isRead)
+      await postsStore.markAsRead(displayPost.value.id);
+  } catch {
+    toast.error("Hata!");
+  } finally {
+    likeLoading.value = false;
+  }
 };
 
 const handleRepost = async () => {
@@ -544,7 +626,11 @@ const handleRepost = async () => {
   try {
     const res = await postsStore.toggleRepost(displayPost.value.id);
     if (res.reposted) toast.success("Remakülendi!");
-  } catch { toast.error("Hata!"); } finally { repostLoading.value = false; }
+  } catch {
+    toast.error("Hata!");
+  } finally {
+    repostLoading.value = false;
+  }
 };
 
 const handleProfileClick = (username: string) => {
@@ -554,7 +640,7 @@ const handleProfileClick = (username: string) => {
 
 const handleReportClick = () => {
   if (!checkAuth()) return;
-  emit('report', displayPost.value.id);
+  emit("report", displayPost.value.id);
 };
 
 const handleCopyLink = () => {
@@ -568,8 +654,15 @@ const handleShare = () => postsStore.openShareModal(displayPost.value);
 
 const getBadgeComponent = (iconName: string) => {
   if (!iconName) return LucideIcons.HelpCircle;
-  const pascalName = iconName.split(/[-_]/).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join("");
-  return (LucideIcons as any)[pascalName] || (LucideIcons as any)[iconName] || LucideIcons.HelpCircle;
+  const pascalName = iconName
+    .split(/[-_]/)
+    .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
+    .join("");
+  return (
+    (LucideIcons as any)[pascalName] ||
+    (LucideIcons as any)[iconName] ||
+    LucideIcons.HelpCircle
+  );
 };
 
 const formatDate = (date: string) => {
@@ -605,23 +698,94 @@ const getFileName = (path: string) => {
 
 const getSentimentStyles = (sentiment: string) => {
   const styles: any = {
-    Neşeli: { class: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200" },
-    Hüzünlü: { class: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200" },
-    Kızgın: { class: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200" },
-    Sakin: { class: "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200" }
+    Neşeli: {
+      class:
+        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200",
+    },
+    positive: {
+      class:
+        "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 border-green-200",
+    },
+    Hüzünlü: {
+      class:
+        "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200",
+    },
+    negative: {
+      class:
+        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200",
+    },
+    Kızgın: {
+      class:
+        "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 border-red-200",
+    },
+    Endişeli: {
+      class:
+        "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200",
+    },
+    Meraklı: {
+      class:
+        "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200",
+    },
+    Sakin: {
+      class:
+        "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200",
+    },
+    neutral: {
+      class:
+        "bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400 border-teal-200",
+    },
+    Ciddi: {
+      class:
+        "bg-gray-100 text-gray-700 dark:bg-gray-700/50 dark:text-gray-300 border-gray-200",
+    },
   };
-  return styles[sentiment] || { class: "bg-gray-100 text-gray-600 border-gray-200" };
+  return (
+    styles[sentiment] || { class: "bg-gray-100 text-gray-600 border-gray-200" }
+  );
 };
 
 const translateSentiment = (s: string) => {
-  const t: any = { positive: "Neşeli", negative: "Kızgın", neutral: "Sakin", Sakin: "Sakin", Neşeli: "Neşeli", Kızgın: "Kızgın", Hüzünlü: "Hüzünlü" };
+  const t: any = {
+    positive: "Neşeli",
+    negative: "Kızgın",
+    neutral: "Sakin",
+    Sakin: "Sakin",
+    Neşeli: "Neşeli",
+    Kızgın: "Kızgın",
+    Hüzünlü: "Hüzünlü",
+  };
   return t[s] || s;
 };
 </script>
 
 <style scoped>
-.fade-scale-enter-active, .fade-scale-leave-active { transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
-.fade-scale-enter-from, .fade-scale-leave-to { opacity: 0; transform: scale(0.95) translateY(-10px); }
-.academic-unread::before { content: ""; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background-color: #10b981; z-index: 20; animation: emerald-pulse 4s infinite; }
-@keyframes emerald-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95) translateY(-10px);
+}
+.academic-unread::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background-color: #10b981;
+  z-index: 20;
+  animation: emerald-pulse 4s infinite;
+}
+@keyframes emerald-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
 </style>

@@ -10,6 +10,15 @@
         placeholder="MAKUtalk'ta ara..."
         class="w-full pl-11 pr-10 py-3 rounded-2xl bg-slate-100 dark:bg-gray-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-gray-400 text-sm border border-transparent focus:border-blue-500/50 focus:bg-white dark:focus:bg-gray-800 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all"
       />
+      <svg
+        class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-indigo-500 transition-colors"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+      </svg>
+
       <div
         class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors"
       >
