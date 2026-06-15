@@ -1222,6 +1222,253 @@
             </div>
           </div>
         </div>
+        <!-- İSTATİSTİK -->
+        <div v-if="activeTab === 'İSTATİSTİK'" class="space-y-10">
+
+          <!-- Yükleniyor -->
+          <div v-if="wilcoxonLoading" class="py-32 flex flex-col items-center justify-center gap-6">
+            <div class="w-10 h-10 rounded-full border-2 border-white/5 border-t-violet-500 animate-spin"></div>
+            <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] animate-pulse">
+              İstatistiksel Analiz Hesaplanıyor...
+            </p>
+          </div>
+
+          <div v-else-if="wilcoxonData" class="space-y-8">
+
+            <!-- Başlık açıklama kartı -->
+            <div class="bg-[#0A0A0C] border border-violet-500/10 rounded-[2rem] p-8 relative overflow-hidden">
+              <div class="absolute -top-16 -right-16 w-48 h-48 bg-violet-600/5 rounded-full blur-[60px]"></div>
+              <div class="flex items-start gap-6 relative z-10">
+                <div class="w-12 h-12 bg-violet-500/10 border border-violet-500/20 rounded-2xl flex items-center justify-center shrink-0">
+                  <FlaskConical class="w-5 h-5 text-violet-400" />
+                </div>
+                <div class="space-y-2">
+                  <span class="px-3 py-1 bg-violet-500/10 border border-violet-500/20 text-violet-400 text-[8px] font-black rounded-md uppercase tracking-widest">
+                    HİPOTEZ TESTİ
+                  </span>
+                  <h3 class="text-white font-medium text-lg tracking-tight leading-snug mt-2">
+                    Wilcoxon Sıra Toplamı Testi
+                  </h3>
+                  <p class="text-[11px] text-slate-500 leading-relaxed">
+                    Son 1 ay ile önceki 5 aydaki yorum duygu skorları arasında istatistiksel olarak anlamlı bir fark olup olmadığını test eder.
+                    Parametrik olmayan bu test, 0–1 arasındaki olasılık skorlarını sıralara dönüştürerek karşılaştırır.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- İki dönem dağılım kartları -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+              <!-- Son 1 Ay -->
+              <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 space-y-6 relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-500/5 rounded-full blur-[40px]"></div>
+                <div class="flex items-center justify-between relative z-10">
+                  <div>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.25em]">Dönem 1</p>
+                    <h4 class="text-white font-medium text-xl mt-1">Son 1 Ay</h4>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-[9px] font-black text-slate-600 uppercase tracking-widest">Toplam Yorum</p>
+                    <p class="text-2xl font-black text-blue-400 tabular-nums">{{ wilcoxonData.recentPeriod.count }}</p>
+                  </div>
+                </div>
+
+                <div v-if="wilcoxonData.recentPeriod.dominant" class="flex items-center gap-3 px-4 py-3 bg-blue-500/5 border border-blue-500/10 rounded-xl relative z-10">
+                  <component :is="sentimentIcon(wilcoxonData.recentPeriod.dominant)" class="w-5 h-5 shrink-0" :style="{ color: sentimentColor(wilcoxonData.recentPeriod.dominant) }" />
+                  <div>
+                    <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest">Baskın Duygu</p>
+                    <p class="text-sm font-black text-white">{{ wilcoxonData.recentPeriod.dominant }}</p>
+                  </div>
+                  <span class="ml-auto text-[10px] font-black text-blue-400 tabular-nums">{{ wilcoxonData.recentPeriod.dominantCount }} yorum</span>
+                </div>
+
+                <div class="space-y-2 relative z-10">
+                  <p class="text-[8px] font-black text-slate-600 uppercase tracking-[0.25em] mb-3">Duygu Dağılımı</p>
+                  <div v-for="item in wilcoxonData.recentPeriod.distribution" :key="item.name" class="flex items-center gap-3">
+                    <component :is="sentimentIcon(item.name)" class="w-3.5 h-3.5 shrink-0" :style="{ color: sentimentColor(item.name) }" />
+                    <span class="text-[10px] text-slate-500 w-16 truncate">{{ item.name }}</span>
+                    <div class="flex-1 h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
+                      <div
+                        class="h-full rounded-full transition-all duration-700"
+                        :style="{
+                          width: wilcoxonData.recentPeriod.count > 0 ? (item.count / wilcoxonData.recentPeriod.count * 100) + '%' : '0%',
+                          backgroundColor: sentimentColor(item.name)
+                        }"
+                      ></div>
+                    </div>
+                    <span class="text-[10px] font-black text-slate-400 tabular-nums w-8 text-right">{{ item.count }}</span>
+                    <span class="text-[9px] text-slate-600 tabular-nums w-10 text-right">{{ item.avgScore.toFixed(2) }}</span>
+                  </div>
+                </div>
+
+                <div v-if="wilcoxonData.testApplied" class="flex justify-between items-center px-4 py-3 bg-white/[0.02] rounded-xl relative z-10">
+                  <span class="text-[9px] font-black text-slate-600 uppercase tracking-widest">Ort. {{ wilcoxonData.targetSentiment }} Skoru</span>
+                  <span class="text-lg font-black text-blue-400 tabular-nums">{{ wilcoxonData.recentPeriod.avgScore?.toFixed(3) }}</span>
+                </div>
+              </div>
+
+              <!-- Önceki 5 Ay -->
+              <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 space-y-6 relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/5 rounded-full blur-[40px]"></div>
+                <div class="flex items-center justify-between relative z-10">
+                  <div>
+                    <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.25em]">Dönem 2</p>
+                    <h4 class="text-white font-medium text-xl mt-1">Önceki 5 Ay</h4>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-[9px] font-black text-slate-600 uppercase tracking-widest">Toplam Yorum</p>
+                    <p class="text-2xl font-black text-emerald-400 tabular-nums">{{ wilcoxonData.olderPeriod.count }}</p>
+                  </div>
+                </div>
+
+                <div v-if="wilcoxonData.olderPeriod.dominant" class="flex items-center gap-3 px-4 py-3 bg-emerald-500/5 border border-emerald-500/10 rounded-xl relative z-10">
+                  <component :is="sentimentIcon(wilcoxonData.olderPeriod.dominant)" class="w-5 h-5 shrink-0" :style="{ color: sentimentColor(wilcoxonData.olderPeriod.dominant) }" />
+                  <div>
+                    <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest">Baskın Duygu</p>
+                    <p class="text-sm font-black text-white">{{ wilcoxonData.olderPeriod.dominant }}</p>
+                  </div>
+                  <span class="ml-auto text-[10px] font-black text-emerald-400 tabular-nums">{{ wilcoxonData.olderPeriod.dominantCount }} yorum</span>
+                </div>
+
+                <div class="space-y-2 relative z-10">
+                  <p class="text-[8px] font-black text-slate-600 uppercase tracking-[0.25em] mb-3">Duygu Dağılımı</p>
+                  <div v-for="item in wilcoxonData.olderPeriod.distribution" :key="item.name" class="flex items-center gap-3">
+                    <component :is="sentimentIcon(item.name)" class="w-3.5 h-3.5 shrink-0" :style="{ color: sentimentColor(item.name) }" />
+                    <span class="text-[10px] text-slate-500 w-16 truncate">{{ item.name }}</span>
+                    <div class="flex-1 h-1.5 bg-white/[0.03] rounded-full overflow-hidden">
+                      <div
+                        class="h-full rounded-full transition-all duration-700"
+                        :style="{
+                          width: wilcoxonData.olderPeriod.count > 0 ? (item.count / wilcoxonData.olderPeriod.count * 100) + '%' : '0%',
+                          backgroundColor: sentimentColor(item.name)
+                        }"
+                      ></div>
+                    </div>
+                    <span class="text-[10px] font-black text-slate-400 tabular-nums w-8 text-right">{{ item.count }}</span>
+                    <span class="text-[9px] text-slate-600 tabular-nums w-10 text-right">{{ item.avgScore.toFixed(2) }}</span>
+                  </div>
+                </div>
+
+                <div v-if="wilcoxonData.testApplied" class="flex justify-between items-center px-4 py-3 bg-white/[0.02] rounded-xl relative z-10">
+                  <span class="text-[9px] font-black text-slate-600 uppercase tracking-widest">Ort. {{ wilcoxonData.targetSentiment }} Skoru</span>
+                  <span class="text-lg font-black text-emerald-400 tabular-nums">{{ wilcoxonData.olderPeriod.avgScore?.toFixed(3) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Test uygulanamadı -->
+            <div v-if="!wilcoxonData.testApplied" class="bg-[#0A0A0C] border border-amber-500/10 rounded-[2rem] p-10 flex items-start gap-6">
+              <div class="w-12 h-12 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-center shrink-0">
+                <AlertTriangle class="w-5 h-5 text-amber-400" />
+              </div>
+              <div class="space-y-2">
+                <p class="text-[9px] font-black text-amber-500/70 uppercase tracking-widest">Test Uygulanamadı</p>
+                <p class="text-white font-medium text-sm leading-relaxed">{{ wilcoxonData.reason }}</p>
+                <p class="text-[10px] text-slate-600 mt-2">
+                  Wilcoxon testi ancak her iki dönemde de aynı duygunun baskın çıktığı durumlarda uygulanabilir.
+                </p>
+              </div>
+            </div>
+
+            <!-- Test sonuçları -->
+            <div v-if="wilcoxonData.testApplied && wilcoxonData.test" class="space-y-6">
+
+              <!-- Hipotezler -->
+              <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-[2rem] p-8 space-y-4">
+                <p class="text-[9px] font-black text-slate-500 uppercase tracking-[0.25em]">Hipotezler</p>
+                <div class="space-y-3">
+                  <div class="flex items-start gap-4 p-4 bg-white/[0.02] rounded-xl">
+                    <span class="px-2 py-0.5 bg-slate-700 text-slate-300 text-[9px] font-black rounded uppercase tracking-widest shrink-0 mt-0.5">H0</span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">{{ wilcoxonData.test.h0 }}</p>
+                  </div>
+                  <div class="flex items-start gap-4 p-4 bg-white/[0.02] rounded-xl">
+                    <span class="px-2 py-0.5 bg-violet-500/20 text-violet-300 text-[9px] font-black rounded uppercase tracking-widest shrink-0 mt-0.5">H1</span>
+                    <p class="text-[11px] text-slate-400 leading-relaxed">{{ wilcoxonData.test.h1 }}</p>
+                  </div>
+                </div>
+              </div>
+
+              <!-- İstatistik değerleri -->
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-2xl p-6 flex flex-col gap-2">
+                  <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest">U İstatistiği</p>
+                  <p class="text-2xl font-black text-white tabular-nums">{{ wilcoxonData.test.U }}</p>
+                </div>
+                <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-2xl p-6 flex flex-col gap-2">
+                  <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest">Z Skoru</p>
+                  <p class="text-2xl font-black text-white tabular-nums">{{ wilcoxonData.test.z }}</p>
+                </div>
+                <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-2xl p-6 flex flex-col gap-2">
+                  <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest">p-değeri</p>
+                  <p class="text-2xl font-black tabular-nums" :class="wilcoxonData.test.significant ? 'text-rose-400' : 'text-emerald-400'">
+                    {{ wilcoxonData.test.pValue.toFixed(4) }}
+                  </p>
+                </div>
+                <div class="bg-[#0A0A0C] border border-white/[0.03] rounded-2xl p-6 flex flex-col gap-2">
+                  <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest">Anlamlılık Düzeyi</p>
+                  <p class="text-2xl font-black text-slate-300 tabular-nums">α = {{ wilcoxonData.test.alpha }}</p>
+                </div>
+              </div>
+
+              <!-- Sonuç kutusu -->
+              <div
+                :class="[
+                  'rounded-[2rem] p-8 border flex items-start gap-6 relative overflow-hidden',
+                  wilcoxonData.test.significant
+                    ? 'bg-rose-500/[0.04] border-rose-500/20'
+                    : 'bg-emerald-500/[0.04] border-emerald-500/20'
+                ]"
+              >
+                <div
+                  :class="[
+                    'absolute -top-16 -right-16 w-48 h-48 rounded-full blur-[60px]',
+                    wilcoxonData.test.significant ? 'bg-rose-500/10' : 'bg-emerald-500/10'
+                  ]"
+                ></div>
+                <div
+                  :class="[
+                    'w-14 h-14 rounded-2xl flex items-center justify-center text-2xl shrink-0 border',
+                    wilcoxonData.test.significant
+                      ? 'bg-rose-500/10 border-rose-500/20'
+                      : 'bg-emerald-500/10 border-emerald-500/20'
+                  ]"
+                >
+                  <component :is="wilcoxonData.test.significant ? BarChart2 : TrendingUp" class="w-6 h-6" :class="wilcoxonData.test.significant ? 'text-rose-400' : 'text-emerald-400'" />
+                </div>
+                <div class="space-y-3 relative z-10">
+                  <span
+                    :class="[
+                      'px-3 py-1 text-[8px] font-black rounded-md uppercase tracking-widest border',
+                      wilcoxonData.test.significant
+                        ? 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                        : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+                    ]"
+                  >
+                    {{ wilcoxonData.test.significant ? 'H0 Reddedildi' : 'H0 Reddedilemedi' }}
+                  </span>
+                  <p class="text-white font-medium text-sm leading-relaxed">
+                    {{ wilcoxonData.test.conclusion }}
+                  </p>
+                  <p class="text-[10px] text-slate-500 leading-relaxed">
+                    <template v-if="wilcoxonData.test.significant">
+                      İki dönem arasında istatistiksel olarak anlamlı bir fark saptandı. Bu, kampüs duygusal ikliminin zaman içinde değiştiğine işaret eder.
+                    </template>
+                    <template v-else>
+                      İki dönem arasında istatistiksel olarak anlamlı bir fark saptanamadı. Kampüsteki duygusal iklim istikrarlı seyrini sürdürmektedir.
+                    </template>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hata durumu -->
+          <div v-else-if="!wilcoxonLoading" class="py-32 text-center">
+            <p class="text-[10px] font-black text-slate-600 uppercase tracking-[0.3em]">Veri Yüklenemedi</p>
+          </div>
+        </div>
+
       </div>
     </main>
   </div>
@@ -1245,6 +1492,17 @@ import {
   HandHelping,
   LogOut,
   ChevronLeft,
+  FlaskConical,
+  Smile,
+  Frown,
+  Flame,
+  ShieldAlert,
+  Wind,
+  Lightbulb,
+  Minus,
+  AlertTriangle,
+  BarChart2,
+  TrendingUp,
 } from "lucide-vue-next";
 
 const activeTab = ref("GENEL");
@@ -1276,6 +1534,7 @@ const menuItems = [
   { id: "SOSYAL", label: "SOSYAL", icon: Users },
   { id: "PSİKOLOJİ", label: "PSİKOLOJİ", icon: Brain },
   { id: "EKONOMİ", label: "DAYANIŞMA", icon: HandHelping },
+  { id: "İSTATİSTİK", label: "İSTATİSTİK", icon: FlaskConical },
 ];
 
 const timeOptions = [
@@ -1339,6 +1598,44 @@ const solidarityKPIs = computed(() => [
   },
 ]);
 
+const wilcoxonData = ref<any>(null);
+const wilcoxonLoading = ref(false);
+
+const SENTIMENT_COLORS: Record<string, string> = {
+  Neşeli: "#10b981",
+  Hüzünlü: "#3b82f6",
+  Kızgın: "#ef4444",
+  Endişeli: "#f59e0b",
+  Sakin: "#14b8a6",
+  Meraklı: "#8b5cf6",
+  Ciddi: "#64748b",
+};
+
+const SENTIMENT_ICONS: Record<string, any> = {
+  Neşeli: Smile,
+  Hüzünlü: Frown,
+  Kızgın: Flame,
+  Endişeli: ShieldAlert,
+  Sakin: Wind,
+  Meraklı: Lightbulb,
+  Ciddi: Minus,
+};
+
+const sentimentColor = (name: string) => SENTIMENT_COLORS[name] ?? "#64748b";
+const sentimentIcon = (name: string) => SENTIMENT_ICONS[name] ?? Minus;
+
+const fetchWilcoxon = async () => {
+  wilcoxonLoading.value = true;
+  try {
+    const res = await apiClient.get("/campus/analytics/wilcoxon");
+    wilcoxonData.value = res.data;
+  } catch {
+    toast.error("İstatistiksel analiz yüklenemedi");
+  } finally {
+    wilcoxonLoading.value = false;
+  }
+};
+
 const fetchAnalytics = async () => {
   await campusStore.fetchAnalytics(interval.value);
   if (activeTab.value === "PSİKOLOJİ") fetchTopPosts();
@@ -1381,6 +1678,8 @@ watch(activeTab, (newTab) => {
     fetchTopPosts();
   } else if (newTab === "SOSYAL" && selectedCategoryId.value) {
     fetchCategoryPosts(selectedCategoryId.value, selectedCategoryName.value);
+  } else if (newTab === "İSTATİSTİK" && !wilcoxonData.value) {
+    fetchWilcoxon();
   }
 });
 
