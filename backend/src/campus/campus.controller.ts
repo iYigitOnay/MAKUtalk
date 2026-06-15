@@ -18,6 +18,11 @@ export class CampusController {
     return this.campusService.getAnalytics(interval);
   }
 
+  @Get('analytics/wilcoxon')
+  async getWilcoxonTest() {
+    return this.campusService.getWilcoxonTest();
+  }
+
   @Get('analytics/top-sentiment')
   async getTopSentimentPosts(
     @Query('sentiment') sentiment: string,

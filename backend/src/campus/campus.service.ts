@@ -538,6 +538,195 @@ export class CampusService implements OnModuleInit {
     });
   }
 
+  async getWilcoxonTest() {
+    const now = new Date();
+    const oneMonthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const sixMonthsAgo = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+
+    const recentPosts = await this.prisma.post.findMany({
+      where: {
+        parentId: { not: null },
+        sentimentScore: { not: null },
+        sentiment: { not: null },
+        isDeleted: false,
+        createdAt: { gte: oneMonthAgo },
+      },
+      select: { sentiment: true, sentimentScore: true },
+    });
+
+    const olderPosts = await this.prisma.post.findMany({
+      where: {
+        parentId: { not: null },
+        sentimentScore: { not: null },
+        sentiment: { not: null },
+        isDeleted: false,
+        createdAt: { gte: sixMonthsAgo, lt: oneMonthAgo },
+      },
+      select: { sentiment: true, sentimentScore: true },
+    });
+
+    const SENTIMENT_NAMES = ['Neşeli', 'Hüzünlü', 'Kızgın', 'Endişeli', 'Sakin', 'Meraklı', 'Ciddi'];
+
+    const getDominant = (posts: { sentiment: string | null }[]) => {
+      const counts: Record<string, number> = {};
+      for (const p of posts) {
+        if (p.sentiment) counts[p.sentiment] = (counts[p.sentiment] || 0) + 1;
+      }
+      const sorted = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+      return sorted[0] ?? null;
+    };
+
+    const buildDistribution = (posts: { sentiment: string | null; sentimentScore: number | null }[]) => {
+      const dist: Record<string, { count: number; total: number }> = {};
+      for (const s of SENTIMENT_NAMES) dist[s] = { count: 0, total: 0 };
+      for (const p of posts) {
+        if (p.sentiment && dist[p.sentiment]) {
+          dist[p.sentiment].count++;
+          dist[p.sentiment].total += p.sentimentScore ?? 0;
+        }
+      }
+      return SENTIMENT_NAMES.map((s) => ({
+        name: s,
+        count: dist[s].count,
+        avgScore: dist[s].count > 0 ? Math.round((dist[s].total / dist[s].count) * 100) / 100 : 0,
+      }));
+    };
+
+    const recentDist = buildDistribution(recentPosts);
+    const olderDist = buildDistribution(olderPosts);
+    const recentDominantEntry = getDominant(recentPosts);
+    const olderDominantEntry = getDominant(olderPosts);
+
+    if (!recentDominantEntry || !olderDominantEntry) {
+      return {
+        testApplied: false,
+        reason: 'Yeterli veri bulunamadı. Yorumların duygu analizi tamamlanmamış olabilir.',
+        recentPeriod: { label: 'Son 1 Ay', count: recentPosts.length, dominant: null, distribution: recentDist },
+        olderPeriod: { label: 'Önceki 5 Ay', count: olderPosts.length, dominant: null, distribution: olderDist },
+        test: null,
+      };
+    }
+
+    const [recentDominant, recentDominantCount] = recentDominantEntry;
+    const [olderDominant, olderDominantCount] = olderDominantEntry;
+
+    if (recentDominant !== olderDominant) {
+      return {
+        testApplied: false,
+        reason: `İki dönemin baskın duygusu farklı — Son 1 ay: "${recentDominant}", Önceki 5 ay: "${olderDominant}". Wilcoxon testi uygulanabilmesi için her iki dönemde de aynı duygunun baskın olması gerekir.`,
+        recentPeriod: { label: 'Son 1 Ay', count: recentPosts.length, dominant: recentDominant, dominantCount: recentDominantCount, distribution: recentDist },
+        olderPeriod: { label: 'Önceki 5 Ay', count: olderPosts.length, dominant: olderDominant, dominantCount: olderDominantCount, distribution: olderDist },
+        test: null,
+      };
+    }
+
+    const target = recentDominant;
+    const recentScores = recentPosts.filter((p) => p.sentiment === target).map((p) => p.sentimentScore as number);
+    const olderScores = olderPosts.filter((p) => p.sentiment === target).map((p) => p.sentimentScore as number);
+
+    if (recentScores.length < 3 || olderScores.length < 3) {
+      return {
+        testApplied: false,
+        reason: `"${target}" duygusu için yeterli veri yok (Son 1 ay: ${recentScores.length}, Önceki 5 ay: ${olderScores.length} yorum). En az 3 veri noktası gerekli.`,
+        recentPeriod: { label: 'Son 1 Ay', count: recentPosts.length, dominant: recentDominant, dominantCount: recentDominantCount, distribution: recentDist },
+        olderPeriod: { label: 'Önceki 5 Ay', count: olderPosts.length, dominant: olderDominant, dominantCount: olderDominantCount, distribution: olderDist },
+        test: null,
+      };
+    }
+
+    const { U, z, pValue } = this.wilcoxonRankSum(recentScores, olderScores);
+    const significant = pValue < 0.05;
+    const pRounded = Math.round(pValue * 10000) / 10000;
+    const avgRecent = recentScores.reduce((a, b) => a + b, 0) / recentScores.length;
+    const avgOlder = olderScores.reduce((a, b) => a + b, 0) / olderScores.length;
+
+    return {
+      testApplied: true,
+      targetSentiment: target,
+      recentPeriod: {
+        label: 'Son 1 Ay',
+        count: recentPosts.length,
+        dominant: recentDominant,
+        dominantCount: recentDominantCount,
+        dominantScoreCount: recentScores.length,
+        avgScore: Math.round(avgRecent * 100) / 100,
+        distribution: recentDist,
+      },
+      olderPeriod: {
+        label: 'Önceki 5 Ay',
+        count: olderPosts.length,
+        dominant: olderDominant,
+        dominantCount: olderDominantCount,
+        dominantScoreCount: olderScores.length,
+        avgScore: Math.round(avgOlder * 100) / 100,
+        distribution: olderDist,
+      },
+      test: {
+        name: 'Wilcoxon Sıra Toplamı Testi (Mann-Whitney U)',
+        U: Math.round(U * 100) / 100,
+        z: Math.round(z * 1000) / 1000,
+        pValue: pRounded,
+        significant,
+        alpha: 0.05,
+        h0: `Son 1 aydaki yorumların "${target}" olasılıkları ile önceki 5 aydaki yorumların "${target}" olasılıkları arasında istatistiksel olarak anlamlı bir fark yoktur.`,
+        h1: `İki dönemin "${target}" olasılıkları arasında istatistiksel olarak anlamlı bir fark vardır.`,
+        conclusion: significant
+          ? `H0 REDDEDİLDİ — Son 1 aydaki yorumların "${target}" seviyesi, önceki 5 aya kıyasla istatistiksel olarak anlamlı biçimde değişmiştir (p = ${pRounded.toFixed(4)} < 0.05).`
+          : `H0 REDDEDİLEMEDİ — Son 1 aydaki yorumların "${target}" seviyesi, önceki 5 aya kıyasla istatistiksel olarak anlamlı bir değişim göstermemiştir (p = ${pRounded.toFixed(4)} > 0.05).`,
+      },
+    };
+  }
+
+  private wilcoxonRankSum(group1: number[], group2: number[]): { U: number; z: number; pValue: number } {
+    const n1 = group1.length;
+    const n2 = group2.length;
+
+    const combined = [
+      ...group1.map((v) => ({ value: v, group: 1 })),
+      ...group2.map((v) => ({ value: v, group: 2 })),
+    ].sort((a, b) => a.value - b.value);
+
+    const ranks: number[] = new Array(combined.length);
+    let i = 0;
+    while (i < combined.length) {
+      let j = i;
+      while (j < combined.length - 1 && combined[j + 1].value === combined[j].value) j++;
+      const avgRank = (i + j) / 2 + 1;
+      for (let k = i; k <= j; k++) ranks[k] = avgRank;
+      i = j + 1;
+    }
+
+    let R1 = 0;
+    for (let k = 0; k < combined.length; k++) {
+      if (combined[k].group === 1) R1 += ranks[k];
+    }
+
+    const U1 = n1 * n2 + (n1 * (n1 + 1)) / 2 - R1;
+    const U2 = n1 * n2 - U1;
+    const U = Math.min(U1, U2);
+    const meanU = (n1 * n2) / 2;
+    const stdU = Math.sqrt((n1 * n2 * (n1 + n2 + 1)) / 12);
+
+    if (stdU === 0) return { U, z: 0, pValue: 1 };
+
+    const z = (U - meanU) / stdU;
+    const pValue = 2 * this.normalCDF(-Math.abs(z));
+    return { U, z, pValue };
+  }
+
+  // Abramowitz & Stegun approximation for normal CDF
+  private normalCDF(x: number): number {
+    const sign = x < 0 ? -1 : 1;
+    const absX = Math.abs(x);
+    const t = 1.0 / (1.0 + 0.3275911 * absX);
+    const y =
+      1.0 -
+      ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) *
+        t *
+        Math.exp(-(absX * absX) / 2);
+    return 0.5 * (1.0 + sign * y);
+  }
+
   async getTopPostsBySentiment(sentiment: string, interval: string = 'day') {
     const startDate = this.getStartDateFromInterval(interval);
     return this.prisma.post.findMany({
