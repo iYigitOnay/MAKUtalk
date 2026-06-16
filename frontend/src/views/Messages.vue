@@ -625,11 +625,9 @@
         <footer
           class="p-4 md:p-6 bg-white dark:bg-[#0b0f19] border-t dark:border-white/5 flex-shrink-0 text-left"
         >
+          <!-- Normal mesajlaşma: kabul edilmiş veya karşı taraf bizi takip ediyor -->
           <div
-            v-if="
-              chatStore.activeConversation.isAccepted ||
-              chatStore.activeConversation.isFriend
-            "
+            v-if="chatStore.activeConversation.isAccepted || chatStore.activeConversation.isFriend"
             class="max-w-4xl mx-auto flex items-center gap-3"
           >
             <input
@@ -697,11 +695,47 @@
               </svg>
             </button>
           </div>
+
+          <!-- Reddedilmiş sohbet -->
+          <div
+            v-else-if="chatStore.activeConversation.isRejected"
+            class="text-center py-4"
+          >
+            <p class="text-[10px] font-black text-red-400 uppercase tracking-widest italic">
+              Bu sohbet isteği reddedildi.
+            </p>
+          </div>
+
+          <!-- Gelen istek: alıcı tarafından kabul/red -->
+          <div
+            v-else-if="isIncomingChatRequest"
+            class="max-w-sm mx-auto py-3 flex flex-col items-center gap-3"
+          >
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">
+              {{ otherUser?.fullName || otherUser?.username }} sana mesaj göndermek istiyor
+            </p>
+            <div class="flex gap-3 w-full">
+              <button
+                @click="handleAcceptRequest"
+                :disabled="requestActionLoading"
+                class="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 shadow-lg disabled:opacity-50"
+              >
+                Kabul Et
+              </button>
+              <button
+                @click="handleRejectRequest"
+                :disabled="requestActionLoading"
+                class="flex-1 py-3 bg-slate-100 dark:bg-white/5 hover:bg-red-50 dark:hover:bg-red-900/10 text-slate-600 dark:text-slate-300 hover:text-red-500 text-[11px] font-black uppercase tracking-widest rounded-2xl transition-all active:scale-95 disabled:opacity-50"
+              >
+                Reddet
+              </button>
+            </div>
+          </div>
+
+          <!-- Gönderilen istek: istek gönderen bekliyor -->
           <div v-else class="text-center py-4 opacity-50">
-            <p
-              class="text-[10px] font-black text-slate-400 uppercase tracking-widest italic tracking-widest"
-            >
-              Sohbet için onay bekleniyor.
+            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">
+              Sohbet isteği gönderildi, onay bekleniyor.
             </p>
           </div>
         </footer>
@@ -982,6 +1016,12 @@ const formatTime = (dateStr: string) => {
   }
 };
 
+const isConvIncomingRequest = (conv: any): boolean => {
+  if (conv.isAccepted || conv.isRejected) return false;
+  if (conv.requesterId) return conv.requesterId !== currentUserId.value;
+  return conv.lastMessage?.senderId !== currentUserId.value;
+};
+
 const filteredConversations = computed(() =>
   chatStore.conversations.filter((conv) => {
     const name = (
@@ -990,24 +1030,15 @@ const filteredConversations = computed(() =>
       ""
     ).toLowerCase();
     const matchesSearch = name.includes(searchQuery.value.toLowerCase());
-    const isIncomingRequest =
-      !conv.isAccepted &&
-      !conv.isRejected &&
-      conv.lastMessage?.senderId !== currentUserId.value;
+    const incoming = isConvIncomingRequest(conv);
     return activeTab.value === "chats"
-      ? matchesSearch && (conv.isAccepted || !isIncomingRequest)
-      : matchesSearch && isIncomingRequest;
+      ? matchesSearch && !incoming
+      : matchesSearch && incoming;
   }),
 );
 
 const pendingRequestsCount = computed(
-  () =>
-    chatStore.conversations.filter(
-      (conv) =>
-        !conv.isAccepted &&
-        !conv.isRejected &&
-        conv.lastMessage?.senderId !== currentUserId.value,
-    ).length,
+  () => chatStore.conversations.filter((conv) => isConvIncomingRequest(conv)).length,
 );
 
 const showMoreMenu = ref(false);
@@ -1118,6 +1149,45 @@ const currentUserId = computed(() => authStore.userId);
 const otherUser = computed(
   () => chatStore.activeConversation?.otherParticipant,
 );
+
+// Gelen istek: requesterId benim değil ve sohbet henüz kabul edilmemiş
+const isIncomingChatRequest = computed(() => {
+  const conv = chatStore.activeConversation;
+  if (!conv || conv.isAccepted || conv.isRejected) return false;
+  const requesterId = conv.requesterId;
+  // requesterId varsa: ben istek göndermedim mi?
+  if (requesterId) return requesterId !== currentUserId.value;
+  // requesterId yoksa (eski kayıtlar): son mesaj benden değilse gelen istek
+  return conv.lastMessage?.senderId !== currentUserId.value;
+});
+
+const requestActionLoading = ref(false);
+
+const handleAcceptRequest = async () => {
+  if (!chatStore.activeConversation) return;
+  requestActionLoading.value = true;
+  try {
+    await chatStore.acceptConversation(chatStore.activeConversation.id);
+    toast.success("Sohbet isteği kabul edildi.");
+  } catch {
+    toast.error("Hata oluştu!");
+  } finally {
+    requestActionLoading.value = false;
+  }
+};
+
+const handleRejectRequest = async () => {
+  if (!chatStore.activeConversation) return;
+  requestActionLoading.value = true;
+  try {
+    await chatStore.rejectConversation(chatStore.activeConversation.id);
+    toast.warning("Sohbet isteği reddedildi.");
+  } catch {
+    toast.error("Hata oluştu!");
+  } finally {
+    requestActionLoading.value = false;
+  }
+};
 
 // MEDIA HANDLING
 const fileInput = ref<HTMLInputElement | null>(null);

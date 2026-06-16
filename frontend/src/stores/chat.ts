@@ -146,6 +146,25 @@ export const useChatStore = defineStore("chat", () => {
     }
   };
 
+  const acceptConversation = async (conversationId: string) => {
+    await apiClient.post(`/chat/accept/${conversationId}`);
+    const conv = conversations.value.find((c) => c.id === conversationId);
+    if (conv) conv.isAccepted = true;
+    if (activeConversation.value?.id === conversationId) {
+      activeConversation.value.isAccepted = true;
+    }
+  };
+
+  const rejectConversation = async (conversationId: string) => {
+    await apiClient.post(`/chat/reject/${conversationId}`);
+    const conv = conversations.value.find((c) => c.id === conversationId);
+    if (conv) { conv.isRejected = true; conv.isAccepted = false; }
+    if (activeConversation.value?.id === conversationId) {
+      activeConversation.value.isRejected = true;
+      activeConversation.value.isAccepted = false;
+    }
+  };
+
   const deleteConversation = async (conversationId: string) => {
     try {
       await apiClient.post(`/chat/delete/${conversationId}`);
@@ -203,6 +222,8 @@ export const useChatStore = defineStore("chat", () => {
     typingUsers,
     setTypingStatus,
     markMessagesAsRead,
+    acceptConversation,
+    rejectConversation,
     onlineUsers,
     setOnlineUsers,
     updateUserStatus,

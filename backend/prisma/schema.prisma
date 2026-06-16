@@ -91,6 +91,7 @@ model Conversation {
   id          BigInt   @id
   isAccepted  Boolean  @default(true)
   isRejected  Boolean  @default(false)
+  requesterId BigInt?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -99,11 +100,12 @@ model Conversation {
 }
 
 model ConversationParticipant {
-  id             BigInt   @id
+  id             BigInt    @id
   conversationId BigInt
   userId         BigInt
-  themeColor     String   @default("#4f46e5")
-  joinedAt       DateTime @default(now())
+  themeColor     String    @default("#4f46e5")
+  joinedAt       DateTime  @default(now())
+  deletedAt      DateTime?
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)

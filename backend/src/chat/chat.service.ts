@@ -26,7 +26,6 @@ export class ChatService {
   async getOrCreateConversation(userId: bigint, targetUserId: bigint) {
     if (userId === targetUserId) throw new ForbiddenException('Kendinizle sohbet edemezsiniz.');
 
-    // Her iki user'ın da var olup olmadığını kontrol et
     const [currentUser, targetUser] = await Promise.all([
       this.prisma.user.findUnique({ where: { id: userId } }),
       this.prisma.user.findUnique({ where: { id: targetUserId } }),
@@ -54,20 +53,32 @@ export class ChatService {
       }
     }
 
+    // Eğer mevcut sohbet varsa ve kullanıcı daha önce silmişse tekrar göster
+    if (existing) {
+      await this.prisma.conversationParticipant.updateMany({
+        where: { conversationId: existing.id, userId, deletedAt: { not: null } },
+        data: { deletedAt: null },
+      });
+    }
+
     const targetFollowsMe = await this.prisma.follow.findFirst({ where: { followerId: targetUserId, followingId: userId } });
+    const isFriend = !!targetFollowsMe;
+    const isAutoAccepted = isFriend;
+
     if (!existing) {
       const convId = this.snowflakeService.getNextId();
       existing = await this.prisma.conversation.create({
-        data: { 
-          id: convId, // SNOWFLAKE ID
-          isAccepted: !!targetFollowsMe, 
-          isRejected: false, 
-          participants: { 
+        data: {
+          id: convId,
+          isAccepted: isAutoAccepted,
+          isRejected: false,
+          requesterId: isAutoAccepted ? null : userId,
+          participants: {
             create: [
-              { id: this.snowflakeService.getNextId(), userId: userId }, // SNOWFLAKE ID
-              { id: this.snowflakeService.getNextId(), userId: targetUserId } // SNOWFLAKE ID
-            ] 
-          } 
+              { id: this.snowflakeService.getNextId(), userId: userId },
+              { id: this.snowflakeService.getNextId(), userId: targetUserId }
+            ]
+          }
         },
         include: { participants: true, messages: { where: { isDeleted: false }, take: 1, orderBy: { createdAt: 'desc' } } }
       });
@@ -77,7 +88,13 @@ export class ChatService {
     const myPart = existing.participants.find((p: any) => p.userId === userId);
     const otherPart = await this.prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true } });
 
-    return { ...existing, themeColor: myPart?.themeColor || '#4f46e5', otherParticipant: otherPart, canChat: true };
+    return {
+      ...existing,
+      themeColor: myPart?.themeColor || '#4f46e5',
+      otherParticipant: otherPart,
+      isFriend,
+      requesterId: (existing.requesterId ?? (!isAutoAccepted ? userId : null))?.toString() ?? null,
+    };
   }
 
   async sendMessage(senderId: bigint, conversationId: bigint, content?: string, postId?: bigint, isForwarded: boolean = false, mediaUrl?: string, mediaType?: string) {
@@ -115,15 +132,35 @@ export class ChatService {
 
   async getUserConversations(userId: bigint) {
     const participantEntries = await this.prisma.conversationParticipant.findMany({
-      where: { userId: userId },
+      where: { userId: userId, deletedAt: null },
       include: { conversation: { include: { participants: { include: { user: { select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true } } } }, messages: { where: { isDeleted: false }, orderBy: { createdAt: 'desc' }, take: 1 } } } }
     });
+
+    const otherUserIds = participantEntries
+      .map(p => p.conversation.participants.find(part => part.userId !== userId)?.userId)
+      .filter(Boolean) as bigint[];
+
+    const friendFollows = otherUserIds.length > 0
+      ? await this.prisma.follow.findMany({ where: { followerId: { in: otherUserIds }, followingId: userId }, select: { followerId: true } })
+      : [];
+    const friendSet = new Set(friendFollows.map(f => f.followerId.toString()));
 
     return participantEntries.map(p => {
       const conv = p.conversation;
       const other = conv.participants.find(part => part.userId !== userId);
       if (!other?.user) return null;
-      return { id: conv.id, isAccepted: conv.isAccepted, isRejected: conv.isRejected, createdAt: conv.createdAt, themeColor: p.themeColor, otherParticipant: other.user, lastMessage: conv.messages[0] || null };
+      const isFriend = friendSet.has(other.userId.toString());
+      return {
+        id: conv.id,
+        isAccepted: conv.isAccepted,
+        isRejected: conv.isRejected,
+        requesterId: conv.requesterId?.toString() ?? null,
+        createdAt: conv.createdAt,
+        themeColor: p.themeColor,
+        otherParticipant: other.user,
+        lastMessage: conv.messages[0] || null,
+        isFriend,
+      };
     }).filter(c => c !== null).sort((a, b) => {
       const dateA = a!.lastMessage?.createdAt || a!.createdAt;
       const dateB = b!.lastMessage?.createdAt || b!.createdAt;
@@ -164,8 +201,22 @@ export class ChatService {
   async removeConversation(userId: bigint, conversationId: bigint) {
     const isPart = await this.prisma.conversationParticipant.findFirst({ where: { conversationId: conversationId, userId: userId } });
     if (!isPart) throw new ForbiddenException();
-    await this.prisma.message.updateMany({ where: { conversationId: conversationId }, data: { isDeleted: true } });
-    return this.prisma.conversation.delete({ where: { id: conversationId } });
+
+    // Sadece bu kullanıcı için sohbeti gizle, karşı taraf etkilenmesin
+    await this.prisma.conversationParticipant.update({
+      where: { conversationId_userId: { conversationId, userId } },
+      data: { deletedAt: new Date() },
+    });
+
+    // Eğer her iki taraf da silmişse conversation'ı tamamen kaldır
+    const remaining = await this.prisma.conversationParticipant.count({
+      where: { conversationId, deletedAt: null },
+    });
+    if (remaining === 0) {
+      await this.prisma.conversation.delete({ where: { id: conversationId } });
+    }
+
+    return { success: true };
   }
 
   async removeMessage(messageId: bigint, userId: bigint) {

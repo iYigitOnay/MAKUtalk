@@ -110,6 +110,12 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
       if (!isParticipant) throw new Error('Bu sohbete mesaj gönderme yetkiniz yok.');
 
+      if (conversation.isRejected) throw new Error('Bu sohbet isteği reddedildi.');
+
+      if (!conversation.isAccepted && conversation.requesterId === senderId) {
+        throw new Error('Sohbet isteği henüz kabul edilmedi.');
+      }
+
       const actualReceiver = conversation.participants.find(
         (p) => p.userId !== senderId,
       );
