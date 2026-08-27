@@ -285,18 +285,7 @@
               class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-between"
             >
               <div class="flex items-center gap-3">
-                <img
-                  v-if="user.avatarUrl"
-                  :src="getImageUrl(user.avatarUrl)"
-                  :alt="user.username"
-                  class="w-12 h-12 rounded-full object-cover"
-                />
-                <div
-                  v-else
-                  class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg"
-                >
-                  {{ user.username?.charAt(0).toUpperCase() }}
-                </div>
+                <UserAvatar :user="user" size="lg" />
                 <div>
                   <p class="font-semibold text-gray-900 dark:text-white">
                     {{ user.fullName || user.username }}
@@ -316,7 +305,7 @@
           </div>
         </div>
 
-        <div v-if="results.posts?.length">
+        <div v-if="postsStore.searchResults?.length">
           <div
             class="px-4 py-3 font-semibold text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-950/30 border-b border-gray-200 dark:border-primary-900/30"
           >
@@ -324,7 +313,7 @@
           </div>
           <div class="divide-y divide-gray-200 dark:divide-primary-900/20">
             <PostCard
-              v-for="post in results.posts"
+              v-for="post in postsStore.searchResults"
               :key="post.id"
               :post="post"
             />
@@ -342,18 +331,7 @@
           class="p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center justify-between"
         >
           <div class="flex items-center gap-3">
-            <img
-              v-if="user.avatarUrl"
-              :src="user.avatarUrl"
-              :alt="user.username"
-              class="w-12 h-12 rounded-full object-cover"
-            />
-            <div
-              v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold text-lg"
-            >
-              {{ user.username?.charAt(0).toUpperCase() }}
-            </div>
+            <UserAvatar :user="user" size="lg" />
             <div>
               <p class="font-semibold text-gray-900 dark:text-white">
                 {{ user.fullName || user.username }}
@@ -374,10 +352,10 @@
 
       <!-- Posts Tab -->
       <div
-        v-else-if="activeTab === 'posts' && results.posts?.length"
+        v-else-if="activeTab === 'posts' && postsStore.searchResults?.length"
         class="divide-y divide-gray-200 dark:divide-primary-900/20"
       >
-        <PostCard v-for="post in results.posts" :key="post.id" :post="post" />
+        <PostCard v-for="post in postsStore.searchResults" :key="post.id" :post="post" />
       </div>
     </div>
   </div>
@@ -387,13 +365,18 @@
 import { ref, computed, watch, onMounted } from "vue";
 import { useRoute } from "vue-router";
 import { useAuthStore } from "@/stores/auth";
+import { usePostsStore } from "@/stores/posts";
+import { useProfileStore } from "@/stores/profile";
 import { useToast } from "vue-toastification";
 import apiClient from "@/api/client";
 import PostCard from "@/components/PostCard.vue";
+import UserAvatar from "@/components/UserAvatar.vue";
 import type { Post, User } from "@/types";
 
 const route = useRoute();
 const authStore = useAuthStore();
+const postsStore = usePostsStore();
+const profileStore = useProfileStore();
 const toast = useToast();
 
 const getImageUrl = (path: string | undefined) => {
@@ -407,7 +390,36 @@ const getImageUrl = (path: string | undefined) => {
 const searchQuery = ref("");
 const activeTab = ref<"all" | "users" | "posts">("all");
 const loading = ref(false);
-const results = ref<{ users: User[]; posts: Post[] }>({ users: [], posts: [] });
+const results = ref<{ users: User[] }>({ users: [] });
+
+// CANLI SENKRONİZASYON: Global post değişimlerini izle ve arama sonuçlarına yansıt
+watch(
+  [() => postsStore.posts, () => profileStore.userPosts, () => profileStore.userLikedPosts],
+  () => {
+    if (!postsStore.searchResults.length) return;
+
+    // Tüm global kaynakları birleştirip bir "gerçeklik haritası" oluştur
+    const globalPosts = [...postsStore.posts, ...profileStore.userPosts, ...profileStore.userLikedPosts];
+    
+    postsStore.searchResults = postsStore.searchResults.map(searchPost => {
+      // Bu postun (veya eğer bu bir repost ise orijinalinin) global bir kopyasını bul
+      const targetId = searchPost.repostId || searchPost.id;
+      
+      const match = globalPosts.find(p => (p.repostId || p.id) === targetId);
+      
+      if (match) {
+        return {
+          ...searchPost,
+          isLiked: match.isLiked,
+          isReposted: match.isReposted,
+          _count: { ...match._count }
+        };
+      }
+      return searchPost;
+    });
+  },
+  { deep: true }
+);
 
 // Trends data
 const trendingCategories = ref<any[]>([]);
@@ -419,12 +431,12 @@ const fetchTrends = async () => {
   try {
     const [catRes, tagRes] = await Promise.all([
       apiClient.get("/categories/trending"),
-      apiClient.get("/search/hashtags/popular?limit=12"),
+      apiClient.get("/hashtags/trending?limit=12"),
     ]);
     trendingCategories.value = catRes.data;
     trendingHashtags.value = tagRes.data.map((t: any) => ({
-      name: t.tag,
-      count: t.count,
+      name: t.name,
+      count: t.usageCount,
     }));
   } catch (err) {
     console.error("Trends fetch error:", err);
@@ -438,7 +450,7 @@ let searchTimeout: ReturnType<typeof setTimeout>;
 const hasResults = computed(() => {
   return (
     (results.value.users?.length || 0) > 0 ||
-    (results.value.posts?.length || 0) > 0
+    (postsStore.searchResults?.length || 0) > 0
   );
 });
 
@@ -446,7 +458,8 @@ const handleSearch = () => {
   clearTimeout(searchTimeout);
 
   if (searchQuery.value.trim().length < 2) {
-    results.value = { users: [], posts: [] };
+    results.value.users = [];
+    postsStore.searchResults = [];
     return;
   }
 
@@ -459,7 +472,8 @@ const handleSearch = () => {
       }
 
       const response = await apiClient.get("/search", { params });
-      results.value = response.data;
+      results.value.users = response.data.users || [];
+      postsStore.searchResults = response.data.posts || [];
     } catch (error) {
       console.error("Search error:", error);
       toast.error("Arama sırasında bir hata oluştu.");
@@ -496,19 +510,19 @@ watch(
   (newUser) => {
     if (!newUser || !hasResults.value) return;
 
-    const userId = Number(newUser.id);
+    const userId = newUser.id;
 
     // 1. Kullanıcılar listesindeki kendimizi güncelle
     if (results.value.users) {
       results.value.users = results.value.users.map((u) =>
-        Number(u.id) === userId ? { ...u, ...newUser } : u,
+        u.id === userId ? { ...u, ...newUser } : u,
       );
     }
 
     // 2. Postlardaki yazar bilgilerimizi güncelle
-    if (results.value.posts) {
-      results.value.posts = results.value.posts.map((p) => {
-        if (Number(p.authorId) === userId) {
+    if (postsStore.searchResults) {
+      postsStore.searchResults = postsStore.searchResults.map((p) => {
+        if (p.authorId === userId) {
           return { ...p, author: { ...p.author, ...newUser } };
         }
         return p;

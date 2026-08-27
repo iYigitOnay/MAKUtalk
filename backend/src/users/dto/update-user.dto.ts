@@ -1,4 +1,4 @@
-import { IsOptional, IsString, MaxLength, IsBoolean } from 'class-validator';
+import { IsOptional, IsString, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class UpdateUserDto {
@@ -31,7 +31,13 @@ export class UpdateUserDto {
   class?: string;
 
   @IsOptional()
-  @Transform(({ value }) => value === 'true' || value === true)
-  @IsBoolean()
-  isPrivate?: boolean;
+  @Transform(({ value }) => {
+    // String "false" veya "true" değerlerini burada manuel yakalıyoruz 
+    // NestJS'in otomatik (hatalı) boolean çevrimine girmeden önce müdahale ediyoruz.
+    if (value === 'true' || value === true) return true;
+    if (value === 'false' || value === false) return false;
+    if (value === undefined || value === null) return undefined;
+    return value;
+  })
+  isPrivate?: any; // Boolean yerine any kullanarak otomatik conversion'ı bypass ediyoruz
 }

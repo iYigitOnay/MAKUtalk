@@ -8,7 +8,7 @@ export class ClubsController {
 
   @Get()
   findAll(@Query('userId') userId?: string, @Query('mainType') mainType?: string, @Query('category') category?: string) {
-    return this.clubsService.findAll(userId ? parseInt(userId) : undefined, mainType, category);
+    return this.clubsService.findAll(userId ? BigInt(userId) : undefined, mainType, category);
   }
 
   @Get('pending')
@@ -26,7 +26,7 @@ export class ClubsController {
   findOne(@Param('slug') slug: string, @Query('currentUserId') userId?: string) {
     // Not: Frontend'den bazen query ile bazen header ile gelebilir. 
     // En sağlamı findOne içinde her iki durumu da desteklemek.
-    return this.clubsService.findOne(slug, userId ? parseInt(userId) : undefined);
+    return this.clubsService.findOne(slug, userId ? BigInt(userId) : undefined);
   }
 
   @Post()
@@ -38,31 +38,31 @@ export class ClubsController {
   @Post(':id/approve-admin')
   @UseGuards(JwtAuthGuard)
   approveAdmin(@Request() req, @Param('id') id: string) {
-    return this.clubsService.approveByAdmin(req.user.id, parseInt(id));
+    return this.clubsService.approveByAdmin(req.user.id, BigInt(id));
   }
 
   @Post(':id/reject')
   @UseGuards(JwtAuthGuard)
   reject(@Request() req, @Param('id') id: string) {
-    return this.clubsService.rejectProposal(req.user.id, parseInt(id));
+    return this.clubsService.rejectProposal(req.user.id, BigInt(id));
   }
 
   @Post(':id/toggle-join')
   @UseGuards(JwtAuthGuard)
   toggleJoin(@Request() req, @Param('id') id: string) {
-    return this.clubsService.toggleJoin(req.user.id, parseInt(id));
+    return this.clubsService.toggleJoin(req.user.id, BigInt(id));
   }
 
   @Post(':id/badges')
   @UseGuards(JwtAuthGuard)
-  assignBadge(@Request() req, @Param('id') id: string, @Body('badgeId') badgeId: number) {
-    return this.clubsService.assignBadge(req.user.id, parseInt(id), badgeId);
+  assignBadge(@Request() req, @Param('id') id: string, @Body('badgeId') badgeId: string) {
+    return this.clubsService.assignBadge(req.user.id, BigInt(id), BigInt(badgeId));
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Request() req, @Param('id') id: string) {
-    return this.clubsService.remove(req.user.id, parseInt(id), req.user.role);
+    return this.clubsService.remove(req.user.id, BigInt(id), req.user.role);
   }
 
   @Post('seed')

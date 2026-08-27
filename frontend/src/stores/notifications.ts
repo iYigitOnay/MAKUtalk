@@ -3,29 +3,75 @@ import { ref } from "vue";
 import apiClient from "@/api/client";
 
 export interface Notification {
-  id: number;
-  type: "LIKE" | "COMMENT" | "FOLLOW";
-  recipientId: number;
-  senderId: number;
-  postId?: number;
+  id: string;
+  type: "LIKE" | "COMMENT" | "FOLLOW" | "MESSAGE" | "MENTION"; // MESSAGE eklendi
+  recipientId: string;
+  senderId: string;
+  postId?: string;
   read: boolean;
+  content?: string; // Mesaj önizlemesi için eklendi
+  conversationId?: string; // Mesaj yönlendirmesi için eklendi
   createdAt: string;
   sender: {
-    id: number;
+    id: string;
     username: string;
     fullName?: string;
     avatarUrl?: string;
   };
   post?: {
-    id: number;
+    id: string;
+    content: string;
+  };
+  comment?: {
+    id: string;
     content: string;
   };
 }
 
+// Canlı bildirim kartı için basit tip
+export interface LiveNotification extends Partial<Notification> {
+  liveId: string; // Benzersiz geçici ID
+  displayType: "MESSAGE" | "SYSTEM";
+}
+
 export const useNotificationsStore = defineStore("notifications", () => {
   const notifications = ref<Notification[]>([]);
+  const activeNotifications = ref<LiveNotification[]>([]); // Sağ altta aktif görünen kartlar
   const unreadCount = ref(0);
   const loading = ref(false);
+
+  // Yeni canlı bildirim ekle
+  const pushLiveNotification = (notif: LiveNotification) => {
+    console.log("📣 pushLiveNotification tetiklendi:", notif.type, notif.content);
+
+    // Mükerrer kontrolü (Aynı liveId veya son 2 saniye içinde gelen birebir aynı bildirim)
+    const isDuplicate = activeNotifications.value.some(n => 
+                        n.type === notif.type && 
+                        n.content === notif.content &&
+                        n.senderId === notif.senderId &&
+                        n.liveId.split('-').pop() === notif.liveId.split('-').pop()); // Zamana dayalı kontrol
+
+    if (isDuplicate) {
+      console.warn("⚠️ Mükerrer bildirim engellendi.");
+      return;
+    }
+
+    // Listeye Ekle (Sistem bildirimi ise ana listeye de ekle)
+    if (notif.displayType === "SYSTEM") {
+       fetchUnreadCount();
+       // Listede yoksa ekle
+       if (notif.id && !notifications.value.some(n => n.id === notif.id)) {
+          notifications.value.unshift(notif as Notification);
+       }
+    }
+
+    activeNotifications.value.push(notif);
+    // Not: Silme işlemi GlobalNotification.vue içerisindeki timerlar ile yönetiliyor.
+  };
+
+  const removeLiveNotification = (liveId: string) => {
+    activeNotifications.value = activeNotifications.value.filter(n => n.liveId !== liveId);
+  };
 
   const fetchNotifications = async () => {
     loading.value = true;
@@ -51,7 +97,7 @@ export const useNotificationsStore = defineStore("notifications", () => {
     }
   };
 
-  const markAsRead = async (notificationId: number) => {
+  const markAsRead = async (notificationId: string) => {
     try {
       await apiClient.patch(`/notifications/${notificationId}/read`);
       const notification = notifications.value.find(
@@ -78,7 +124,7 @@ export const useNotificationsStore = defineStore("notifications", () => {
     }
   };
 
-  const deleteNotification = async (notificationId: number) => {
+  const deleteNotification = async (notificationId: string) => {
     try {
       await apiClient.delete(`/notifications/${notificationId}`);
       notifications.value = notifications.value.filter(
@@ -90,9 +136,9 @@ export const useNotificationsStore = defineStore("notifications", () => {
   };
 
   // Bildirimlerdeki kullanıcı bilgilerini tazele (Canlı profil güncellemesi için)
-  const updateUserInNotifications = (userId: number, updates: any) => {
+  const updateUserInNotifications = (userId: string, updates: any) => {
     notifications.value = notifications.value.map(notification => {
-      if (Number(notification.senderId) === userId && notification.sender) {
+      if (notification.senderId === userId && notification.sender) {
         notification.sender = { ...notification.sender, ...updates };
       }
       return notification;
@@ -101,8 +147,11 @@ export const useNotificationsStore = defineStore("notifications", () => {
 
   return {
     notifications,
+    activeNotifications,
     unreadCount,
     loading,
+    pushLiveNotification,
+    removeLiveNotification,
     fetchNotifications,
     fetchUnreadCount,
     markAsRead,
@@ -111,3 +160,4 @@ export const useNotificationsStore = defineStore("notifications", () => {
     updateUserInNotifications,
   };
 });
+

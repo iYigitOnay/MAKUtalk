@@ -6,6 +6,13 @@ import App from "./App.vue";
 import router from "./router";
 import "./style.css";
 import { useAuthStore } from "./stores/auth";
+import clarity from "@microsoft/clarity";
+
+// Microsoft Clarity Initialization (Only in Production)
+const clarityId = import.meta.env.VITE_CLARITY_ID;
+if (clarityId) {
+  clarity.init(clarityId);
+}
 
 const app = createApp(App);
 const pinia = createPinia();

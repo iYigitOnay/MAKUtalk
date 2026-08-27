@@ -29,7 +29,6 @@ export class CreateEventDto {
   @IsOptional()
   imageUrl?: string;
 
-  @IsInt()
   @IsOptional()
-  clubId?: number;
+  clubId?: string | number;
 }

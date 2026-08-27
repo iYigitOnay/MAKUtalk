@@ -38,18 +38,18 @@ export class EventsController {
 
   @Get()
   findAll(@Query('currentUserId') currentUserId?: string) {
-    return this.eventsService.findAll(currentUserId ? parseInt(currentUserId) : undefined);
+    return this.eventsService.findAll(currentUserId ? BigInt(currentUserId) : undefined);
   }
 
   @Post(':id/attend')
   @UseGuards(JwtAuthGuard)
   toggleAttendance(@Request() req, @Param('id') id: string) {
-    return this.eventsService.toggleAttendance(req.user.id, parseInt(id));
+    return this.eventsService.toggleAttendance(req.user.id, BigInt(id));
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@Request() req, @Param('id') id: string) {
-    return this.eventsService.remove(req.user.id, parseInt(id));
+    return this.eventsService.remove(req.user.id, BigInt(id));
   }
 }

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { ChatGateway } from './chat.gateway';
 import { ChatController } from './chat.controller';
+import { ChatMediaController } from './chat-media.controller';
 import { JwtModule } from '@nestjs/jwt';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -19,7 +20,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
     }),
   ],
   providers: [ChatService, ChatGateway],
-  controllers: [ChatController],
-  exports: [ChatService],
+  controllers: [ChatController, ChatMediaController],
+  exports: [ChatService, ChatGateway],
 })
 export class ChatModule {}

@@ -1,8 +1,46 @@
 <!-- src/views/Home.vue -->
 <template>
   <div
-    class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen font-sans"
+    class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen font-sans relative"
   >
+    <!-- TOP TABS (Main Feed vs Academic Feed) - Not sticky anymore to avoid overlap -->
+    <div
+      class="bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-b border-gray-200 dark:border-primary-900/30"
+    >
+      <div class="flex">
+        <button
+          @click="switchTab('main')"
+          class="flex-1 py-4 text-sm font-black transition-all relative outline-none"
+          :class="
+            activeFeedTab === 'main'
+              ? 'text-gray-900 dark:text-white'
+              : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'
+          "
+        >
+          ANA AKIŞ
+          <div
+            v-if="activeFeedTab === 'main'"
+            class="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-blue-600 rounded-t-full"
+          ></div>
+        </button>
+        <button
+          @click="switchTab('academic')"
+          class="flex-1 py-4 text-sm font-black transition-all relative outline-none flex items-center justify-center gap-2"
+          :class="
+            activeFeedTab === 'academic'
+              ? 'text-emerald-600 dark:text-emerald-400'
+              : 'text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-900'
+          "
+        >
+          AKADEMİK
+          <div
+            v-if="activeFeedTab === 'academic'"
+            class="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-1 bg-emerald-600 rounded-t-full"
+          ></div>
+        </button>
+      </div>
+    </div>
+
     <!-- MODERATION OVERLAYS -->
     <transition name="fade">
       <div
@@ -99,41 +137,34 @@
       </div>
     </transition>
 
-    <!-- Post Composer Section (Sticky Özelliği Kaldırıldı) -->
+    <!-- Post Composer Section -->
     <div
-      v-if="authStore.isAuthenticated"
-      class="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-primary-900/30 p-4"
+      v-if="
+        authStore.isAuthenticated &&
+        (activeFeedTab === 'main' || canPostToAcademic)
+      "
+      class="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-primary-900/30 p-4 transition-all duration-500"
     >
       <div class="flex gap-4">
         <div class="relative group flex-shrink-0">
-          <div
-            class="p-[2px] rounded-full bg-gradient-to-tr from-blue-400 to-purple-400 shadow-sm transition-transform group-hover:scale-105"
-          >
-            <img
-              v-if="authStore.user?.avatarUrl"
-              :src="getImageUrl(authStore.user.avatarUrl)"
-              :alt="authStore.user.username"
-              class="w-12 h-12 rounded-full object-cover border-2 border-white dark:border-gray-950"
-            />
-            <div
-              v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 border-2 border-white dark:border-gray-950 flex items-center justify-center text-white font-black"
-            >
-              {{ authStore.user?.username?.charAt(0).toUpperCase() }}
-            </div>
-          </div>
+          <UserAvatar :user="authStore.user" size="lg" />
         </div>
         <div class="flex-1 min-w-0 relative">
           <textarea
             ref="textareaRef"
             v-model="newPostContent"
             @input="handleInput"
-            placeholder="Ne Düşünüyorsun?"
+            :placeholder="
+              activeFeedTab === 'academic'
+                ? 'Duyuru, ders notu veya bilgilendirme paylaşın...'
+                : 'Ne Düşünüyorsunuz?'
+            "
             class="w-full text-lg bg-transparent text-gray-900 dark:text-gray-50 placeholder-gray-400 dark:placeholder-gray-500 outline-none resize-none font-medium min-h-[100px] overflow-hidden pt-2.5 pr-12"
             :disabled="postsStore.loading"
-            maxlength="280"
+            maxlength="750"
           />
 
+          <!-- Mentions Modal -->
           <div
             v-if="showMentions"
             :style="{ top: mentionPos.y + 'px', left: mentionPos.x + 'px' }"
@@ -146,17 +177,8 @@
                 @click="selectMention(user.username)"
                 class="w-full flex items-center gap-3 p-2.5 hover:bg-blue-600 hover:text-white transition-colors group text-left"
               >
-                <img
-                  v-if="user.avatarUrl"
-                  :src="getImageUrl(user.avatarUrl)"
-                  class="w-7 h-7 rounded-full object-cover border border-white/20"
-                />
-                <div
-                  v-else
-                  class="w-7 h-7 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center text-[10px] font-black group-hover:bg-white group-hover:text-blue-600 transition-colors"
-                >
-                  {{ user.username.charAt(0).toUpperCase() }}
-                </div>
+                <!-- FIXED: Asil Avatar KullanÄ±mÄ± (Mentions) -->
+                <UserAvatar :user="user" size="xs" />
                 <div class="flex flex-col min-w-0">
                   <span class="text-xs font-bold truncate">{{
                     user.fullName || user.username
@@ -169,14 +191,84 @@
             </div>
           </div>
 
-          <div v-if="selectedImagePreview" class="relative mt-4 group">
+          <div v-if="selectedImagePreview" class="relative mt-4 group rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/20 bg-gray-50 dark:bg-gray-900/50 flex justify-center">
             <img
               :src="selectedImagePreview"
-              class="w-full max-h-80 object-cover rounded-2xl border border-gray-100 dark:border-primary-900/20 shadow-sm"
+              class="w-full h-auto max-h-[512px] object-contain shadow-sm"
             />
             <button
               @click="removeSelectedImage"
-              class="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90"
+              class="absolute top-3 right-3 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90 z-10"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <!-- Video Preview -->
+          <div v-if="selectedVideoPreview" class="relative mt-4 group rounded-2xl overflow-hidden border border-gray-100 dark:border-primary-900/20 bg-gray-50 dark:bg-gray-900/50 flex justify-center">
+            <video
+              :src="selectedVideoPreview"
+              class="w-full h-auto max-h-[512px] object-contain shadow-sm"
+              controls
+            />
+            <button
+              @click="removeSelectedVideo"
+              class="absolute top-3 right-3 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full backdrop-blur-md transition-all active:scale-90 z-10"
+            >
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
+
+          <div
+            v-if="selectedDocument"
+            class="relative mt-4 p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 flex items-center justify-between"
+          >
+            <div class="flex items-center gap-3 truncate">
+              <svg
+                class="w-8 h-8 text-blue-500 flex-shrink-0"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span
+                class="font-semibold text-sm truncate text-gray-700 dark:text-gray-300"
+                >{{ selectedDocument.name }}</span
+              >
+            </div>
+            <button
+              @click="removeSelectedDocument"
+              class="p-1.5 text-gray-500 hover:bg-gray-200 dark:hover:bg-gray-800 rounded-full transition-colors flex-shrink-0"
             >
               <svg
                 class="w-5 h-5"
@@ -196,7 +288,10 @@
 
           <transition name="fade">
             <div
-              v-if="newPostContent.trim() || selectedImage"
+              v-if="
+                (newPostContent.trim() || selectedImage || selectedDocument) &&
+                activeFeedTab === 'main'
+              "
               class="relative mt-2 h-24 flex items-center justify-center overflow-hidden -ml-16"
             >
               <div
@@ -204,6 +299,7 @@
                 class="flex items-center gap-6 overflow-x-auto px-[38%] h-full scrollbar-hide snap-x snap-mandatory pt-4 pb-8 scroll-smooth"
                 @scroll="handleComposerScroll"
               >
+                <!-- Kategori SeÃ§ici Sadece Ana AkÄ±ÅŸta GÃ¶rÃ¼nÃ¼r -->
                 <div
                   v-for="(item, index) in allItems"
                   :key="index"
@@ -294,6 +390,7 @@
               <button
                 @click="imageInputRef?.click()"
                 class="p-2.5 text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-500/10 rounded-xl transition-all"
+                title="Görsel Ekle"
               >
                 <svg
                   class="w-5 h-5"
@@ -309,6 +406,64 @@
                   />
                 </svg>
               </button>
+
+              <input
+                type="file"
+                ref="videoInputRef"
+                class="hidden"
+                accept="video/*"
+                @change="handleVideoSelect"
+              />
+              <button
+                @click="videoInputRef?.click()"
+                class="p-2.5 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all"
+                title="Video Ekle"
+              >
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                  />
+                </svg>
+              </button>
+
+              <!-- DÃ¶kÃ¼man YÃ¼kleme Butonu (Sadece Akademik AkÄ±ÅŸta) -->
+              <template v-if="activeFeedTab === 'academic'">
+                <input
+                  type="file"
+                  ref="docInputRef"
+                  class="hidden"
+                  accept=".pdf,.doc,.docx,.ppt,.pptx"
+                  @change="handleDocSelect"
+                />
+                <button
+                  @click="docInputRef?.click()"
+                  class="p-2.5 text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10 rounded-xl transition-all"
+                  title="Döküman Ekle (PDF, Word, vs.)"
+                >
+                  <svg
+                    class="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                </button>
+              </template>
+
               <EmojiPicker
                 :modelValue="newPostContent"
                 @update:modelValue="(e) => (newPostContent += e)"
@@ -316,7 +471,7 @@
             </div>
 
             <div class="flex items-center gap-4">
-              <!-- Animated Character Counter (Next to Button) -->
+              <!-- Animated Character Counter -->
               <transition name="scale-fade">
                 <div
                   v-if="newPostContent.length > 0"
@@ -344,47 +499,63 @@
                         fill="transparent"
                         class="transition-all duration-500"
                         :class="
-                          newPostContent.length > 250
+                          newPostContent.length > 750
                             ? 'text-red-500'
-                            : newPostContent.length > 200
+                            : newPostContent.length > 650
                               ? 'text-orange-500'
                               : 'text-primary-500'
                         "
                         :stroke-dasharray="63"
                         :stroke-dashoffset="
-                          63 - (Math.min(newPostContent.length, 250) / 250) * 63
+                          63 - (Math.min(newPostContent.length, 750) / 750) * 63
                         "
                         stroke-linecap="round"
                       />
                     </svg>
                     <span
-                      v-if="newPostContent.length > 200"
+                      v-if="newPostContent.length > 650"
                       class="absolute text-[8px] font-black"
                       :class="
-                        newPostContent.length > 250
+                        newPostContent.length > 750
                           ? 'text-red-500'
                           : 'text-gray-400'
                       "
-                      >{{ 250 - newPostContent.length }}</span
+                      >{{ 750 - newPostContent.length }}</span
                     >
                   </div>
                   <div
-                    v-if="newPostContent.length > 250"
+                    v-if="newPostContent.length > 750"
                     class="w-px h-4 bg-gray-200 dark:bg-gray-800"
                   ></div>
                 </div>
               </transition>
 
+              <!-- Upload Progress Bar -->
+              <div v-if="isUploading" class="flex-1 max-w-[200px] bg-gray-100 dark:bg-gray-800 h-1.5 rounded-full overflow-hidden relative">
+                <div 
+                  class="absolute inset-y-0 left-0 bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-300"
+                  :style="{ width: uploadProgress + '%' }"
+                ></div>
+              </div>
+
               <button
                 @click="handleCreatePost"
                 :disabled="
-                  (!newPostContent.trim() && !selectedImage) ||
+                  (!newPostContent.trim() && !selectedImage && !selectedVideo && !selectedDocument) ||
                   postsStore.loading ||
-                  newPostContent.length > 250
+                  isUploading ||
+                  newPostContent.length > 750
                 "
-                class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50 disabled:grayscale transition-all"
+                class="px-8 py-2.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white text-sm font-black rounded-full shadow-lg shadow-blue-500/20 active:scale-95 disabled:opacity-50 disabled:grayscale transition-all flex items-center gap-2"
               >
-                PAYLAŞ
+                <template v-if="isUploading">
+                  <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  YÜKLENİYOR
+                </template>
+                <template v-else>PAYLAŞ</template>
               </button>
             </div>
           </div>
@@ -392,8 +563,8 @@
       </div>
     </div>
 
-    <!-- ANA KATEGORİ ÇARKI (Artık en üstte sticky: top-0) -->
     <div
+      v-if="activeFeedTab === 'main'"
       class="sticky top-0 z-40 bg-white/95 dark:bg-gray-950/95 backdrop-blur-xl border-b border-gray-100 dark:border-primary-900/10 py-3 overflow-hidden"
     >
       <div
@@ -501,10 +672,12 @@ import { useAuthStore } from "@/stores/auth";
 import { usePostsStore } from "@/stores/posts";
 import { useCategoriesStore } from "@/stores/categories";
 import { useToast } from "vue-toastification";
+import { compressImage } from "@/common/utils/image-optimizer";
 import PostCard from "@/components/PostCard.vue";
 import CommentsModal from "@/components/CommentsModal.vue";
 import DeleteConfirmModal from "@/components/DeleteConfirmModal.vue";
 import EmojiPicker from "@/components/EmojiPicker.vue";
+import UserAvatar from "@/components/UserAvatar.vue";
 import apiClient from "@/api/client";
 
 const authStore = useAuthStore();
@@ -524,12 +697,57 @@ const newPostContent = ref("");
 const selectedCategoryId = ref<number | null>(null);
 const selectedImage = ref<File | null>(null);
 const selectedImagePreview = ref<string | null>(null);
+const selectedVideo = ref<File | null>(null);
+const selectedVideoPreview = ref<string | null>(null);
 const imageInputRef = ref<HTMLInputElement | null>(null);
+const videoInputRef = ref<HTMLInputElement | null>(null);
 const textareaRef = ref<HTMLTextAreaElement | null>(null);
+
+const activeFeedTab = computed({
+  get: () => postsStore.activeFeedTab,
+  set: (val) => (postsStore.activeFeedTab = val),
+});
+
+const switchTab = (tab: "main" | "academic") => {
+  activeFeedTab.value = tab;
+  postsStore.posts = [];
+  postsStore.resetCategory();
+
+  if (tab === "main") {
+    postsStore.fetchPosts(authStore.user?.id);
+    nextTick(() => {
+      const idx = allItems.value.findIndex((i) => i.id === null);
+      if (idx !== -1) centerCarouselItem(idx);
+    });
+  } else {
+    postsStore.fetchAcademicPosts(authStore.user?.id);
+  }
+};
+
+const canPostToAcademic = computed(() => {
+  return (
+    authStore.user?.role === "ADMIN" || authStore.user?.role === "ACADEMIC"
+  );
+});
 
 const mentionUsers = ref<any[]>([]);
 const showMentions = ref(false);
 const mentionPos = ref({ x: 0, y: 0 });
+
+const selectedDocument = ref<File | null>(null);
+const docInputRef = ref<HTMLInputElement | null>(null);
+
+const handleDocSelect = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (file) {
+    selectedDocument.value = file;
+  }
+};
+
+const removeSelectedDocument = () => {
+  selectedDocument.value = null;
+  if (docInputRef.value) docInputRef.value.value = "";
+};
 
 const adjustTextareaHeight = () => {
   const el = textareaRef.value;
@@ -681,6 +899,8 @@ const selectCategory = (id: number | null) => {
 const handleImageSelect = (e: Event) => {
   const file = (e.target as HTMLInputElement).files?.[0];
   if (file) {
+    removeSelectedVideo();
+    removeSelectedDocument();
     selectedImage.value = file;
     selectedImagePreview.value = URL.createObjectURL(file);
   }
@@ -691,26 +911,91 @@ const removeSelectedImage = () => {
   selectedImagePreview.value = null;
   if (imageInputRef.value) imageInputRef.value.value = "";
 };
+
+const handleVideoSelect = (e: Event) => {
+  const file = (e.target as HTMLInputElement).files?.[0];
+  if (file) {
+    if (file.size > 25 * 1024 * 1024) {
+      toast.error("Video boyutu 25MB'dan büyük olamaz.");
+      return;
+    }
+    removeSelectedImage();
+    removeSelectedDocument();
+    selectedVideo.value = file;
+    selectedVideoPreview.value = URL.createObjectURL(file);
+  }
+};
+
+const removeSelectedVideo = () => {
+  selectedVideo.value = null;
+  selectedVideoPreview.value = null;
+  if (videoInputRef.value) videoInputRef.value.value = "";
+};
+
 const handleCreatePost = async () => {
-  if (!newPostContent.value.trim() && !selectedImage.value) return;
+  if (
+    !newPostContent.value.trim() &&
+    !selectedImage.value &&
+    !selectedVideo.value &&
+    !selectedDocument.value
+  )
+    return;
+
+  isUploading.value = true;
+  uploadProgress.value = 0;
+
   try {
+    const isAcademicPost =
+      activeFeedTab.value === "academic" && canPostToAcademic.value;
+
+    let imageToUpload = selectedImage.value || undefined;
+
+    // Fotoğraf sıkıştırma (Sadece fotoğraf varsa)
+    if (imageToUpload) {
+      try {
+        const compressed = await compressImage(imageToUpload);
+        imageToUpload = compressed;
+      } catch (e) {
+        console.error("Görsel sıkıştırılamadı, orijinali gönderiliyor:", e);
+      }
+    }
+
     await postsStore.createPost(
       newPostContent.value,
       true,
-      selectedCategoryId.value || undefined,
-      selectedImage.value || undefined,
+      isAcademicPost ? undefined : selectedCategoryId.value || undefined,
+      imageToUpload,
+      undefined, // parentId
+      isAcademicPost,
+      selectedDocument.value || undefined,
+      selectedVideo.value || undefined,
+      (progressEvent: any) => {
+        if (progressEvent.total) {
+          uploadProgress.value = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total,
+          );
+        }
+      },
     );
+
     newPostContent.value = "";
     selectedCategoryId.value = null;
     removeSelectedImage();
+    removeSelectedVideo();
+    removeSelectedDocument();
     nextTick(adjustTextareaHeight);
     toast.success("Paylaşıldı!");
   } catch (err: any) {
-    // Store zaten error.response.data'yı fırlattığı için direkt içindeki message'a bakıyoruz
-    const msg = err.message || (err.response?.data?.message);
-    toast.error(Array.isArray(msg) ? msg[0] : (msg || "Hata!"));
+    const msg = err.message || err.response?.data?.message;
+    toast.error(Array.isArray(msg) ? msg[0] : msg || "Hata!");
+  } finally {
+    isUploading.value = false;
+    uploadProgress.value = 0;
   }
 };
+
+const isUploading = ref(false);
+const uploadProgress = ref(0);
 
 const commentsModalOpen = ref(false);
 const selectedPostId = ref<number | null>(null);
@@ -785,7 +1070,7 @@ const submitReport = async (sub: string) => {
     toast.warning("Bildirildi.");
   } catch (err: any) {
     const msg = err.response?.data?.message;
-    toast.error(Array.isArray(msg) ? msg[0] : (msg || "Hata!"));
+    toast.error(Array.isArray(msg) ? msg[0] : msg || "Hata!");
   } finally {
     closeReport();
   }
@@ -801,9 +1086,29 @@ const handleShowComments = (id: number) => {
   commentsModalOpen.value = true;
 };
 
+watch(
+  () => postsStore.currentCategory,
+  (newCatId) => {
+    const index = allItems.value.findIndex((item) => item.id === newCatId);
+    if (index !== -1) {
+      nextTick(() => {
+        centerCarouselItem(index);
+      });
+    }
+  },
+  { immediate: true },
+);
+
 onMounted(() => {
   postsStore.resetCategory();
-  postsStore.fetchPosts(authStore.user?.id);
+
+  // Persist tab logic
+  if (activeFeedTab.value === "academic") {
+    postsStore.fetchAcademicPosts(authStore.user?.id);
+  } else {
+    postsStore.fetchPosts(authStore.user?.id);
+  }
+
   categoriesStore.fetchCategories().then(() => {
     setTimeout(() => {
       const idx = allItems.value.findIndex((i) => i.id === null);

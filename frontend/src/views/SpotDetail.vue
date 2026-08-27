@@ -70,17 +70,43 @@
           {{ isProcessing ? 'Sohbet Başlatılıyor...' : 'İLAN SAHİBİNE YAZ' }}
         </button>
 
+        <button 
+          v-if="(isOwner || authStore.user?.role === 'ADMIN') && listing.status !== 'SOLD'"
+          @click="markAsSold"
+          :disabled="isProcessing"
+          class="w-full py-5 rounded-[2rem] text-xs font-black uppercase tracking-[0.2em] transition-all active:scale-95 shadow-2xl bg-green-500 text-white hover:bg-green-600 shadow-green-500/30 flex items-center justify-center gap-3"
+        >
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7" /></svg>
+          TAMAMLANDI OLARAK İŞARETLE
+        </button>
+
+        <div v-if="listing.status === 'SOLD'" class="py-4 px-6 bg-green-500/10 border border-green-500/20 rounded-2xl text-green-500 text-xs font-black uppercase tracking-widest italic">
+          BU İLAN TAMAMLANMIŞTIR ✨
+        </div>
+
         <button v-if="isOwner || authStore.user?.role === 'ADMIN'" @click="isDeleteModalOpen = true" class="w-full py-4 text-[10px] font-black text-red-500/40 hover:text-red-500 uppercase tracking-[0.3em] transition-colors outline-none">İlanı Kaldır</button>
       </section>
 
       <DeleteConfirmModal
         :is-open="isDeleteModalOpen"
-        :is-deleting="deleting"
+        :loading="deleting"
+        variant="danger"
         title="İLANINI KALDIR"
         message="Bu ilanı kalıcı olarak kaldırmak istediğine emin misin?"
         confirm-text="EVET, KALDIR"
         @confirm="confirmDelete"
         @cancel="isDeleteModalOpen = false"
+      />
+
+      <DeleteConfirmModal
+        :is-open="isSoldModalOpen"
+        :loading="isProcessing"
+        variant="success"
+        title="İLAN TAMAMLANDI"
+        message="Bu ilanı tamamlandı olarak işaretlemek istediğine emin misin?"
+        confirm-text="EVET, TAMAMLA"
+        @confirm="confirmMarkAsSold"
+        @cancel="isSoldModalOpen = false"
       />
 
     </div>
@@ -105,6 +131,7 @@ const loading = ref(true);
 const deleting = ref(false);
 const isProcessing = ref(false);
 const isDeleteModalOpen = ref(false);
+const isSoldModalOpen = ref(false);
 
 const isOwner = computed(() => authStore.user?.id === listing.value?.authorId);
 
@@ -137,7 +164,7 @@ const contactSeller = async () => {
     query: { 
       userId: listing.value.authorId,
       fromSpot: 'true',
-      listingId: listing.value.id, // Yeni eklenen
+      listingId: listing.value.id,
       initialMessage: autoMessage 
     } 
   });
@@ -145,6 +172,24 @@ const contactSeller = async () => {
 
 const viewProfile = () => {
   if (listing.value) router.push(`/profile/${listing.value.author.username}`);
+};
+
+const markAsSold = () => {
+  isSoldModalOpen.value = true;
+};
+
+const confirmMarkAsSold = async () => {
+  isProcessing.value = true;
+  try {
+    await apiClient.patch(`/spot/${listing.value.id}/status`, { status: 'SOLD' });
+    toast.success("İlan tamamlandı! 🎉");
+    fetchListing();
+  } catch {
+    toast.error("Hata!");
+  } finally {
+    isProcessing.value = false;
+    isSoldModalOpen.value = false;
+  }
 };
 
 const confirmDelete = async () => {

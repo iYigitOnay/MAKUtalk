@@ -15,7 +15,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     // payload = { sub: userId, email, username, iat, exp }
-    const user = await this.authService.validateUser(payload.sub);
+    const user = await this.authService.validateUser(BigInt(payload.sub));
 
     if (!user) {
       throw new UnauthorizedException('Geçersiz token.');

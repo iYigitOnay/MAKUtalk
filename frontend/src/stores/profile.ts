@@ -35,7 +35,7 @@ export const useProfileStore = defineStore("profile", () => {
   };
 
   // Kullanıcının postlarını, yanıtlarını, repostlarını ve beğenilerini getir
-  const fetchProfileContent = async (userId: number) => {
+  const fetchProfileContent = async (userId: string) => {
     loadingPosts.value = true;
     try {
       const [postsRes, repliesRes, repostsRes, likesRes] = await Promise.all([
@@ -66,20 +66,80 @@ export const useProfileStore = defineStore("profile", () => {
   };
 
   // Takip Etme / Takipten Çıkma anında lokal state güncellemesi
-  const updateFollowStateLocally = (isFollowingNow: boolean, isPrivate: boolean) => {
+  const updateFollowStateLocally = (status: 'FOLLOWING' | 'PENDING' | 'NONE', isPrivate: boolean) => {
     if (!profileUser.value) return;
-    
+
+    const oldStatus = profileUser.value.followStatus || (profileUser.value.isFollowing ? 'FOLLOWING' : 'NONE');
+
+    // Takipçi sayısını sadece GERÇEK takip gerçekleştiğinde (FOLLOWING) güncelle
     if (profileUser.value._count) {
-       profileUser.value._count.followers += isFollowingNow ? 1 : -1;
-       profileUser.value._count.followers = Math.max(0, profileUser.value._count.followers);
+      if (status === 'FOLLOWING' && oldStatus !== 'FOLLOWING') {
+        profileUser.value._count.followers++;
+      } else if (status !== 'FOLLOWING' && oldStatus === 'FOLLOWING') {
+        profileUser.value._count.followers--;
+      }
+      profileUser.value._count.followers = Math.max(0, profileUser.value._count.followers);
     }
-    
-    if (!isFollowingNow && isPrivate) {
+
+    profileUser.value.followStatus = status;
+    profileUser.value.isFollowing = (status === 'FOLLOWING');
+
+    if (status !== 'FOLLOWING' && isPrivate) {
        userPosts.value = [];
        userReplies.value = [];
        userReposts.value = [];
        userLikedPosts.value = [];
     }
+  };
+  // ADMIN & PROFILE ACTIONS
+  const blockUser = async (userId: string) => {
+    const res = await apiClient.post(`/users/${userId}/block`);
+    // res.data.blocked: true (engellendi) veya false (engel kaldırıldı) döner
+    if (profileUser.value && String(profileUser.value.id) === String(userId)) {
+      profileUser.value.isBlockedByMe = res.data.blocked;
+      profileUser.value.isBlocked = res.data.blocked; // Geriye dönük uyumluluk için
+      
+      // Engel anında içerikleri temizleyelim (Gizlilik)
+      if (res.data.blocked) {
+        userPosts.value = [];
+        userReplies.value = [];
+        userReposts.value = [];
+        userLikedPosts.value = [];
+        profileUser.value.isFollowing = false;
+        profileUser.value.followStatus = 'NONE';
+      }
+    }
+    return res.data;
+  };
+
+  const banUser = async (userId: string) => {
+    const res = await apiClient.post(`/users/${userId}/ban`);
+    if (profileUser.value && profileUser.value.id === userId) {
+      profileUser.value.isBanned = !profileUser.value.isBanned;
+    }
+    return res.data;
+  };
+
+  const deleteUser = async (userId: string) => {
+    await apiClient.delete(`/users/${userId}`);
+    if (profileUser.value && profileUser.value.id === userId) {
+      clearProfile();
+    }
+  };
+
+  const fetchAllBadges = async () => {
+    const res = await apiClient.get("/users/badges/all");
+    return res.data;
+  };
+
+  const toggleBadge = async (userId: string, badgeId: string) => {
+    const res = await apiClient.post(`/users/${userId}/badges/${badgeId}`);
+    return res.data; // { assigned: boolean }
+  };
+
+  const reportUser = async (data: { reportedUserId?: string, reportedPostId?: string, reportedCommentId?: string, reason: string, subReason?: string }) => {
+    const res = await apiClient.post("/users/report", data);
+    return res.data;
   };
 
   return {
@@ -93,6 +153,12 @@ export const useProfileStore = defineStore("profile", () => {
     fetchProfileByUsername,
     fetchProfileContent,
     clearProfile,
-    updateFollowStateLocally
+    updateFollowStateLocally,
+    blockUser,
+    banUser,
+    deleteUser,
+    fetchAllBadges,
+    toggleBadge,
+    reportUser
   };
 });

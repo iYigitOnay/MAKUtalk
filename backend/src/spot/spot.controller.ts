@@ -38,7 +38,7 @@ export class SpotController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.spotService.findOne(+id);
+    return this.spotService.findOne(BigInt(id));
   }
 
   @Post()
@@ -50,12 +50,12 @@ export class SpotController {
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard)
   updateStatus(@CurrentUser() user: any, @Param('id') id: string, @Body('status') status: string) {
-    return this.spotService.updateStatus(user.id, +id, status);
+    return this.spotService.updateStatus(user.id, BigInt(id), status);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
   remove(@CurrentUser() user: any, @Param('id') id: string) {
-    return this.spotService.remove(user.id, +id);
+    return this.spotService.remove(user.id, BigInt(id));
   }
 }

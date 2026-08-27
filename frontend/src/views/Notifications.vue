@@ -141,25 +141,12 @@
             "
             class="cursor-pointer hover:opacity-80 transition-opacity"
           >
-            <img
-              v-if="notification.sender?.avatarUrl"
-              :src="getImageUrl(notification.sender.avatarUrl)"
-              :alt="notification.sender.username"
-              class="w-12 h-12 rounded-full object-cover flex-shrink-0"
-            />
-            <div
-              v-else
-              class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold flex-shrink-0"
-            >
-              {{
-                notification.sender?.username?.charAt(0).toUpperCase() || "?"
-              }}
-            </div>
+            <UserAvatar :user="notification.sender" size="lg" />
           </div>
 
           <!-- Content -->
           <div class="flex-1 min-w-0">
-            <p class="text-sm text-slate-900 dark:text-white">
+            <div class="text-sm text-slate-900 dark:text-white">
               <span
                 @click.stop="
                   router.push(`/profile/${notification.sender?.username}`)
@@ -181,46 +168,50 @@
                 class="text-gray-600 dark:text-gray-400"
               >
                 gönderini beğendi
-                <svg
-                  class="w-4 h-4 text-red-500 inline"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                  />
-                </svg>
               </span>
               <span
                 v-else-if="notification.type === 'COMMENT'"
                 class="text-gray-600 dark:text-gray-400"
               >
                 gönderine yorum yaptı
-                <svg
-                  class="w-4 h-4 text-primary-500 inline"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                  />
-                </svg>
               </span>
-            </p>
+              <span
+                v-else-if="notification.type === 'REPOST'"
+                class="text-gray-600 dark:text-gray-400 ml-1"
+              >
+                gönderini remaküledi
+              </span>
+              <span
+                v-else-if="notification.type === 'MENTION'"
+                class="text-gray-600 dark:text-gray-400 ml-1"
+              >
+                bir gönderide senden bahsetti
+              </span>
+            </div>
 
-            <!-- Post Preview (if exists) -->
-            <p
-              v-if="notification.post"
-              class="text-xs text-gray-500 dark:text-gray-400 mt-1 truncate"
+            <!-- Post & Comment Preview (Simplified) -->
+            <div
+              v-if="notification.post || notification.comment"
+              class="mt-1 space-y-1"
             >
-              "{{ notification.post.content }}"
-            </p>
+              <!-- Post content as context -->
+              <p
+                v-if="notification.post"
+                class="text-[11px] text-gray-500 dark:text-gray-400 italic line-clamp-1 opacity-70"
+              >
+                "{{ notification.post.content }}"
+              </p>
 
-            <p class="text-xs text-gray-500 dark:text-gray-500 mt-1">
+              <!-- Real comment content -->
+              <p
+                v-if="notification.type === 'COMMENT' && notification.comment"
+                class="text-sm font-bold text-indigo-600 dark:text-indigo-400 mt-0.5"
+              >
+                {{ notification.comment.content }}
+              </p>
+            </div>
+
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">
               {{ formatTime(notification.createdAt) }}
             </p>
           </div>
@@ -267,6 +258,7 @@ import { useRouter } from "vue-router";
 import { useNotificationsStore } from "@/stores/notifications";
 import { useAuthStore } from "@/stores/auth";
 import { useFollowStore } from "@/stores/follow";
+import UserAvatar from "@/components/UserAvatar.vue";
 
 const router = useRouter();
 const notificationsStore = useNotificationsStore();
@@ -304,11 +296,14 @@ const formatTime = (date: string) => {
 };
 
 const handleNotificationClick = async (notification: any) => {
-  // Mark as read if unread
-  if (!notification.read) {
+  // Mark as read locally first (Optimistic UI)
+  const wasUnread = !notification.read;
+  if (wasUnread) {
+    notification.read = true;
     try {
       await notificationsStore.markAsRead(notification.id);
     } catch (error) {
+      notification.read = false; // Rollback on error
       console.error("Error marking notification as read:", error);
     }
   }

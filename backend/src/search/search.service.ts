@@ -6,55 +6,46 @@ import { PrismaService } from '../prisma/prisma.service';
 export class SearchService {
   constructor(private prisma: PrismaService) {}
 
-  // Popüler hashtagleri çek (son 7 günün postlarından)
+  // Popüler hashtagleri çek (Yeni tablo yapısını kullanarak)
   async getPopularHashtags(limit = 10) {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-
-    const posts = await this.prisma.post.findMany({
+    const hashtags = await this.prisma.hashtag.findMany({
       where: {
-        createdAt: { gte: sevenDaysAgo },
-        published: true,
-        author: {
-          isPrivate: false,
-          isBanned: false,
-        },
+        usageCount: { gt: 0 },
       },
-      select: { content: true },
+      select: {
+        name: true,
+        usageCount: true,
+      },
+      orderBy: {
+        usageCount: 'desc',
+      },
+      take: limit,
     });
 
-    // Post içeriklerinden hashtagleri çıkar
-    const hashtagCounts: Record<string, number> = {};
-
-    posts.forEach(({ content }) => {
-      if (!content) return;
-      // Güvenli hashtag regex'i
-      const matches = content.match(/#[a-zA-Z0-9çğıöşüÇĞİÖŞÜ]+/g) || [];
-      matches.forEach((tag) => {
-        // Başındaki # işaretini at ve küçük harfe çevir
-        const normalized = tag.slice(1).toLowerCase();
-        if (normalized.length >= 2) {
-          hashtagCounts[normalized] = (hashtagCounts[normalized] || 0) + 1;
-        }
-      });
-    });
-
-    // Sırala ve limit uygula
-    return Object.entries(hashtagCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, limit)
-      .map(([tag, count]) => ({ tag, count }));
+    return hashtags.map((h) => ({ tag: h.name, count: h.usageCount }));
   }
 
   // Genel arama
-  async search(query: string, currentUserId?: number) {
+  async search(query: string, currentUserId?: bigint) {
     if (!query || query.trim().length < 2) return { posts: [], users: [] };
+
+    // Engel filtresi
+    let blockedIds: bigint[] = [];
+    if (currentUserId) {
+      const [blocking, blockedBy] = await Promise.all([
+        this.prisma.block.findMany({ where: { blockerId: currentUserId }, select: { blockedId: true } }),
+        this.prisma.block.findMany({ where: { blockedId: currentUserId }, select: { blockerId: true } }),
+      ]);
+      blockedIds = [...blocking.map(b => b.blockedId), ...blockedBy.map(b => b.blockerId)];
+    }
 
     const [posts, users] = await Promise.all([
       this.prisma.post.findMany({
         where: {
           published: true,
+          isDeleted: false,
           content: { contains: query, mode: 'insensitive' },
+          authorId: { notIn: blockedIds },
           author: {
             OR: [
               { isPrivate: false }, // Herkese açık hesaplar
@@ -69,16 +60,31 @@ export class SearchService {
               username: true,
               fullName: true,
               avatarUrl: true,
+              badges: { include: { badge: true } }
             },
           },
           category: true,
-          _count: { select: { likes: true, comments: true } },
+          repostOf: {
+            include: {
+              author: { select: { id: true, username: true, fullName: true, avatarUrl: true, badges: { include: { badge: true } } } },
+              category: true,
+              _count: { select: { likes: true, replies: true, reposts: true } }
+            }
+          },
+          _count: { 
+            select: { 
+              likes: true, 
+              replies: { where: { isDeleted: false } }, 
+              reposts: { where: { isDeleted: false } } 
+            } 
+          },
         },
         orderBy: { createdAt: 'desc' },
-        take: 20,
+        take: 30, // Sonuç sayısını biraz artırdık
       }),
       this.prisma.user.findMany({
         where: {
+          id: { notIn: blockedIds },
           OR: [
             { username: { contains: query, mode: 'insensitive' } },
             { fullName: { contains: query, mode: 'insensitive' } },
@@ -91,22 +97,51 @@ export class SearchService {
           fullName: true,
           avatarUrl: true,
           isPrivate: true,
+          badges: { include: { badge: true } },
           _count: { select: { followers: true, posts: true } },
         },
         take: 10,
       }),
     ]);
 
+    // Etkileşim durumlarını ekle (LIKE & REPOST)
+    if (currentUserId && posts.length > 0) {
+      const [userLikes, userReposts] = await Promise.all([
+        this.prisma.like.findMany({
+          where: { userId: currentUserId, postId: { in: posts.map(p => p.repostId || p.id) } },
+          select: { postId: true }
+        }),
+        this.prisma.post.findMany({
+          where: { authorId: currentUserId, repostId: { in: posts.map(p => p.repostId || p.id) }, isDeleted: false },
+          select: { repostId: true }
+        })
+      ]);
+
+      const likedIds = new Set(userLikes.map(l => l.postId));
+      const repostedIds = new Set(userReposts.map(r => r.repostId));
+
+      posts.forEach((p: any) => {
+        const targetId = p.repostId || p.id;
+        p.isLiked = likedIds.has(targetId);
+        p.isReposted = repostedIds.has(targetId);
+        if (p.repostOf) {
+          p.repostOf.isLiked = p.isLiked;
+          p.repostOf.isReposted = p.isReposted;
+        }
+      });
+    }
+
     return { posts, users };
   }
 
   // Hashtag'e göre postlar
-  async searchByHashtag(hashtag: string, currentUserId?: number) {
+  async searchByHashtag(hashtag: string, currentUserId?: bigint) {
     const tag = hashtag.startsWith('#') ? hashtag : `#${hashtag}`;
 
-    return this.prisma.post.findMany({
+    const posts = await this.prisma.post.findMany({
       where: {
         published: true,
+        isDeleted: false,
         content: { contains: tag, mode: 'insensitive' },
         author: {
           OR: [
@@ -117,13 +152,49 @@ export class SearchService {
       },
       include: {
         author: {
-          select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true },
+          select: { id: true, username: true, fullName: true, avatarUrl: true, isPrivate: true, badges: { include: { badge: true } } },
         },
         category: true,
-        _count: { select: { likes: true, comments: true } },
+        repostOf: {
+          include: {
+            author: { select: { id: true, username: true, fullName: true, avatarUrl: true, badges: { include: { badge: true } } } },
+            category: true,
+            _count: { select: { likes: true, replies: true, reposts: true } }
+          }
+        },
+        _count: { select: { likes: true, replies: true, reposts: true } },
       },
       orderBy: { createdAt: 'desc' },
       take: 50,
     });
+
+    // Etkileşim durumlarını ekle (LIKE & REPOST)
+    if (currentUserId && posts.length > 0) {
+      const [userLikes, userReposts] = await Promise.all([
+        this.prisma.like.findMany({
+          where: { userId: currentUserId, postId: { in: posts.map(p => p.repostId || p.id) } },
+          select: { postId: true }
+        }),
+        this.prisma.post.findMany({
+          where: { authorId: currentUserId, repostId: { in: posts.map(p => p.repostId || p.id) }, isDeleted: false },
+          select: { repostId: true }
+        })
+      ]);
+
+      const likedIds = new Set(userLikes.map(l => l.postId));
+      const repostedIds = new Set(userReposts.map(r => r.repostId));
+
+      posts.forEach((p: any) => {
+        const targetId = p.repostId || p.id;
+        p.isLiked = likedIds.has(targetId);
+        p.isReposted = repostedIds.has(targetId);
+        if (p.repostOf) {
+          p.repostOf.isLiked = p.isLiked;
+          p.repostOf.isReposted = p.isReposted;
+        }
+      });
+    }
+
+    return posts;
   }
 }

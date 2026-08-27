@@ -47,6 +47,7 @@ services:
       dockerfile: Dockerfile
       args:
         VITE_API_URL: ${VITE_API_URL}
+        VITE_CLARITY_ID: ${VITE_CLARITY_ID}
     container_name: makutalk_frontend
     restart: unless-stopped
     ports:

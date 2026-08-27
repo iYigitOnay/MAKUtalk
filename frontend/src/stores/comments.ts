@@ -2,14 +2,16 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import apiClient from "@/api/client";
 import type { Comment } from "@/types";
+import { usePostsStore } from "./posts";
 
 export const useCommentsStore = defineStore("comments", () => {
+  const postsStore = usePostsStore();
   const comments = ref<Comment[]>([]);
   const loading = ref(false);
-  const lastAddedCommentId = ref<number | null>(null);
-  const lastDeletedCommentId = ref<number | null>(null);
+  const lastAddedCommentId = ref<string | null>(null);
+  const lastDeletedCommentId = ref<string | null>(null);
 
-  const fetchComments = async (postId: number) => {
+  const fetchComments = async (postId: string) => {
     loading.value = true;
     try {
       const response = await apiClient.get<Comment[]>(
@@ -24,18 +26,29 @@ export const useCommentsStore = defineStore("comments", () => {
     }
   };
 
-  const createComment = async (postId: number, content: string) => {
+  const createComment = async (postId: string, content: string) => {
     loading.value = true;
     try {
-      const response = await apiClient.post<Comment>(
+      const response = await apiClient.post<any>(
         `/comments/post/${postId}`,
         {
           content,
         },
       );
-      comments.value.unshift(response.data);
-      lastAddedCommentId.value = response.data.id;
-      return response.data;
+      const newComment = response.data;
+      comments.value.unshift(newComment);
+      lastAddedCommentId.value = newComment.id;
+
+      // Global state'i güncelle (Backend'den gelen gerçek sayıyı kullan)
+      if (newComment.commentsCount !== undefined) {
+        postsStore.updatePostLocally(postId, {
+          _count: {
+            comments: newComment.commentsCount
+          }
+        });
+      }
+
+      return newComment;
     } catch (error: any) {
       throw error.response?.data || error;
     } finally {
@@ -43,12 +56,23 @@ export const useCommentsStore = defineStore("comments", () => {
     }
   };
 
-  const deleteComment = async (commentId: number) => {
+  const deleteComment = async (commentId: string) => {
     loading.value = true;
     try {
-      await apiClient.delete(`/comments/${commentId}`);
+      const response = await apiClient.delete(`/comments/${commentId}`);
+      const { commentsCount, postId } = response.data;
+
       comments.value = comments.value.filter((c) => c.id !== commentId);
       lastDeletedCommentId.value = commentId;
+
+      // Global state'i güncelle (Backend'den gelen gerçek sayıyı kullan)
+      if (postId && commentsCount !== undefined) {
+        postsStore.updatePostLocally(postId, {
+          _count: {
+            comments: commentsCount
+          }
+        });
+      }
     } catch (error: any) {
       throw error.response?.data || error;
     } finally {

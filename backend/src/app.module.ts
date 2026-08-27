@@ -17,6 +17,7 @@ import { AiModule } from './ai/ai.module';
 import { MailModule } from './mail/mail.module';
 import { CampusModule } from './campus/campus.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { NotificationsModule } from './notifications/notifications.module';
 import { HashtagModule } from './hashtags/hashtag.module';
 import { ChatModule } from './chat/chat.module';
@@ -24,6 +25,8 @@ import { ClubsModule } from './clubs/clubs.module';
 import { SpotModule } from './spot/spot.module';
 import { EventsModule } from './events/events.module';
 import { LoggerModule } from './common/logger/logger.module';
+import { SnowflakeModule } from './common/snowflake/snowflake.module';
+import { CommonModule } from './common/common.module';
 
 @Module({
   imports: [
@@ -31,6 +34,8 @@ import { LoggerModule } from './common/logger/logger.module';
       isGlobal: true,
     }),
     LoggerModule,
+    SnowflakeModule,
+    CommonModule,
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'uploads'),
       serveRoot: '/uploads',
@@ -38,21 +43,22 @@ import { LoggerModule } from './common/logger/logger.module';
     ThrottlerModule.forRoot([
       {
         name: 'short',
-        ttl: 1000, 
-        limit: 3,
+        ttl: 1000,
+        limit: 10, // 3 -> 10 yapıldı
       },
       {
         name: 'medium',
-        ttl: 60000, 
-        limit: 100,
+        ttl: 60000,
+        limit: 150, // 100 -> 150 yapıldı
       },
       {
         name: 'long',
-        ttl: 3600000, 
-        limit: 1000,
+        ttl: 3600000,
+        limit: 2000, // 1000 -> 2000 yapıldı
       },
     ]),
     ScheduleModule.forRoot(),
+    EventEmitterModule.forRoot(),
     PrismaModule,
     UsersModule,
     AuthModule,

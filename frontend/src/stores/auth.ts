@@ -15,9 +15,9 @@ export const useAuthStore = defineStore("auth", () => {
 
   // Computed
   const isAuthenticated = computed(() => !!token.value && !!user.value);
-  
-  // KRITIK: ID'yi number olarak garanti et
-  const userId = computed(() => user.value?.id ? Number(user.value.id) : null);
+
+  // Snowflake ID'ler string olarak saklanmalı
+  const userId = computed(() => user.value?.id || null);
 
   // Initialize - localStorage'dan token ve user'ı yükle
   const initialize = () => {
@@ -28,11 +28,8 @@ export const useAuthStore = defineStore("auth", () => {
       token.value = storedToken;
       try {
         const parsedUser = JSON.parse(storedUser);
-        // ID'yi number'a çevir
-        user.value = {
-          ...parsedUser,
-          id: Number(parsedUser.id),
-        };
+        // Snowflake ID'ler string olarak kalmalı
+        user.value = parsedUser;
       } catch (error) {
         console.error("Error parsing user from localStorage:", error);
         localStorage.removeItem("user");
@@ -52,11 +49,8 @@ export const useAuthStore = defineStore("auth", () => {
       const { access_token, user: userData } = response.data;
 
       token.value = access_token;
-      // ID'yi number olarak kaydet
-      user.value = {
-        ...userData,
-        id: Number(userData.id),
-      };
+      // Snowflake ID'ler string olarak gelmeli ve saklanmalı
+      user.value = userData;
 
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("user", JSON.stringify(user.value));
@@ -64,7 +58,17 @@ export const useAuthStore = defineStore("auth", () => {
       return user.value;
     } catch (error: any) {
       console.error("Login error:", error);
-      throw error.response?.data || error;
+      const errorData = error.response?.data;
+      const message = Array.isArray(errorData?.message)
+        ? errorData.message[0]
+        : errorData?.message || "Giriş başarısız.";
+
+      // YASAKLI KULLANICI KONTROLÜ
+      if (message === "BANNED_USER" || error.response?.status === 403) {
+        throw { type: "BANNED", message: "Hesabınız askıya alınmıştır." };
+      }
+
+      throw { message };
     } finally {
       loading.value = false;
     }
@@ -74,11 +78,15 @@ export const useAuthStore = defineStore("auth", () => {
   const register = async (data: RegisterData) => {
     loading.value = true;
     try {
-      const response = await apiClient.post<User>("/users/register", data);
+      const response = await apiClient.post<User>("/auth/register", data);
       return response.data;
     } catch (error: any) {
       console.error("Register error:", error);
-      throw error.response?.data || error;
+      const errorData = error.response?.data;
+      const message = Array.isArray(errorData?.message)
+        ? errorData.message[0]
+        : errorData?.message || "Kayıt başarısız.";
+      throw { message };
     } finally {
       loading.value = false;
     }

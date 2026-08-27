@@ -2,17 +2,15 @@ import {
   Controller,
   Post,
   Body,
-  HttpCode,
-  HttpStatus,
   Get,
   Param,
-  ParseIntPipe,
   Query,
   Patch,
   UseGuards,
   Delete,
   UseInterceptors,
   UploadedFiles,
+  BadRequestException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -28,7 +26,6 @@ export class UsersController {
     private readonly postsService: PostsService,
   ) {}
 
-  // STATIK ROUTE'LAR (ÖNCELİKLİ)
   @Get('badges/all')
   async getAllBadges() {
     return this.usersService.getAllBadges();
@@ -37,11 +34,14 @@ export class UsersController {
   @Get('me/blocked')
   @UseGuards(JwtAuthGuard)
   async getBlockedUsers(@CurrentUser() user) {
-    return this.usersService.getBlockedUsers(user.id);
+    return this.usersService.getBlockedUsers(BigInt(user.id));
   }
 
   @Get('search-mentions')
-  async searchMentions(@Query('q') query: string, @Query('role') role?: string) {
+  async searchMentions(
+    @Query('q') query: string,
+    @Query('role') role?: string,
+  ) {
     return this.usersService.searchMentions(query || '', role);
   }
 
@@ -50,34 +50,36 @@ export class UsersController {
     @Param('username') username: string,
     @Query('currentUserId') currentUserId?: string,
   ) {
-    const userId = currentUserId ? parseInt(currentUserId) : undefined;
+    const userId = currentUserId ? BigInt(currentUserId) : undefined;
     return this.usersService.findByUsername(username, userId);
   }
 
-  // DINAMIK ROUTE'LAR (DAHA SONRA)
   @Get(':id')
   async getUserProfile(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Query('currentUserId') currentUserId?: string,
   ) {
-    const userId = currentUserId ? parseInt(currentUserId) : undefined;
-    return this.usersService.findByIdWithStats(id, userId);
+    const userId = currentUserId ? BigInt(currentUserId) : undefined;
+    return this.usersService.findByIdWithStats(BigInt(id), userId);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(
-    FileFieldsInterceptor([
-      { name: 'avatar', maxCount: 1 },
-      { name: 'cover', maxCount: 1 },
-    ], {
-      limits: {
-        fileSize: 20 * 1024 * 1024, // 20 MB
-      }
-    }),
+    FileFieldsInterceptor(
+      [
+        { name: 'avatar', maxCount: 1 },
+        { name: 'cover', maxCount: 1 },
+      ],
+      {
+        limits: {
+          fileSize: 20 * 1024 * 1024, // 20 MB
+        },
+      },
+    ),
   )
   async updateProfile(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @CurrentUser() user,
     @Body() updateUserDto: UpdateUserDto,
     @UploadedFiles()
@@ -86,65 +88,77 @@ export class UsersController {
       cover?: Express.Multer.File[];
     },
   ) {
-    return this.usersService.updateProfile(id, user.id, updateUserDto, files);
+    return this.usersService.updateProfile(
+      BigInt(id),
+      BigInt(user.id),
+      updateUserDto,
+      files,
+    );
   }
 
   @Get(':id/posts')
   async getUserPosts(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Query('currentUserId') currentUserId?: string,
   ) {
-    const userId = currentUserId ? parseInt(currentUserId) : undefined;
-    return this.postsService.getUserPosts(id, userId);
+    const userId = currentUserId ? BigInt(currentUserId) : undefined;
+    return this.postsService.getUserPosts(BigInt(id), userId);
   }
 
   @Get(':id/replies')
   async getUserReplies(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id') id: string,
     @Query('currentUserId') currentUserId?: string,
   ) {
-    const userId = currentUserId ? parseInt(currentUserId) : undefined;
-    return this.postsService.getUserReplies(id, userId);
+    const userId = currentUserId ? BigInt(currentUserId) : undefined;
+    return this.postsService.getUserReplies(BigInt(id), userId);
   }
 
   @Post(':id/block')
   @UseGuards(JwtAuthGuard)
-  async toggleBlock(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user,
-  ) {
-    return this.usersService.toggleBlock(user.id, id);
+  async toggleBlock(@Param('id') id: string, @CurrentUser() user) {
+    return this.usersService.toggleBlock(BigInt(user.id), BigInt(id));
   }
 
   @Post('report')
   @UseGuards(JwtAuthGuard)
-  async reportUser(
-    @CurrentUser() user,
-    @Body() body: { reportedUserId?: number; reportedPostId?: number; reportedCommentId?: number; reason: string; subReason?: string },
-  ) {
-    return this.usersService.createReport(user.id, body);
+  async reportUser(@CurrentUser() user, @Body() body: any) {
+    // Body içindeki ID'leri BigInt'e çevir (Eğer varsa)
+    const data = { ...body };
+    if (data.reportedUserId) data.reportedUserId = BigInt(data.reportedUserId);
+    if (data.reportedPostId) data.reportedPostId = BigInt(data.reportedPostId);
+    if (data.reportedCommentId)
+      data.reportedCommentId = BigInt(data.reportedCommentId);
+    if (data.reportedMessageId)
+      data.reportedMessageId = BigInt(data.reportedMessageId);
+
+    return this.usersService.createReport(BigInt(user.id), data);
   }
 
   @Post(':id/ban')
   @UseGuards(JwtAuthGuard)
-  async toggleBan(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
-    return this.usersService.toggleBan(id, user.id);
+  async toggleBan(@Param('id') id: string, @CurrentUser() user) {
+    return this.usersService.toggleBan(BigInt(id), BigInt(user.id));
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  async deleteUserByAdmin(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
-    return this.usersService.deleteUser(id, user.id);
+  async deleteUserByAdmin(@Param('id') id: string, @CurrentUser() user) {
+    return this.usersService.deleteUser(BigInt(id), BigInt(user.id));
   }
 
   @Post(':id/badges/:badgeId')
   @UseGuards(JwtAuthGuard)
   async toggleBadge(
-    @Param('id', ParseIntPipe) userId: number,
-    @Param('badgeId', ParseIntPipe) badgeId: number,
+    @Param('id') userId: string,
+    @Param('badgeId') badgeId: string,
     @CurrentUser() admin,
   ) {
-    return this.usersService.toggleUserBadge(userId, badgeId, admin.id);
+    return this.usersService.toggleUserBadge(
+      BigInt(userId),
+      BigInt(badgeId),
+      BigInt(admin.id),
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -153,7 +167,13 @@ export class UsersController {
     @CurrentUser() user,
     @Body() body: { type: string; message: string },
   ) {
-    const userId = user ? user.id : null;
-    return this.usersService.createFeedback(userId, body.type, body.message);
+    if (!user || !user.id) {
+      throw new BadRequestException('Kullanıcı kimliği gerekli');
+    }
+    return this.usersService.createFeedback(
+      BigInt(user.id),
+      body.type,
+      body.message,
+    );
   }
 }

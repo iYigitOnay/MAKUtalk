@@ -1,4 +1,4 @@
-﻿<!-- src/views/Settings.vue -->
+<!-- src/views/Settings.vue -->
 <template>
   <div
     class="max-w-2xl mx-auto border-x border-gray-200 dark:border-primary-900/30 min-h-screen flex flex-col bg-white dark:bg-gray-950 transition-colors duration-300 relative"
@@ -555,7 +555,7 @@
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1-1v3M4 7h16"
               /></svg
             >HESABI KALICI OLARAK SİL
           </button>
@@ -838,7 +838,7 @@
           <p
             class="text-[10px] font-black text-gray-300 dark:text-gray-600 uppercase tracking-[0.5em]"
           >
-            MAKUtalk v1.4.0
+            MAKUtalk v1.4.1
           </p>
         </div>
       </div>
@@ -882,6 +882,49 @@
 
         <!-- Menü Maddeleri -->
         <div class="space-y-3">
+          <!-- GÜNCELLEME NOTLARI BUTONU -->
+          <button
+            @click="activeSection = 'updates'"
+            class="w-full p-5 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-primary-900/10 flex items-center justify-between hover:scale-[1.02] transition-all"
+          >
+            <div class="flex items-center gap-4">
+              <div
+                class="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600"
+              >
+                <svg
+                  class="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              </div>
+              <span
+                class="text-sm font-black text-gray-900 dark:text-white uppercase tracking-wider"
+                >Güncelleme Notları</span
+              >
+            </div>
+            <svg
+              class="w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </button>
+
           <button
             @click="activeMoreItem = 'contact'"
             class="w-full p-5 bg-gray-50 dark:bg-gray-900/40 rounded-2xl border border-gray-100 dark:border-primary-900/10 flex items-center justify-between hover:scale-[1.02] transition-all"
@@ -1041,6 +1084,87 @@
           <p class="text-[9px] text-gray-400 uppercase tracking-[0.3em]">
             MAKUtalk ile kampüs elinin altında.
           </p>
+        </div>
+      </div>
+
+      <!-- Güncelleme Notları İçeriği -->
+      <div
+        v-if="activeSection === 'updates'"
+        class="space-y-8 pb-20 font-black"
+      >
+        <div class="relative pl-8 space-y-12">
+          <!-- Timeline Vertical Line -->
+          <div
+            class="absolute left-3 top-2 bottom-2 w-0.5 bg-gray-100 dark:bg-primary-900/20"
+          ></div>
+
+          <div v-for="v in changelog" :key="v.version" class="relative">
+            <!-- Timeline Dot -->
+            <div
+              class="absolute -left-[25px] top-1.5 w-4 h-4 rounded-full border-4 border-white dark:border-gray-950 shadow-sm"
+              :class="
+                v.version.includes('1.4.1')
+                  ? 'bg-blue-500 scale-125'
+                  : 'bg-gray-300 dark:bg-gray-700'
+              "
+            ></div>
+
+            <div class="space-y-4">
+              <div class="flex items-center gap-3">
+                <span
+                  class="px-3 py-1 bg-blue-600 text-white text-[10px] font-black rounded-full tracking-widest"
+                  >{{ v.version }}</span
+                >
+                <span
+                  class="text-[10px] text-gray-400 uppercase tracking-wider"
+                  >{{ v.date }}</span
+                >
+              </div>
+
+              <div
+                class="bg-gray-50/50 dark:bg-gray-900/40 rounded-3xl border border-gray-100 dark:border-primary-900/10 p-6 space-y-6"
+              >
+                <div v-if="v.added?.length" class="space-y-3">
+                  <h4
+                    class="text-[10px] text-blue-500 uppercase tracking-[0.2em] font-black"
+                  >
+                    Yenilikler
+                  </h4>
+                  <ul class="space-y-2">
+                    <li
+                      v-for="item in v.added"
+                      :key="item"
+                      class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300 font-medium"
+                    >
+                      <span class="text-blue-500 mt-1">•</span>
+                      {{ item }}
+                    </li>
+                  </ul>
+                </div>
+
+                <div
+                  v-if="v.fixed?.length"
+                  class="space-y-3 pt-2 border-t border-gray-100 dark:border-white/5"
+                >
+                  <h4
+                    class="text-[10px] text-emerald-500 uppercase tracking-[0.2em] font-black"
+                  >
+                    Düzelttik
+                  </h4>
+                  <ul class="space-y-2">
+                    <li
+                      v-for="item in v.fixed"
+                      :key="item"
+                      class="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-300 font-medium"
+                    >
+                      <span class="text-emerald-500 mt-1">✓</span>
+                      {{ item }}
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -1250,6 +1374,42 @@ const feedbackType = ref("suggestion");
 const feedbackMessage = ref("");
 const feedbackLoading = ref(false);
 
+const changelog = [
+  {
+    version: "v1.4.1",
+    date: "28 Mart 2026",
+    added: [
+      "Profil Akademik Kimliği: Bölüm ve Sınıf bilgileri eklendi.",
+      "Dinamik Favicon: Bildirim türüne göre renkli sekme ikonları.",
+      "Güncelleme Notları Sayfası: Yapılan yenilikleri buradan takip edebilirsiniz.",
+    ],
+    fixed: [
+      "Backend tip hataları ve profil sayfası yerleşim bozuklukları giderildi.",
+    ],
+  },
+  {
+    version: "v1.4.0",
+    date: "27 Mart 2026",
+    added: [
+      "Video Desteği: Paylaşımlara video ekleme ve izleme.",
+      "Snowflake ID: 64-bit yeni kimlik sistemi mimarisi.",
+    ],
+  },
+  {
+    version: "v1.3.0",
+    date: "25 Mart 2026",
+    added: [
+      "Hashtag & Trendler: Kampüs gündemini takip etme.",
+      "Gelişmiş Gizlilik Kontrolleri.",
+    ],
+  },
+  {
+    version: "v1.0.0",
+    date: "20 Mart 2026",
+    added: ["MAKUtalk Lansmanı: İlk büyük adım!"],
+  },
+];
+
 const submitFeedback = async () => {
   feedbackLoading.value = true;
   try {
@@ -1387,6 +1547,7 @@ const sectionTitle = computed(() => {
     blocked: "Engellenen Hesaplar",
     ata: "Saygı Köşesi",
     more: "Daha Fazla",
+    updates: "Güncelleme Notları",
   };
   return titles[activeSection.value || ""] || "Ayarlar";
 });

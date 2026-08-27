@@ -8,8 +8,7 @@ import {
   Body, 
   UseGuards, 
   ForbiddenException, 
-  NotFoundException, 
-  ParseIntPipe 
+  NotFoundException
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -77,17 +76,18 @@ export class AdminController {
   }
 
   @Patch('users/:id/ban')
-  async toggleBan(@CurrentUser() user, @Param('id', ParseIntPipe) targetId: number) {
+  async toggleBan(@CurrentUser() user, @Param('id') targetId: string) {
     this.checkAdmin(user);
-    const target = await this.prisma.user.findUnique({ where: { id: targetId } });
+    const id = BigInt(targetId);
+    const target = await this.prisma.user.findUnique({ where: { id } });
     if (!target) throw new NotFoundException();
-    return this.prisma.user.update({ where: { id: targetId }, data: { isBanned: !target.isBanned } });
+    return this.prisma.user.update({ where: { id }, data: { isBanned: !target.isBanned } });
   }
 
   @Patch('users/:id/role')
-  async updateRole(@CurrentUser() user, @Param('id', ParseIntPipe) targetId: number, @Body('role') role: any) {
+  async updateRole(@CurrentUser() user, @Param('id') targetId: string, @Body('role') role: any) {
     this.checkAdmin(user);
-    return this.prisma.user.update({ where: { id: targetId }, data: { role } });
+    return this.prisma.user.update({ where: { id: BigInt(targetId) }, data: { role } });
   }
 
   @Get('reports')
@@ -98,16 +98,17 @@ export class AdminController {
       include: {
         reporter: { select: { username: true, avatarUrl: true } },
         reportedPost: { select: { content: true, author: { select: { username: true } } } },
-        reportedComment: { select: { content: true, user: { select: { username: true } } } }
+        reportedComment: { select: { content: true, user: { select: { username: true } } } },
+        reportedMessage: { select: { id: true, content: true, sender: { select: { username: true } } } }
       },
       orderBy: { createdAt: 'desc' }
     });
   }
 
   @Patch('reports/:id/status')
-  async updateReportStatus(@CurrentUser() user, @Param('id', ParseIntPipe) id: number, @Body('status') status: string) {
+  async updateReportStatus(@CurrentUser() user, @Param('id') id: string, @Body('status') status: string) {
     this.checkAdmin(user);
-    return this.prisma.report.update({ where: { id }, data: { status } });
+    return this.prisma.report.update({ where: { id: BigInt(id) }, data: { status } });
   }
 
   @Get('clubs')
@@ -120,15 +121,21 @@ export class AdminController {
   }
 
   @Patch('clubs/:id/approve')
-  async approveClub(@CurrentUser() user, @Param('id', ParseIntPipe) id: number, @Body('type') type: string) {
+  async approveClub(@CurrentUser() user, @Param('id') id: string, @Body('type') type: string) {
     this.checkAdmin(user);
-    const club = await this.prisma.club.findUnique({ where: { id } });
+    const clubId = BigInt(id);
+    const club = await this.prisma.club.findUnique({ where: { id: clubId } });
     if (!club) throw new NotFoundException();
     const data: any = {};
     if (type === 'admin') data.adminApproval = true;
     else data.academicApproval = true;
-    if ((type === 'admin' || club.adminApproval) && (type === 'academic' || club.academicApproval)) data.status = 'APPROVED';
-    return this.prisma.club.update({ where: { id }, data });
+    
+    // Eğer her iki taraf da onaylamışsa veya tek bir onay ile status değişiyorsa logic burada
+    if ((type === 'admin' || club.adminApproval) && (type === 'academic' || club.academicApproval)) {
+      data.status = 'APPROVED';
+    }
+    
+    return this.prisma.club.update({ where: { id: clubId }, data });
   }
 
   @Get('spot')
@@ -142,15 +149,14 @@ export class AdminController {
   }
 
   @Delete('spot/:id')
-  async deleteSpot(@CurrentUser() user, @Param('id', ParseIntPipe) id: number) {
+  async deleteSpot(@CurrentUser() user, @Param('id') id: string) {
     this.checkAdmin(user);
-    return this.prisma.spotListing.update({ where: { id }, data: { status: 'CLOSED' } });
+    return this.prisma.spotListing.update({ where: { id: BigInt(id) }, data: { status: 'CLOSED' } });
   }
 
   @Get('trends')
   async getTrends(@CurrentUser() user) {
     this.checkAdmin(user);
-    // GERÇEK ANALİZ: Post içeriklerinden # etiketlerini çıkarıp sayalım
     const posts = await this.prisma.post.findMany({ 
       where: { isDeleted: false, content: { contains: '#' } },
       select: { content: true }
@@ -204,9 +210,9 @@ export class AdminController {
   }
 
   @Delete('events/:id')
-  async deleteEvent(@CurrentUser() user, @Param('id', ParseIntPipe) id: number) {
+  async deleteEvent(@CurrentUser() user, @Param('id') id: string) {
     this.checkAdmin(user);
-    return this.prisma.event.delete({ where: { id } });
+    return this.prisma.event.delete({ where: { id: BigInt(id) } });
   }
 
   @Get('logs')
@@ -235,8 +241,20 @@ export class AdminController {
   }
 
   @Delete('posts/:id')
-  async deletePost(@CurrentUser() user, @Param('id', ParseIntPipe) id: number) {
+  async deletePost(@CurrentUser() user, @Param('id') id: string) {
     this.checkAdmin(user);
-    return this.prisma.post.update({ where: { id }, data: { isDeleted: true } });
+    return this.prisma.post.update({ where: { id: BigInt(id) }, data: { isDeleted: true } });
+  }
+
+  @Delete('comments/:id')
+  async deleteComment(@CurrentUser() user, @Param('id') id: string) {
+    this.checkAdmin(user);
+    return this.prisma.comment.update({ where: { id: BigInt(id) }, data: { isDeleted: true } });
+  }
+
+  @Delete('messages/:id')
+  async deleteMessage(@CurrentUser() user, @Param('id') id: string) {
+    this.checkAdmin(user);
+    return this.prisma.message.update({ where: { id: BigInt(id) }, data: { isDeleted: true } });
   }
 }

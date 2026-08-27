@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Delete,
-  Param,
-  ParseIntPipe,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Get, Post, Param, UseGuards, Query, Delete, Patch } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -17,30 +9,33 @@ export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
   @Get()
-  getUserNotifications(@CurrentUser() user) {
-    return this.notificationsService.getUserNotifications(user.id);
+  async getNotifications(
+    @CurrentUser() user,
+    @Query('limit') limit?: string,
+  ) {
+    return this.notificationsService.getUserNotifications(
+      BigInt(user.id),
+      limit ? parseInt(limit) : 20,
+    );
   }
 
   @Get('unread-count')
-  getUnreadCount(@CurrentUser() user) {
-    return this.notificationsService.getUnreadCount(user.id);
+  async getUnreadCount(@CurrentUser() user) {
+    return this.notificationsService.getUnreadCount(BigInt(user.id));
   }
 
   @Patch(':id/read')
-  markAsRead(@Param('id', ParseIntPipe) id: number, @CurrentUser() user) {
-    return this.notificationsService.markAsRead(id, user.id);
+  async markAsRead(@Param('id') id: string, @CurrentUser() user) {
+    return this.notificationsService.markAsRead(BigInt(id), BigInt(user.id));
   }
 
   @Patch('mark-all-read')
-  markAllAsRead(@CurrentUser() user) {
-    return this.notificationsService.markAllAsRead(user.id);
+  async markAllAsRead(@CurrentUser() user) {
+    return this.notificationsService.markAllAsRead(BigInt(user.id));
   }
 
   @Delete(':id')
-  deleteNotification(
-    @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user,
-  ) {
-    return this.notificationsService.deleteNotification(id, user.id);
+  async deleteNotification(@Param('id') id: string, @CurrentUser() user) {
+    return this.notificationsService.deleteNotification(BigInt(id), BigInt(user.id));
   }
 }

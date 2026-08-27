@@ -15,14 +15,14 @@ jobs:
           host: ${{ secrets.HOST }}
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: DB_PASSWORD,DATABASE_URL,JWT_SECRET,RESEND_API_KEY,GEMINI_API_KEY,SMTP_FROM,FRONTEND_URL,VITE_API_URL
+          command_timeout: 45m
+          envs: DB_PASSWORD,DATABASE_URL,JWT_SECRET,RESEND_API_KEY,GEMINI_API_KEY,SMTP_FROM,FRONTEND_URL,VITE_API_URL,VITE_CLARITY_ID
           script: |
             set -e
 
             mkdir -p ~/makutalk
             cd ~/makutalk
 
-            # Repo yoksa clone, varsa pull
             if [ ! -d ".git" ]; then
               git clone https://github.com/${{ github.repository }}.git .
             else
@@ -30,33 +30,61 @@ jobs:
               git reset --hard origin/main
             fi
 
-            # .env dosyasını güvenli şekilde oluştur
-            cat > .env << EOF
+            cat > .env << 'ENVEOF'
             DB_USERNAME=admin
-            DB_PASSWORD=${DB_PASSWORD}
+            DB_PASSWORD=$DB_PASSWORD
             DB_NAME=makutalk_db
-            DATABASE_URL=${DATABASE_URL}
-            JWT_SECRET=${JWT_SECRET}
-            RESEND_API_KEY=${RESEND_API_KEY}
-            GEMINI_API_KEY=${GEMINI_API_KEY}
-            SMTP_FROM=${SMTP_FROM}
-            FRONTEND_URL=${FRONTEND_URL}
-            VITE_API_URL=${VITE_API_URL}
-            EOF
+            DATABASE_URL=$DATABASE_URL
+            JWT_SECRET=$JWT_SECRET
+            RESEND_API_KEY=$RESEND_API_KEY
+            GEMINI_API_KEY=$GEMINI_API_KEY
+            SMTP_FROM=$SMTP_FROM
+            FRONTEND_URL=$FRONTEND_URL
+            VITE_API_URL=$VITE_API_URL
+            VITE_CLARITY_ID=$VITE_CLARITY_ID
+            ENVEOF
 
-            # Build ve başlat (SIRALI BUILD - 1GB RAM Optimizasyonu)
-            docker compose down --remove-orphans
+            # DB'yi kapatma — sadece backend/frontend'i durdur
+            docker compose stop backend frontend
 
-            echo "🐘 Veritabanı başlatılıyor..."
-            docker compose up -d db
+            # DB zaten çalışıyorsa atlat, yoksa başlat
+            if ! docker compose ps db | grep -q "Up"; then
+              echo "🐘 Veritabanı başlatılıyor..."
+              docker compose up -d db
 
-            echo "⚙️ Backend build ediliyor..."
+              echo "⏳ DB hazır olana kadar bekleniyor..."
+              for i in $(seq 1 30); do
+                docker compose exec -T db pg_isready -U admin -d makutalk_db && break
+                echo "  ($i/30) Bekleniyor..."
+                sleep 2
+              done
+            else
+              echo "✅ DB zaten çalışıyor, atlanıyor."
+            fi
+
+            # Container'lar çalışırken image'ları build et
+            echo "⚙️ Backend image build ediliyor..."
             docker compose build backend
-            docker compose up -d backend
 
-            echo "🎨 Frontend build ediliyor (RAM yoğun işlem)..."
+            echo "🎨 Frontend image build ediliyor..."
             docker compose build frontend
-            docker compose up -d frontend
+
+            # Migration
+            echo "🗄️ Prisma schema güncelleniyor..."
+            docker compose run --rm \
+              -e NODE_OPTIONS="--max-old-space-size=256" \
+              backend \
+              npx prisma db push --accept-data-loss
+
+            # Hızlı switch — downtime ~3-5 sn
+            echo "🚀 Backend güncelleniyor..."
+            docker compose up -d --force-recreate --no-deps backend
+
+            echo "⏳ Backend hazırlanıyor..."
+            sleep 10
+
+            echo "🎨 Frontend güncelleniyor..."
+            docker compose up -d --force-recreate --no-deps frontend
 
             docker image prune -f
 
@@ -70,3 +98,4 @@ jobs:
           SMTP_FROM: ${{ secrets.SMTP_FROM }}
           FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_CLARITY_ID: ${{ secrets.VITE_CLARITY_ID }}

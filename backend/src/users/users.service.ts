@@ -7,14 +7,19 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { MailService } from '../mail/mail.service';
+import { SnowflakeService } from '../common/snowflake/snowflake.service';
+import { HashtagService } from '../hashtags/hashtag.service';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma: PrismaService,
     private mailService: MailService,
+    private snowflakeService: SnowflakeService,
+    private readonly hashtagService: HashtagService,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -38,7 +43,6 @@ export class UsersService {
       100000 + Math.random() * 900000,
     ).toString();
 
-    // AKADEMİSYEN OTOMATIK ROL ATAMASI (@mehmetakif.edu.tr)
     let role: any = 'USER';
     if (
       createUserDto.email.endsWith('@mehmetakif.edu.tr') &&
@@ -49,6 +53,7 @@ export class UsersService {
 
     const user = await this.prisma.user.create({
       data: {
+        id: this.snowflakeService.getNextId(),
         ...createUserDto,
         password: hashedPassword,
         role: role,
@@ -56,14 +61,17 @@ export class UsersService {
       },
     });
 
-    // AKADEMİSYEN ROZETİ OTOMATIK ATAMA
     if (role === 'ACADEMIC') {
       const academicBadge = await this.prisma.badge.findFirst({
         where: { name: 'Akademisyen' },
       });
       if (academicBadge) {
         await this.prisma.userBadge.create({
-          data: { userId: user.id, badgeId: academicBadge.id },
+          data: {
+            id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+            userId: user.id,
+            badgeId: academicBadge.id,
+          },
         });
       }
     }
@@ -88,46 +96,88 @@ export class UsersService {
     return this.prisma.user.findUnique({ where: { username } });
   }
 
-  // Controller'ın beklediği metod
-  async findByUsername(username: string, currentUserId?: number) {
+  async findByUsername(username: string, currentUserId?: bigint) {
     const user = await this.prisma.user.findUnique({
       where: { username },
       include: {
         badges: { include: { badge: true } },
-        _count: { select: { posts: { where: { isDeleted: false } }, followers: true, following: true } },
+        _count: {
+          select: {
+            posts: { where: { isDeleted: false } },
+            followers: true,
+            following: true,
+          },
+        },
       },
     });
 
     if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
 
+    let followStatus: 'FOLLOWING' | 'PENDING' | 'NONE' = 'NONE';
     let isFollowing = false;
-    let isBlocked = false;
+    let isBlockedByMe = false;
+    let isBlockedMe = false;
 
     if (currentUserId) {
-      const follow = await this.prisma.follow.findFirst({
-        where: { followerId: currentUserId, followingId: user.id },
-      });
-      isFollowing = !!follow;
+      const [follow, request, blockByMe, blockMe] = await Promise.all([
+        this.prisma.follow.findFirst({
+          where: { followerId: currentUserId, followingId: user.id },
+        }),
+        this.prisma.followRequest.findFirst({
+          where: { senderId: currentUserId, receiverId: user.id },
+        }),
+        this.prisma.block.findFirst({
+          where: { blockerId: currentUserId, blockedId: user.id },
+        }),
+        this.prisma.block.findFirst({
+          where: { blockerId: user.id, blockedId: currentUserId },
+        }),
+      ]);
 
-      const block = await this.prisma.block.findFirst({
-        where: { blockerId: currentUserId, blockedId: user.id },
-      });
-      isBlocked = !!block;
+      if (follow) {
+        followStatus = 'FOLLOWING';
+        isFollowing = true;
+      } else if (request) {
+        followStatus = 'PENDING';
+      }
+
+      isBlockedByMe = !!blockByMe;
+      isBlockedMe = !!blockMe;
     }
 
-    return { ...user, isFollowing, isBlocked };
+    // Eğer o beni engellediyse, verileri kısıtlı döndürelim (Privacy)
+    if (isBlockedMe) {
+      return {
+        id: user.id,
+        username: user.username,
+        fullName: user.fullName,
+        avatarUrl: user.avatarUrl,
+        isBlockedMe: true,
+        isBlockedByMe: false, // O beni engellediği için benim engelim önemsiz kalabilir
+        isPrivate: true,
+        _count: { posts: 0, followers: 0, following: 0 },
+      };
+    }
+
+    return { ...user, isFollowing, followStatus, isBlockedByMe, isBlockedMe };
   }
 
-  async findById(id: number) {
+  async findById(id: bigint) {
     return this.prisma.user.findUnique({ where: { id } });
   }
 
-  async findByIdWithStats(id: number, currentUserId?: number) {
+  async findByIdWithStats(id: bigint, currentUserId?: bigint) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       include: {
         badges: { include: { badge: true } },
-        _count: { select: { posts: { where: { isDeleted: false } }, followers: true, following: true } },
+        _count: {
+          select: {
+            posts: { where: { isDeleted: false } },
+            followers: true,
+            following: true,
+          },
+        },
       },
     });
     if (!user) throw new NotFoundException();
@@ -146,9 +196,9 @@ export class UsersService {
   }
 
   async updateProfile(
-    userId: number,
-    currentUserId: number,
-    data: any,
+    userId: bigint,
+    currentUserId: bigint,
+    updateUserDto: UpdateUserDto,
     files?: {
       avatar?: Express.Multer.File[];
       cover?: Express.Multer.File[];
@@ -168,11 +218,23 @@ export class UsersService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('Kullanıcı bulunamadı.');
 
-    const updateData = { ...data };
+    const updateData: any = {
+      fullName: updateUserDto.fullName,
+      bio: updateUserDto.bio,
+      department: updateUserDto.department,
+      class: updateUserDto.class,
+    };
+
+    // isPrivate alanını kesin olarak boolean'a zorla (String "false" -> false)
+    if (updateUserDto.isPrivate !== undefined) {
+      updateData.isPrivate = String(updateUserDto.isPrivate) === 'true';
+    }
+
     const uploadedFiles: string[] = [];
+    console.log('[UsersService] Gelen DTO isPrivate:', updateUserDto.isPrivate, typeof updateUserDto.isPrivate);
+    console.log('[UsersService] Prisma Update Öncesi Veri:', updateData);
 
     try {
-      // AVATAR İŞLEME
       if (files?.avatar?.[0]) {
         const file = files.avatar[0];
         const fileName = `avatar-${userId}-${Date.now()}.webp`;
@@ -221,7 +283,7 @@ export class UsersService {
         }
       }
 
-      return await this.prisma.user.update({
+      const updatedUser = await this.prisma.user.update({
         where: { id: userId },
         data: updateData,
         select: {
@@ -237,6 +299,21 @@ export class UsersService {
           class: true,
         },
       });
+
+      // Eğer gizlilik durumu değişmişse, arka planda hashtag senkronizasyonunu başlat
+      if (user.isPrivate !== updatedUser.isPrivate) {
+        console.log('[UsersService] Gizlilik Değişti! Hashtag Senkronizasyonu Başlatılıyor...');
+        this.hashtagService
+          .syncUserHashtagsAfterPrivacyChange(userId, updatedUser.isPrivate)
+          .catch((err) =>
+            console.error(
+              'Gizlilik değişimi hashtag senkronizasyon hatası:',
+              err,
+            ),
+          );
+      }
+
+      return updatedUser;
     } catch (error) {
       uploadedFiles.forEach((filePath) => {
         if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
@@ -245,7 +322,7 @@ export class UsersService {
     }
   }
 
-  async toggleBan(userId: number, currentUserId: number) {
+  async toggleBan(userId: bigint, currentUserId: bigint) {
     const admin = await this.prisma.user.findUnique({
       where: { id: currentUserId },
     });
@@ -260,7 +337,7 @@ export class UsersService {
     });
   }
 
-  async deleteUser(userId: number, currentUserId: number) {
+  async deleteUser(userId: bigint, currentUserId: bigint) {
     const admin = await this.prisma.user.findUnique({
       where: { id: currentUserId },
     });
@@ -273,7 +350,7 @@ export class UsersService {
     return this.prisma.user.delete({ where: { id: userId } });
   }
 
-  async toggleBlock(blockerId: number, blockedId: number) {
+  async toggleBlock(blockerId: bigint, blockedId: bigint) {
     const existing = await this.prisma.block.findFirst({
       where: { blockerId, blockedId },
     });
@@ -281,8 +358,13 @@ export class UsersService {
       await this.prisma.block.delete({ where: { id: existing.id } });
       return { blocked: false };
     }
-    await this.prisma.block.create({ data: { blockerId, blockedId } });
-    // Bloklayınca takibi de bırak
+    await this.prisma.block.create({
+      data: {
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        blockerId,
+        blockedId,
+      },
+    });
     await this.prisma.follow.deleteMany({
       where: {
         OR: [
@@ -294,7 +376,7 @@ export class UsersService {
     return { blocked: true };
   }
 
-  async getBlockedUsers(userId: number) {
+  async getBlockedUsers(userId: bigint) {
     return this.prisma.block.findMany({
       where: { blockerId: userId },
       include: {
@@ -305,21 +387,23 @@ export class UsersService {
     });
   }
 
-  async createReport(reporterId: number, data: any) {
+  async createReport(reporterId: bigint, data: any) {
     const {
       reportedUserId,
       reportedPostId,
       reportedCommentId,
+      reportedMessageId,
       reason,
       subReason,
     } = data;
 
-    const existingReport = await (this.prisma as any).report.findFirst({
+    const existingReport = await this.prisma.report.findFirst({
       where: {
         reporterId,
         reportedPostId: reportedPostId || null,
         reportedCommentId: reportedCommentId || null,
         reportedUserId: reportedUserId || null,
+        reportedMessageId: reportedMessageId || null,
       },
     });
 
@@ -329,12 +413,14 @@ export class UsersService {
       );
     }
 
-    const report = await (this.prisma as any).report.create({
+    const report = await this.prisma.report.create({
       data: {
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
         reporterId,
         reportedUserId,
         reportedPostId,
         reportedCommentId,
+        reportedMessageId,
         reason,
         subReason,
       },
@@ -343,7 +429,7 @@ export class UsersService {
     const THRESHOLD = 3;
 
     if (reportedPostId) {
-      const reportCount = await (this.prisma as any).report.count({
+      const reportCount = await this.prisma.report.count({
         where: { reportedPostId },
       });
 
@@ -352,35 +438,47 @@ export class UsersService {
           where: { id: reportedPostId },
           data: { published: false },
         });
-        console.warn(
-          `[Moderasyon] Post #${reportedPostId} çok fazla şikayet aldığı için otomatik gizlendi.`,
-        );
       }
     }
 
     if (reportedCommentId) {
-      const reportCount = await (this.prisma as any).report.count({
+      const reportCount = await this.prisma.report.count({
         where: { reportedCommentId },
       });
 
       if (reportCount >= THRESHOLD) {
         await this.prisma.comment.update({
           where: { id: reportedCommentId },
-          data: { isDeleted: true }, // Yorumu gizle (Soft Delete)
+          data: { isDeleted: true },
         });
-        console.warn(
-          `[Moderasyon] Yorum #${reportedCommentId} otomatik olarak karantinaya alındı.`,
-        );
+      }
+    }
+
+    if (reportedMessageId) {
+      const reportCount = await this.prisma.report.count({
+        where: { reportedMessageId },
+      });
+
+      if (reportCount >= THRESHOLD) {
+        await this.prisma.message.update({
+          where: { id: reportedMessageId },
+          data: { isDeleted: true },
+        });
       }
     }
 
     return report;
   }
 
-  async createFeedback(userId: number, type: string, message: string) {
+  async createFeedback(userId: bigint, type: string, message: string) {
     if (!userId) throw new Error('UserId gerekli.');
-    return (this.prisma as any).feedback.create({
-      data: { userId, type, message },
+    return this.prisma.feedback.create({
+      data: {
+        id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+        userId,
+        type,
+        message,
+      },
     });
   }
 
@@ -392,9 +490,9 @@ export class UsersService {
   }
 
   async toggleUserBadge(
-    userId: number,
-    badgeId: number,
-    currentUserId: number,
+    userId: bigint,
+    badgeId: bigint,
+    currentUserId: bigint,
   ) {
     const admin = await this.prisma.user.findUnique({
       where: { id: currentUserId },
@@ -413,7 +511,13 @@ export class UsersService {
       await this.prisma.userBadge.delete({ where: { id: ex.id } });
       return { assigned: false };
     } else {
-      await this.prisma.userBadge.create({ data: { userId, badgeId } });
+      await this.prisma.userBadge.create({
+        data: {
+          id: this.snowflakeService.getNextId(), // SNOWFLAKE ID
+          userId,
+          badgeId,
+        },
+      });
       return { assigned: true };
     }
   }

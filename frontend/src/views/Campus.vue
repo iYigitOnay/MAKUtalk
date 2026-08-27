@@ -1,7 +1,7 @@
 <!-- src/views/Campus.vue -->
 <template>
   <div
-    class="max-w-4xl mx-auto p-6 pb-20 bg-white dark:bg-gray-950 min-h-screen font-sans"
+    class="max-w-4xl mx-auto p-6 pb-20 bg-white dark:bg-gray-950 min-h-screen font-sans justify-center items-center flex flex-col"
   >
     <!-- Header -->
     <header class="mb-12">
@@ -22,6 +22,7 @@
     </header>
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- 1. Haftalık Analiz -->
       <div
         @click="$router.push('/campus/analytics')"
         class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-blue-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left"
@@ -33,19 +34,7 @@
           <div
             class="w-14 h-14 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-2xl flex items-center justify-center mb-6 mx-auto sm:mx-0 group-hover:rotate-12 transition-transform duration-500"
           >
-            <svg
-              class="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-              />
-            </svg>
+            <BarChart3 class="w-8 h-8" />
           </div>
           <h3
             class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2"
@@ -60,6 +49,7 @@
         </div>
       </div>
 
+      <!-- 2. Eduroam -->
       <div
         @click="activeSubPage = 'eduroam'"
         class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-purple-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left"
@@ -71,19 +61,7 @@
           <div
             class="w-14 h-14 bg-purple-50 dark:bg-purple-900/20 text-purple-600 rounded-2xl flex items-center justify-center mb-6 mx-auto sm:mx-0 group-hover:scale-110 transition-transform duration-500 text-purple-600"
           >
-            <svg
-              class="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071a9.05 9.05 0 0112.728 0M1 7.071a14.121 14.121 0 0120 0"
-              />
-            </svg>
+            <Wifi class="w-8 h-8" />
           </div>
           <h3
             class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2"
@@ -98,7 +76,7 @@
         </div>
       </div>
 
-      <!-- 3. Yemekhane (Turuncu - İhtiyaç) -->
+      <!-- 3. Yemekhane -->
       <div
         @click="$router.push('/campus/cafeteria')"
         class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-orange-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left"
@@ -110,19 +88,7 @@
           <div
             class="w-14 h-14 bg-orange-50 dark:bg-orange-900/20 text-orange-600 rounded-2xl flex items-center justify-center mb-6 mx-auto sm:mx-0 group-hover:scale-110 transition-transform duration-500"
           >
-            <svg
-              class="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 2v7c0 1.1.9 2 2 2h4v10a1 1 0 002 0V11h4c1.1 0 2-.9 2-2V2M7 2v4M12 2v4M17 2v4"
-              />
-            </svg>
+            <Utensils class="w-8 h-8" />
           </div>
           <h3
             class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2"
@@ -137,7 +103,7 @@
         </div>
       </div>
 
-      <!-- 4. MAKÜ-Spot (Sarı - Ticaret) -->
+      <!-- 4. MAKÜ-Spot -->
       <div
         @click="$router.push('/campus/spot')"
         class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-amber-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left"
@@ -149,19 +115,7 @@
           <div
             class="w-14 h-14 bg-amber-50 dark:bg-amber-900/20 text-amber-600 rounded-2xl flex items-center justify-center mb-6 mx-auto sm:mx-0 group-hover:scale-110 transition-transform duration-500"
           >
-            <svg
-              class="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
+            <ShoppingBag class="w-8 h-8" />
           </div>
           <h3
             class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2"
@@ -176,7 +130,7 @@
         </div>
       </div>
 
-      <!-- 5. Kulüpler (Kırmızı - Sosyal) -->
+      <!-- 5. MAKÜ HUB -->
       <div
         @click="$router.push('/campus/clubs')"
         class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-rose-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left"
@@ -188,19 +142,7 @@
           <div
             class="w-14 h-14 bg-rose-50 dark:bg-rose-900/20 text-rose-600 rounded-2xl flex items-center justify-center mb-6 mx-auto sm:mx-0 group-hover:scale-110 transition-transform duration-500"
           >
-            <svg
-              class="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 005.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
+            <Users class="w-8 h-8" />
           </div>
           <h3
             class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2"
@@ -215,7 +157,7 @@
         </div>
       </div>
 
-      <!-- 6. Etkinlik Takvimi (Yeşil - Hareket) -->
+      <!-- 6. Etkinlik Takvimi -->
       <div
         @click="$router.push('/campus/events')"
         class="group relative p-8 bg-white dark:bg-gray-900 border border-gray-100 dark:border-primary-900/20 rounded-[2.5rem] shadow-xl hover:shadow-emerald-500/10 transition-all cursor-pointer overflow-hidden text-center sm:text-left"
@@ -227,19 +169,7 @@
           <div
             class="w-14 h-14 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 rounded-2xl flex items-center justify-center mb-6 mx-auto sm:mx-0 group-hover:scale-110 transition-transform duration-500"
           >
-            <svg
-              class="w-8 h-8"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
+            <Calendar class="w-8 h-8" />
           </div>
           <h3
             class="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-2"
@@ -267,118 +197,16 @@
           @click="activeSubPage = null"
           class="absolute top-6 right-6 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors z-50"
         >
-          <svg
-            class="w-6 h-6 text-gray-400"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <X class="w-6 h-6 text-gray-400" />
         </button>
 
         <div class="p-8 flex-1 overflow-y-auto">
-          <!-- Analytics Content -->
-          <div v-if="activeSubPage === 'analytics'" class="space-y-10 pb-10">
-            <div class="text-center space-y-4">
-              <div
-                class="w-20 h-20 bg-blue-50 dark:bg-blue-900/20 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto animate-bounce shadow-xl shadow-blue-500/10"
-              >
-                <svg
-                  class="w-10 h-10"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-              </div>
-              <h2
-                class="text-3xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter"
-              >
-                Kampüs <span class="text-blue-600">Analizi</span>
-              </h2>
-              <p
-                class="text-sm text-gray-500 dark:text-gray-400 font-black max-w-sm mx-auto leading-relaxed"
-              >
-                MAKUtalk topluluğu büyüdükçe, kampüsün nabzını tutan
-                algoritmalarımız burayı dolduracak.
-              </p>
-            </div>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div
-                v-for="feature in [
-                  {
-                    i: '🔥',
-                    t: 'Popüler Kategoriler',
-                    d: 'Haftanın en çok paylaşım yapılan konuları.',
-                  },
-                  {
-                    i: '📈',
-                    t: 'Etkileşim Zirvesi',
-                    d: 'Kampüsün en çok konuşulan Remaküleri.',
-                  },
-                  {
-                    i: '⏱️',
-                    t: 'Aktif Saatler',
-                    d: 'Öğrencilerin en aktif olduğu zaman dilimleri.',
-                  },
-                  {
-                    i: '🧠',
-                    t: 'Duygu Analizi',
-                    d: 'Topluluğun genel modu (Mutlu, heyecanlı vb.)',
-                  },
-                ]"
-                :key="feature.t"
-                class="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-3xl border border-gray-100 dark:border-gray-700 space-y-2"
-              >
-                <div
-                  class="w-10 h-10 bg-white dark:bg-gray-900 rounded-xl flex items-center justify-center text-lg shadow-sm border border-gray-100 dark:border-gray-800"
-                >
-                  {{ feature.i }}
-                </div>
-                <p
-                  class="text-[10px] font-black uppercase tracking-widest text-gray-900 dark:text-white"
-                >
-                  {{ feature.t }}
-                </p>
-                <p
-                  class="text-[11px] text-gray-500 dark:text-gray-400 font-medium leading-tight"
-                >
-                  {{ feature.d }}
-                </p>
-              </div>
-            </div>
-          </div>
-
           <!-- Eduroam Content -->
-          <div v-else-if="activeSubPage === 'eduroam'" class="space-y-8 pb-10">
+          <div v-if="activeSubPage === 'eduroam'" class="space-y-8 pb-10">
             <h2
               class="text-2xl font-black text-gray-900 dark:text-white uppercase italic tracking-tighter flex items-center gap-3"
             >
-              <svg
-                class="w-6 h-6 text-purple-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8.111 16.404a5.5 5.5 0 017.778 0M12 20h.01m-7.08-7.071a9.05 9.05 0 0112.728 0M1 7.071a14.121 14.121 0 0120 0"
-                /></svg
-              >Eduroam Hızlı Kurulum
+              <Wifi class="w-6 h-6 text-purple-600" /> Eduroam Hızlı Kurulum
             </h2>
             <div
               class="p-5 bg-purple-50 dark:bg-purple-900/20 rounded-3xl border border-purple-100 dark:border-purple-800 flex items-center gap-4"
@@ -514,6 +342,15 @@
 import { ref, onMounted, computed } from "vue";
 import apiClient from "@/api/client";
 import { useToast } from "vue-toastification";
+import {
+  BarChart3,
+  Wifi,
+  Users,
+  X,
+  Utensils,
+  ShoppingBag,
+  Calendar,
+} from "lucide-vue-next";
 
 const toast = useToast();
 const activeSubPage = ref<string | null>(null);
