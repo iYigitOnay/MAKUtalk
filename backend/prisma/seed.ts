@@ -216,6 +216,7 @@ async function main() {
     where: { email: '2312101063@ogr.mehmetakif.edu.tr' },
     update: { role: 'ADMIN', isVerified: true },
     create: {
+      id: getNextId(),
       email: '2312101063@ogr.mehmetakif.edu.tr',
       username: 'Mely',
       password: 'hashedPassword123', // Gerçek şifreni laptopta login olduktan sonra güncelleyebilirsin
